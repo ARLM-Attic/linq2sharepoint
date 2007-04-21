@@ -1,4 +1,14 @@
-﻿using System.Reflection;
+﻿/*
+ * LINQ-to-SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,11 +16,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("SpMetal")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("SharePoint List Definition Export tool for entity type creation.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("Bart De Smet")]
 [assembly: AssemblyProduct("SpMetal")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2007")]
+[assembly: AssemblyCopyright("Copyright © Bart De Smet 2007")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
