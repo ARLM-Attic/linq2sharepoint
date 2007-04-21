@@ -689,7 +689,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                         //
                         // Return enum name, possibly nullable.
                         //
-                        return String.Format((required ? "{0}" : "Nullable(Of {0})"), name);
+                        return language == "CS" ? (required ? name : name + "?") : String.Format((required ? "{0}" : "Nullable(Of {0})"), name);
                     }
                 //
                 // Currently no support for User and UserMulti fields.
