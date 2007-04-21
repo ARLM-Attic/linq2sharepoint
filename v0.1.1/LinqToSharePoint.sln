@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio Codename Orcas
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BdsSoft.SharePoint.Linq", "BdsSoft.SharePoint.Linq\BdsSoft.SharePoint.Linq.csproj", "{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BdsSoft.SharePoint.Linq.Tools.SpMetal", "SpMetal\BdsSoft.SharePoint.Linq.Tools.SpMetal.csproj", "{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
