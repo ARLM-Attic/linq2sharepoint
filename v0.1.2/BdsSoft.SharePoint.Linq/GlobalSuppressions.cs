@@ -1,0 +1,6 @@
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Bds", Scope = "namespace", Target = "BdsSoft.SharePoint.Linq")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Bds")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope = "type", Target = "BdsSoft.SharePoint.Linq.SharePointDataSource`1")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "CheckList", Scope = "member", Target = "BdsSoft.SharePoint.Linq.SharePointDataSource`1.CheckListVersion")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Scope = "member", Target = "BdsSoft.SharePoint.Linq.SharePointDataSource`1.CreateQuery<TElement>(System.Linq.Expressions.Expression):System.Linq.IQueryable`1<TElement>")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Scope = "member", Target = "BdsSoft.SharePoint.Linq.SharePointDataSource`1.Execute<TResult>(System.Linq.Expressions.Expression):TResult")]
