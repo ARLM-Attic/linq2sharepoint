@@ -1,5 +1,0 @@
-C:\LinqToSharePoint\v0.1.2\SpMetal\bin\Release\SpMetal.exe
-C:\LinqToSharePoint\v0.1.2\SpMetal\bin\Release\SpMetal.pdb
-C:\LinqToSharePoint\v0.1.2\SpMetal\obj\Release\ResolveAssemblyReference.cache
-C:\LinqToSharePoint\v0.1.2\SpMetal\obj\Release\SpMetal.exe
-C:\LinqToSharePoint\v0.1.2\SpMetal\obj\Release\SpMetal.pdb
