@@ -1,7 +1,0 @@
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\bin\Debug\BdsSoft.SharePoint.Linq.dll
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\bin\Debug\BdsSoft.SharePoint.Linq.pdb
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\bin\Debug\Microsoft.SharePoint.dll
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\bin\Debug\Microsoft.SharePoint.xml
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\obj\Debug\ResolveAssemblyReference.cache
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\obj\Debug\BdsSoft.SharePoint.Linq.dll
-C:\LinqToSharePoint\v0.1.2\BdsSoft.SharePoint.Linq\obj\Debug\BdsSoft.SharePoint.Linq.pdb
