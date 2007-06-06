@@ -17,9 +17,11 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "DemoVb", "DemoVb\DemoVb.vbp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{1ACE901B-0691-4795-BBA6-69A856D7B372}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Junkyard", "Junkyard\Junkyard.csproj", "{41C163BA-F4E9-4188-B41D-405F32AA704A}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 6
+		SccNumberOfProjects = 7
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://tfs03.codeplex.com/
 		SccLocalPath0 = .
@@ -38,6 +40,9 @@ Global
 		SccProjectUniqueName5 = Tests\\Tests.csproj
 		SccProjectName5 = Tests
 		SccLocalPath5 = Tests
+		SccProjectUniqueName6 = Junkyard\\Junkyard.csproj
+		SccProjectName6 = Junkyard
+		SccLocalPath6 = Junkyard
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = LinqToSharePoint.vsmdi
@@ -67,6 +72,10 @@ Global
 		{1ACE901B-0691-4795-BBA6-69A856D7B372}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1ACE901B-0691-4795-BBA6-69A856D7B372}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1ACE901B-0691-4795-BBA6-69A856D7B372}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

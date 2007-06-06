@@ -743,7 +743,7 @@ namespace BdsSoft.SharePoint.Linq
             }
             /* </ADD> */
             //
-            // Method calls are supported for a limited set of string operations.
+            // Method calls are supported for a limited set of string operations and for LookupMulti fields.
             //
             else if ((mce = predicate as MethodCallExpression) != null)
             {
@@ -844,6 +844,48 @@ namespace BdsSoft.SharePoint.Linq
                         cond.AppendChild(GetValue(val, GetFieldAttribute(property)));
                     else
                         return null;
+
+                    return cond;
+                }
+                //
+                // LookupMulti fields support the Contains method call.
+                //
+                else if (mce.Method.DeclaringType.IsGenericType
+                         && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                         && mce.Method.Name == "Contains")
+                {
+                    if (!isPositive)
+                        throw new NotSupportedException("Can't negate a Contains query expression.");
+                    XmlElement cond = _doc.CreateElement("Contains");
+
+                    //
+                    // Get the value of the method call argument and ensure it's lambda parameter free.
+                    //
+                    Expression arg = mce.Arguments[0];
+                    EnsureLambdaFree(arg, predicateParameter);
+
+                    //
+                    // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                    //
+                    object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+
+                    //
+                    // Contains(null) is considered to be always true.
+                    //
+                    if (val == null)
+                        return null;
+
+                    //
+                    // Check type of the Contains parameter to match the entity type.
+                    //
+                    if (mce.Method.DeclaringType.GetGenericArguments()[0] != val.GetType())
+                        throw new NotSupportedException("Contains expressions for LookupMulti fields should match the referenced entity type.");
+
+                    //
+                    // Build condition based on the referenced field and the lookup key field.
+                    //
+                    cond.AppendChild(GetFieldRef(property));
+                    cond.AppendChild(GetValue(val, GetFieldAttribute(property)));
 
                     return cond;
                 }
@@ -2377,7 +2419,7 @@ namespace BdsSoft.SharePoint.Linq
             settings.ConformanceLevel = ConformanceLevel.Auto;
             using (XmlWriter xw = XmlWriter.Create(queryBuilder, settings))
             {
-                if (this._where != null)
+                if (this._where != null && this._where.ChildNodes.Count != 0)
                     this._where.WriteTo(xw);
                 if (this._order != null)
                     this._order.WriteTo(xw);
@@ -2425,7 +2467,7 @@ namespace BdsSoft.SharePoint.Linq
             // Construct the query ready for consumption by the SharePoint web services, including a <Query> root element.
             //
             XmlNode query = _doc.CreateElement("Query");
-            if (this._where != null)
+            if (this._where != null && this._where.ChildNodes.Count != 0)
                 query.AppendChild(this._where);
             if (this._order != null)
                 query.AppendChild(this._order);
@@ -2502,7 +2544,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Write the query, including the predicate and the ordering element.
                 //
                 xw.WriteStartElement("Query");
-                if (where != null)
+                if (where != null && where.ChildNodes.Count != 0)
                     where.WriteTo(xw);
                 if (order != null)
                     order.WriteTo(xw);
@@ -2735,6 +2777,8 @@ namespace BdsSoft.SharePoint.Linq
                         // Structure will be key;#display where key represents the foreign key and display the display field.
                         //
                         string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        if (fk.Length != 2)
+                            break;
                         int fkey = int.Parse(fk[0]);
                         string fval = fk[1];
 
@@ -2757,29 +2801,31 @@ namespace BdsSoft.SharePoint.Linq
                     // LookupMulti fields represent n-to-m mappings and require lazy loading of the referenced list entities.
                     //
                     case FieldType.LookupMulti:
-                        /*
-                         * !!! Could be empty
-                         */
-                        //string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
-                        //List<int> lstFkeys = new List<int>();
-                        //List<string> lstFvals = new List<string>();
-                        //for (int i = 0; i < fks.Length; i += 2)
-                        //{
-                        //    lstFkeys.Add(int.Parse(fks[i]));
-                        //    lstFvals.Add(fks[i + 1]);
-                        //}
-                        //int[] fkeys = lstFkeys.ToArray();
-                        //string[] fvals = lstFvals.ToArray();
+                        //
+                        // Structure will be [key;#display]* where key represents the foreign key and display the display field.
+                        //
+                        string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        if (fks.Length % 2 != 0)
+                            break;
+                        List<int> lstFkeys = new List<int>();
+                        for (int i = 0; i < fks.Length; i += 2)
+                            lstFkeys.Add(int.Parse(fks[i]));
+                        int[] fkeys = lstFkeys.ToArray();
 
-                        //if (entity == null)
-                        //{
-                        //    //property.PropertyType;
-                        //    //We need to get the lookup field value right away!
-                        //}
-                        //else
-                        //{
-                        //    //Lazy loading
-                        //}
+                        //
+                        // We'll only support lazy loading on entity types that implement SharePointListEntity.
+                        //
+                        if (entity == null)
+                            throw new NotSupportedException("Lookup fields are only supported on entity types deriving from SharePointListEntity. Did you use SpMetal to generate the entity class?");
+                        else
+                        {
+                            //
+                            // Lazy loading
+                            //
+                            Type t = typeof(LazyLoadingThunk<,>).MakeGenericType(typeof(T), property.PropertyType.GetGenericArguments()[0]);
+                            ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, this, fkeys);
+                            entity.SetValue(property.Name, thunk);
+                        }
                         break;
                     default:
                         throw new InvalidOperationException("Unrecognized mapping type encountered: " + field.FieldType + ".");
@@ -2998,6 +3044,26 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Retrieves a list of entities by the given set of IDs (primary key field).
+        /// </summary>
+        /// <param name="ids">IDs of the entities to retrieve.</param>
+        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
+        /// <returns>List of entity objects with the given IDs; null if not found.</returns>
+        public IList<T> GetEntitiesById(int[] ids, bool fromCache)
+        {
+            //
+            // TODO
+            //
+            // Replace naive implementation with <Or>-based query on identifier field, excluding items already in cache.
+            // This implementation will launch a lot of small queries for each individual referenced entity.
+            //
+            List<T> lst = new List<T>();
+            foreach (int id in ids)
+                lst.Add(GetEntityById(id, fromCache));
+            return lst;
+        }
+
+        /// <summary>
         /// Cache of SharePointDataSource objects for various referenced entity types.
         /// </summary>
         private Dictionary<Type, object> datasources = new Dictionary<Type, object>();
@@ -3039,6 +3105,18 @@ namespace BdsSoft.SharePoint.Linq
         {
             SharePointDataSource<R> src = GetSharePointDataSource<R>();
             return src.GetEntityById(id, true);
+        }
+
+        /// <summary>
+        /// Retrieves a list of entities of the specified type from a SharePointDataSource serving that entity type.
+        /// </summary>
+        /// <typeparam name="R">Entity type to get instances of, as specified by the ids parameter.</typeparam>
+        /// <param name="ids">Keys of the entity type instances to retrieve.</param>
+        /// <returns>List of entity type instances of the specified type with the given keys.</returns>
+        internal IList<R> GetEntitiesById<R>(int[] ids)
+        {
+            SharePointDataSource<R> src = GetSharePointDataSource<R>();
+            return src.GetEntitiesById(ids, true);
         }
 
         #endregion

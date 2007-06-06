@@ -22,11 +22,12 @@
  *         Infer file name for entity class from list's name, not the command-line parameter
  *         Restructuring of class files in project
  *         Hosting model with events
+ *         Support for Lookup fields with recursive entity type generation
  */
 
 /*
  * TODO:
- * - Lookup and LookupMulti support
+ * - LookupMulti support
  * - LookupField attribute parameter from ShowField
  */
 
@@ -142,7 +143,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             Queue<Entity> entities = new Queue<Entity>();
             HashSet<string> encounteredEntities = new HashSet<string>();
-            Dictionary<string, string> map = new Dictionary<string, string>();
+            Dictionary<Guid, string> map = new Dictionary<Guid, string>();
 
             //
             // Generate the requested entity.
@@ -174,6 +175,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             // Resolve all Lookup field references, recursively.
             //
             entities.Enqueue(entity);
+            map.Add(entity.Id, entity.Name); //Patch for lists that reference themselves. No need to re-generate entity type.
             encounteredEntities.Add(entity.Name);
             while (entities.Count > 0)
             {
@@ -188,16 +190,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 {
                     string lookupList = entity.Lookups[patch];
                     string lookupEntityName;
-                    if (map.ContainsKey(lookupList))
+                    if (map.ContainsKey(new Guid(lookupList)))
                     {
-                        lookupEntityName = map[lookupList];
+                        lookupEntityName = map[new Guid(lookupList)];
                     }
                     else
                     {
                         a.List = lookupList;
                         Entity lookupEntity = gen.Generate(a);
                         lookupEntityName = lookupEntity.Name;
-                        map.Add(lookupList, lookupEntity.Name);
+                        map.Add(lookupEntity.Id, lookupEntity.Name);
                         entities.Enqueue(lookupEntity);
                     }
                     code.Replace(patch, lookupEntityName);

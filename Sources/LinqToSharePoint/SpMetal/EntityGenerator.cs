@@ -24,13 +24,35 @@ using System.Net;
 
 namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
 {
+    /// <summary>
+    /// Represents an entity for use within LINQ to SharePoint projects.
+    /// </summary>
     class Entity
     {
+        /// <summary>
+        /// Name of the entity.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Unique identifier of list.
+        /// </summary>
+        public Guid Id { get; set; }
+
+        /// <summary>
+        /// Generated code for the entity class.
+        /// </summary>
         public string Code { get; set; }
+
+        /// <summary>
+        /// List of referenced entity types used in Lookup* fields.
+        /// </summary>
         public Dictionary<string, string> Lookups { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a connection with SharePoint being made.
+    /// </summary>
     class ConnectingEventArgs : EventArgs
     {
         public ConnectingEventArgs(string url)
@@ -39,9 +61,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Url = url;
         }
 
+        /// <summary>
+        /// Url connecting to.
+        /// </summary>
         public string Url { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a connection to SharePoint has been established.
+    /// </summary>
     class ConnectedEventArgs : EventArgs
     {
         public ConnectedEventArgs()
@@ -57,10 +85,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Exception = ex;
         }
 
+        /// <summary>
+        /// Indicates whether the connection has succeeded.
+        /// </summary>
         public bool Succeeded { get; set; }
+
+        /// <summary>
+        /// In case the connection didn't succeed, this property contains the corresponding connection exception.
+        /// </summary>
         public Exception Exception { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a schema load is being carried out.
+    /// </summary>
     class LoadingSchemaEventArgs : EventArgs
     {
         public LoadingSchemaEventArgs(string list)
@@ -69,9 +107,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             List = list;
         }
 
+        /// <summary>
+        /// List the schema is being loaded for.
+        /// </summary>
         public string List { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a schema has been loaded.
+    /// </summary>
     class LoadedSchemaEventArgs : EventArgs
     {
         public LoadedSchemaEventArgs()
@@ -87,10 +131,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Exception = ex;
         }
 
+        /// <summary>
+        /// Indicates whether the schema load operation has succeeded.
+        /// </summary>
         public bool Succeeded { get; set; }
+
+        /// <summary>
+        /// In case the schema load didn't succeed, this property contains the corresponding load failure exception.
+        /// </summary>
         public Exception Exception { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a schema export is being carried out.
+    /// </summary>
     class ExportingSchemaEventArgs : EventArgs
     {
         public ExportingSchemaEventArgs(string listName, Guid listID, int version)
@@ -101,11 +155,25 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Version = version;
         }
 
+        /// <summary>
+        /// List the schema is being exported for.
+        /// </summary>
         public string List { get; set; }
+
+        /// <summary>
+        /// Unique identifier of the list.
+        /// </summary>
         public Guid Identifier { get; set; }
+
+        /// <summary>
+        /// Version number of the list.
+        /// </summary>
         public int Version { get; set; }
     }
 
+    /// <summary>
+    /// Event arguments to indicate a schema has been exported.
+    /// </summary>
     class ExportedSchemaEventArgs : EventArgs
     {
         public ExportedSchemaEventArgs(int propertyCount)
@@ -122,8 +190,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Exception = ex;
         }
 
+        /// <summary>
+        /// Indicates whether the schema export operation has succeeded.
+        /// </summary>
         public bool Succeeded { get; set; }
+
+        /// <summary>
+        /// In case the schema export didn't succeed, this property contains the corresponding export failure exception.
+        /// </summary>
         public Exception Exception { get; set; }
+
+        /// <summary>
+        /// Number of properties that have been exported from the schema.
+        /// </summary>
         public int PropertyCount { get; set; }
     }
 
@@ -139,13 +218,39 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         private int lookupCount = 0;
         private HashSet<string> forbiddenTypeNames = new HashSet<string>();
 
+        /// <summary>
+        /// Connecting to the SharePoint site.
+        /// </summary>
         public event EventHandler<ConnectingEventArgs> Connecting;
+
+        /// <summary>
+        /// Connected to the SharePoint site.
+        /// </summary>
         public event EventHandler<ConnectedEventArgs> Connected;
+
+        /// <summary>
+        /// Loading schema from the SharePoint site.
+        /// </summary>
         public event EventHandler<LoadingSchemaEventArgs> LoadingSchema;
+
+        /// <summary>
+        /// Schema loaded from the SharePoint site.
+        /// </summary>
         public event EventHandler<LoadedSchemaEventArgs> LoadedSchema;
+
+        /// <summary>
+        /// Exporting schema from the SharePoint site.
+        /// </summary>
         public event EventHandler<ExportingSchemaEventArgs> ExportingSchema;
+
+        /// <summary>
+        /// Schema exported from the SharePoint site.
+        /// </summary>
         public event EventHandler<ExportedSchemaEventArgs> ExportedSchema;
 
+        /// <summary>
+        /// Holds a list with exported enums as mappings for (Multi)Choice fields.
+        /// </summary>
         public List<string> Enums
         {
             get { return enums; }
@@ -395,8 +500,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                         //
                         // Lookup fields require a LookupField attribute property to be set.
                         //
-                        if ((string)c.Attributes["Type"].Value == "Lookup")
+                        if ((string)c.Attributes["Type"].Value == "Lookup"
+                            || (string)c.Attributes["Type"].Value == "LookupMulti")
                             extra.AppendFormat(", LookupField{1}\"{0}\"", (string)c.Attributes["ShowField"].Value, language == "CS" ? " = " : ":=");
+
+                        //
+                        // LookupMulti fields shouldn't be settable. The underlying IList<T> type will allow changes to the collection though.
+                        //
+                        if ((string)c.Attributes["Type"].Value == "LookupMulti")
+                            readOnly = true;
 
                         //
                         // Generate a property for the current field and append it to the properties output string.
@@ -435,6 +547,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             Entity entity = new Entity();
             entity.Name = listName;
+            entity.Id = listID;
             entity.Code = output.ToString();
             entity.Lookups = lookups;
             return entity;
@@ -659,6 +772,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                         lookups.Add(patch, lookupList);
 
                         return patch;
+                    }
+                //
+                // LookupMulti fields require the generation of another linked entity type.
+                //
+                case "LookupMulti":
+                    {
+                        string patch = String.Format(LOOKUP, ++lookupCount);
+                        string lookupList = (string)c.Attributes["List"].Value;
+                        lookups.Add(patch, lookupList);
+
+                        return "IList<" + patch + ">";
                     }
                 //
                 // Currently no support for User and UserMulti fields.

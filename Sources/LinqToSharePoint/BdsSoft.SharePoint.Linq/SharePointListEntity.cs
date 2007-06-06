@@ -114,12 +114,17 @@ namespace BdsSoft.SharePoint.Linq
         private SharePointDataSource<T> source;
 
         /// <summary>
-        /// Unique id of the entity to be loaded from the child (lookup) list.
+        /// Unique id of the entity to be loaded from the child (lookup) list. Used for Lookup fields.
         /// </summary>
-        private int id;
+        private int? id;
 
         /// <summary>
-        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>.
+        /// List of id values of the entities to be loaded from the child (multi-lookup) list. Used for LookupMulti fields.
+        /// </summary>
+        private int[] ids;
+
+        /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
         /// </summary>
         /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
         /// <param name="id">Unique id of the entity to be loaded from the child (lookup) list.</param>
@@ -130,12 +135,26 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
+        /// </summary>
+        /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
+        /// <param name="id">Unique id of the entity to be loaded from the child (lookup) list.</param>
+        public LazyLoadingThunk(SharePointDataSource<T> source, int[] ids)
+        {
+            this.source = source;
+            this.ids = ids;
+        }
+
+        /// <summary>
         /// Loads the entity from the thunk represented by the thunk's entity id.
         /// </summary>
         /// <returns></returns>
         public object LoadEntity()
         {
-            return source.GetEntityById<R>(id);
+            if (id != null)
+                return source.GetEntityById<R>(id.Value);
+            else
+                return source.GetEntitiesById<R>(ids);
         }
     }
 }
