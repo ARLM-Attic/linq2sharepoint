@@ -1412,6 +1412,35 @@ namespace BdsSoft.SharePoint.Linq
                     throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupField + ". Did you mean a null-check on the Lookup field instead?");
 
                 valueElement.InnerText = o.ToString();
+
+                //
+                // Find primary key value for the referenced entity.
+                //
+                FieldAttribute pkField = null;
+                PropertyInfo pkProp = null;
+                foreach (PropertyInfo property in value.GetType().GetProperties())
+                {
+                    FieldAttribute f = GetFieldAttribute(property);
+                    if (f != null && f.PrimaryKey && f.FieldType == FieldType.Counter)
+                    {
+                        if (pkField != null)
+                            throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
+
+                        pkField = f;
+                        pkProp = property;
+                        break;
+                    }
+                }
+                if (pkField == null)
+                    throw new InvalidOperationException("Missing primary key on referenced entity type.");
+                int fk = (int)pkProp.GetValue(value, null);
+
+                //
+                // Primary key value of the referenced entity acts as a post-filter criterion.
+                //
+                if (!postFilters.ContainsKey(field.Field))
+                    postFilters.Add(field.Field, new HashSet<int>());
+                postFilters[field.Field].Add(fk);
             }
             //
             // Other types will be converted to a string.
@@ -2196,6 +2225,11 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Dictionary of post filters used to filter by foreign key value for Lookup fields.
+        /// </summary>
+        private Dictionary<string, HashSet<int>> postFilters = new Dictionary<string, HashSet<int>>();
+
+        /// <summary>
         /// Patches the query predicate to eliminate Lookup field references by subqueries.
         /// </summary>
         private void PatchQueryPredicate()
@@ -2247,16 +2281,33 @@ namespace BdsSoft.SharePoint.Linq
 
                         //
                         // Only retrieve the lookup column value (display column).
+                        // FIX: Also retrieve the ID value to check foreign key values.
                         //
-                        XmlElement view = _doc.CreateElement("FieldRef");
-                        XmlAttribute fieldName = _doc.CreateAttribute("Name");
-                        fieldName.Value = XmlConvert.EncodeName(lookup.LookupField);
-                        view.Attributes.Append(fieldName);
+                        XmlElement viewFields = _doc.CreateElement("ViewFields");
+                        
+                        XmlElement viewLookupField = _doc.CreateElement("FieldRef");
+                        XmlAttribute lookupFieldName = _doc.CreateAttribute("Name");
+                        lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupField);
+                        viewLookupField.Attributes.Append(lookupFieldName);
+                        viewFields.AppendChild(viewLookupField);
+
+                        XmlElement viewId = _doc.CreateElement("FieldRef");
+                        XmlAttribute idFieldName = _doc.CreateAttribute("Name");
+                        idFieldName.Value = "ID";
+                        viewId.Attributes.Append(idFieldName);
+                        viewFields.AppendChild(viewId);
 
                         //
                         // Prepare list of subquery results.
                         //
                         ArrayList fks = new ArrayList();
+
+                        //
+                        // List of post-filter criteria. Used to match the foreign key field by ID.
+                        // This is required because SharePoint doesn't allow filters by foreign keys on Lookup fields.
+                        // Therefore, we need to apply additional filtering logic once results have been fetched.
+                        //
+                        List<int> ids = new List<int>();
 
                         //
                         // Use SharePoint object model.
@@ -2270,7 +2321,7 @@ namespace BdsSoft.SharePoint.Linq
                             XmlElement q = _doc.CreateElement("Where");
                             q.InnerXml = caml;
                             query.Query = q.OuterXml;
-                            query.ViewFields = view.OuterXml;
+                            query.ViewFields = viewFields.InnerXml;
                             query.IncludeMandatoryColumns = false;
                             query.IncludePermissions = false;
                             query.IncludeAttachmentVersion = false;
@@ -2280,13 +2331,16 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Log it.
                             //
-                            DoLogging(q, null, view);
+                            DoLogging(q, null, viewFields);
 
                             //
                             // Get subquery results.
                             //
                             foreach (SPListItem item in _site.RootWeb.Lists[innerList].GetItems(query))
+                            {
                                 fks.Add(item[lookup.LookupField]);
+                                ids.Add(int.Parse(item["ID"].ToString()));
+                            }
                         }
                         //
                         // Use SharePoint web services.
@@ -2300,8 +2354,6 @@ namespace BdsSoft.SharePoint.Linq
                             XmlElement where = _doc.CreateElement("Where");
                             where.InnerXml = caml;
                             query.AppendChild(where);
-                            XmlElement viewFields = _doc.CreateElement("ViewFields");
-                            viewFields.AppendChild(view);
 
                             XmlNode queryOptions = _doc.CreateElement("QueryOptions");
 
@@ -2312,7 +2364,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Log it.
                             //
-                            DoLogging(where, null, view);
+                            DoLogging(where, null, viewFields);
 
                             //
                             // Get results.
@@ -2326,7 +2378,10 @@ namespace BdsSoft.SharePoint.Linq
                             // Get subquery results.
                             //
                             foreach (DataRow row in tbl.Rows)
+                            {
                                 fks.Add(row["ows_" + lookup.LookupField]);
+                                ids.Add(int.Parse(row["ows_ID"].ToString()));
+                            }
                         }
 
                         //
@@ -2338,6 +2393,13 @@ namespace BdsSoft.SharePoint.Linq
                             XmlElement val = GetValue(o, lookup);
                             patch = CreatePatch("Eq", lookupField, val, patch);
                         }
+
+                        //
+                        // Register post-filter criteria list.
+                        //
+                        if (!postFilters.ContainsKey(lookupField.Name))
+                            postFilters.Add(lookupField.Name, new HashSet<int>());
+                        postFilters[lookupField.Name].UnionWith(ids);
 
                         //
                         // Apply patch.
@@ -2437,7 +2499,31 @@ namespace BdsSoft.SharePoint.Linq
             // Include projection fields if a projection clause has been parsed.
             //
             if (_projection != null)
+            {
+                //
+                // Make sure fields required in post-filters are present.
+                //
+                if (postFilters.Count != 0)
+                {
+                    foreach (string prop in postFilters.Keys)
+                    {
+                        XmlElement field = GetFieldRef(_originalType.GetProperty(prop));
+                        bool found = false;
+                        foreach (XmlElement node in _projection.ChildNodes)
+                        {
+                            if (node.GetAttribute("Name") == field.GetAttribute("Name"))
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                            _projection.AppendChild(field);
+                    }
+                }
+
                 query.ViewFields = _projection.InnerXml;
+            }
 
             //
             // In case a row limit (Take) was found, set the limit on the query.
@@ -2454,7 +2540,12 @@ namespace BdsSoft.SharePoint.Linq
             // Execute the query via the SPList object and fetch results using an iterator.
             //
             foreach (SPListItem item in _list.GetItems(query))
-                yield return GetItem(item, null);
+            {
+                bool ret;
+                T result = GetItem(item, null, out ret);
+                if (ret)
+                    yield return result;
+            }
         }
 
         /// <summary>
@@ -2486,6 +2577,28 @@ namespace BdsSoft.SharePoint.Linq
             /* </FIX> */
 
             //
+            // Make sure fields required in post-filters are present.
+            //
+            if (_projection != null && postFilters.Count != 0)
+            {
+                foreach (string prop in postFilters.Keys)
+                {
+                    XmlElement field = GetFieldRef(_originalType.GetProperty(prop));
+                    bool found = false;
+                    foreach (XmlElement node in _projection.ChildNodes)
+                    {
+                        if (node.GetAttribute("Name") == field.GetAttribute("Name"))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                        _projection.AppendChild(field);
+                }
+            }
+
+            //
             // Perform logging of the gathered information.
             //
             DoLogging(_where, _order, _projection);
@@ -2513,7 +2626,12 @@ namespace BdsSoft.SharePoint.Linq
             // Fetch results using an iterator.
             //
             foreach (DataRow row in tbl.Rows)
-                yield return GetItem(null, row);
+            {
+                bool ret;
+                T result = GetItem(null, row, out ret);
+                if (ret)
+                    yield return result;
+            }
         }
 
         /// <summary>
@@ -2576,10 +2694,13 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="item">Item retrieved via the SharePoint object model.</param>
         /// <param name="row">Item retrieved via the SharePoint list web service.</param>
+        /// <param name="validItem">Indicates whether or not the retrieved item should be returned in the result set.</param>
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
-        private T GetItem(SPListItem item, DataRow row)
+        private T GetItem(SPListItem item, DataRow row, out bool validItem)
         {
+            validItem = true;
+
             //
             // Create an instance of the entity type. This instance will be used to perform the projection operation on (if any).
             //
@@ -2594,14 +2715,26 @@ namespace BdsSoft.SharePoint.Linq
             // Data comes from the SharePoint Object Model.
             //
             if (item != null)
+            {
                 foreach (PropertyInfo p in props)
-                    AssignResultProperty(item, null, p, result);
+                {
+                    AssignResultProperty(item, null, p, result, out validItem);
+                    if (!validItem)
+                        return default(T);
+                }
+            }
             //
             // Data comes from the SharePoint list web service.
             //
             else
+            {
                 foreach (PropertyInfo p in props)
-                    AssignResultProperty(null, row, p, result);
+                {
+                    AssignResultProperty(null, row, p, result, out validItem);
+                    if (!validItem)
+                        return default(T);
+                }
+            }
 
             //
             // Perform projection if required.
@@ -2619,8 +2752,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
         /// <param name="property">Property to set on the entity object.</param>
         /// <param name="target">Entity object to set the property for.</param>
-        private void AssignResultProperty(SPListItem item, DataRow row, PropertyInfo property, object target)
+        /// <param name="validItem">Indicates whether or not the retrieved item should be returned in the result set.</param>
+        private void AssignResultProperty(SPListItem item, DataRow row, PropertyInfo property, object target, out bool validItem)
         {
+            //
+            // Normally the item should be okay. Post-filter criteria can override this (see Lookup field case).
+            //
+            validItem = true;
+
             /* <ADD Version="0.2.0.0"> */
 
             //
@@ -2783,6 +2922,23 @@ namespace BdsSoft.SharePoint.Linq
                         string fval = fk[1];
 
                         //
+                        // Perform post-filtering; required for foreign key check on Lookup fields.
+                        //
+                        if (postFilters.ContainsKey(property.Name))
+                        {
+                            HashSet<int> ids = postFilters[property.Name];
+
+                            //
+                            // Key wasn't in the retrieved foreign key set; result shouldn't be returned.
+                            //
+                            if (!ids.Contains(fkey))
+                            {
+                                validItem = false;
+                                break;
+                            }
+                        }
+
+                        //
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
                         //
                         if (entity == null)
@@ -2811,6 +2967,32 @@ namespace BdsSoft.SharePoint.Linq
                         for (int i = 0; i < fks.Length; i += 2)
                             lstFkeys.Add(int.Parse(fks[i]));
                         int[] fkeys = lstFkeys.ToArray();
+
+                        //
+                        // Perform post-filtering; required for foreign key check on Lookup fields.
+                        //
+                        if (postFilters.ContainsKey(property.Name))
+                        {
+                            HashSet<int> ids = postFilters[property.Name];
+
+                            //
+                            // At least one foreign key should be found for the item to be valid.
+                            //
+                            bool found = false;
+                            foreach (int key in fkeys)
+                            {
+                                if (ids.Contains(key))
+                                {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found)
+                            {
+                                validItem = false;
+                                break;
+                            }
+                        }
 
                         //
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.

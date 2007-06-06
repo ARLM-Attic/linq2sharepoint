@@ -14,8 +14,9 @@ namespace Junkyard
     {
         static void Main(string[] args)
         {
-            SharePointDataSource<Test> lst = new SharePointDataSource<Test>(new Uri("http://wss3demo"));
-            SharePointDataSource<Users> usr = new SharePointDataSource<Users>(new Uri("http://wss3demo"));
+            SPSite site = new SPSite("http://wss3demo");
+            SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
+            SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));
             lst.Log = Console.Out;
             usr.Log = Console.Out;
 
@@ -28,12 +29,14 @@ namespace Junkyard
 
             var res = from t in lst 
                       //where t.UsersMulti.Contains(null)
-                      where t.UsersMulti.Contains(usr.GetEntityById(1, true))
+                      //where t.UsersMulti.Contains(usr.GetEntityById(1, true))
                       //where t.User.Title.StartsWith("Bart")
+                      where t.User.ID == 1 || t.User == usr.GetEntityById(3, true)
                       select t;
             foreach (var t in res)
-                if (t.UsersMulti != null)
-                    Console.WriteLine(t.User.Title);
+                Console.WriteLine(t.Title + " " + t.User.ID);
+                //if (t.UsersMulti != null)
+                //    Console.WriteLine(t.User.Title);
 
             /*
             SPSite s = new SPSite("http://wss3demo");
