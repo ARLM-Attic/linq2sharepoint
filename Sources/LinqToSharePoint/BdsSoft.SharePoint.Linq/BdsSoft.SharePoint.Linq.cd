@@ -53,7 +53,7 @@
       <HashCode>UCqgFAADKKIADFQAAmAAQAyIBLgMUARUwgIYQACAJAg=</HashCode>
       <FileName>SharePointDataSource.cs</FileName>
     </TypeIdentifier>
-    <Lollipop Position="0.2" Collapsed="true" />
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="BdsSoft.SharePoint.Linq.SharePointListEntity">
     <Position X="5.75" Y="0.5" Width="2.75" />
@@ -63,12 +63,12 @@
     </TypeIdentifier>
   </Class>
   <Class Name="BdsSoft.SharePoint.Linq.LazyLoadingThunk&lt;T, R&gt;" BaseTypeListCollapsed="true">
-    <Position X="5" Y="2.5" Width="1.5" />
+    <Position X="4.5" Y="4" Width="4" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAIAAAAAAAQAAAAAAAAAAAAAAAAAAgA=</HashCode>
       <FileName>SharePointListEntity.cs</FileName>
     </TypeIdentifier>
-    <Lollipop Position="0.2" Collapsed="true" />
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="BdsSoft.SharePoint.Linq.Url">
     <Position X="12" Y="0.5" Width="3.25" />
@@ -81,14 +81,14 @@
     </TypeIdentifier>
   </Class>
   <Interface Name="BdsSoft.SharePoint.Linq.ILazyLoadingThunk">
-    <Position X="5" Y="4.75" Width="1.5" />
+    <Position X="4.5" Y="2.5" Width="4" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SharePointListEntity.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Enum Name="BdsSoft.SharePoint.Linq.FieldType">
-    <Position X="7" Y="2.5" Width="1.5" />
+    <Position X="12" Y="4.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AABAAAAAAQAAAAAAAEAAIIAACSAACgQAAAAACAEEAAA=</HashCode>
       <FileName>Attributes.cs</FileName>
