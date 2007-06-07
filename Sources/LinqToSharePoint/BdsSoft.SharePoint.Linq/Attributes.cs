@@ -180,7 +180,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Mapping attribute for (multi-)choice values to enum fields.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public sealed class ChoiceAttribute : Attribute
     {
         /// <summary>
@@ -223,6 +223,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Calculcated field.
         /// </summary>
+        [Obsolete]
         Calculated = SPFieldType.Calculated,
 
         /// <summary>

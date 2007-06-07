@@ -235,7 +235,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             string list = la.Path;
             if (list == null)
-                list = "/Lists/" + la.List;
+                list = la.Path;
 
             //
             // Get list.

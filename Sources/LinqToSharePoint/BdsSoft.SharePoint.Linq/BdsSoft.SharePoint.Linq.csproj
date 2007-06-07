@@ -64,6 +64,7 @@
     <Compile Include="Url.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="BdsSoft.SharePoint.Linq.cd" />
     <None Include="key.snk" />
     <None Include="key.snk.pfx" />
   </ItemGroup>
