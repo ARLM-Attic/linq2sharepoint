@@ -147,6 +147,11 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         private bool _checkVersion = true;
 
+        /// <summary>
+        /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
+        /// </summary>
+        private bool _enforceLookupFieldUniqueness = true;
+
         #endregion
 
         #region Constructors
@@ -309,6 +314,16 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        /// <summary>
+        /// Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique (on by default).
+        /// </summary>
+        /// <remarks>WARNING! Misuse of this property can cause invalid query results to be produced.</remarks>
+        public bool EnforceLookupFieldUniqueness
+        {
+            get { return _enforceLookupFieldUniqueness; }
+            set { _enforceLookupFieldUniqueness = value; }
+        }	
+
         #endregion
 
         #region Query builder and parser
@@ -390,6 +405,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             res._log = this._log;
             res._checkVersion = this._checkVersion;
+            res._enforceLookupFieldUniqueness = this._enforceLookupFieldUniqueness;
 
             //
             // The uppermost query expression nodes should be method call expressions on the System.Linq.Queryable type.
@@ -904,6 +920,26 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="node">Node of the query expression to be patched.</param>
         private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node)
         {
+            //
+            // Make sure the child entity field referenced in the lookup is unique.
+            //
+            if (_enforceLookupFieldUniqueness)
+            {
+                FieldAttribute fap = GetFieldAttribute(lookup);
+                if (fap == null || fap.LookupField == null)
+                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+
+                FieldAttribute fac = GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupField));
+                if (fac == null)
+                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+
+                if (!fac.PrimaryKey && !fac.IsUnique)
+                    throw new NotSupportedException("Lookup field subqueries are only supported for lookup fields that are unique.");
+            }
+
+            //
+            // Apply the patch.
+            //
             XmlElement p = _doc.CreateElement("Patch");
             XmlAttribute a = _doc.CreateAttribute("Field");
             a.Value = lookup.Name;

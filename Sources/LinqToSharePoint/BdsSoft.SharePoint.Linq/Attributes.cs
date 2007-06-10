@@ -116,6 +116,14 @@ namespace BdsSoft.SharePoint.Linq
             get { return otherChoice; }
             set { otherChoice = value; }
         }
+
+        private bool isUnique;
+
+        public bool IsUnique
+        {
+            get { return isUnique; }
+            set { isUnique = value; }
+        }
     }
 
     /// <summary>

@@ -21,6 +21,7 @@ namespace Junkyard
             //usr.Log = Console.Out;
             SharePointDataSource<Parent> lst = new SharePointDataSource<Parent>(site);
             lst.Log = Console.Out;
+            //lst.EnforceLookupFieldUniqueness = false;
 
             var res = from p in lst where p.Title == "Test" && p.Bar.Title.StartsWith("Bart") && p.Foo.Title.StartsWith("De Smet") select p;
             foreach (var p in res)
