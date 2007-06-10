@@ -15,10 +15,18 @@ namespace Junkyard
         static void Main(string[] args)
         {
             SPSite site = new SPSite("http://wss3demo");
-            SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
-            SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));
+            //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
+            //SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));
+            //lst.Log = Console.Out;
+            //usr.Log = Console.Out;
+            SharePointDataSource<Parent> lst = new SharePointDataSource<Parent>(site);
             lst.Log = Console.Out;
-            usr.Log = Console.Out;
+
+            var res = from p in lst where p.Title == "Test" && p.Bar.Title.StartsWith("Bart") && p.Foo.Title.StartsWith("De Smet") select p;
+            foreach (var p in res)
+                Console.WriteLine(p);
+
+            /*
 
             //SELECTMANY
             //
@@ -37,7 +45,7 @@ namespace Junkyard
                 Console.WriteLine(t.Title + " " + t.User.ID);
                 //if (t.UsersMulti != null)
                 //    Console.WriteLine(t.User.Title);
-
+            */
             /*
             SPSite s = new SPSite("http://wss3demo");
             SPList lst = s.RootWeb.GetList("/Lists/Test");

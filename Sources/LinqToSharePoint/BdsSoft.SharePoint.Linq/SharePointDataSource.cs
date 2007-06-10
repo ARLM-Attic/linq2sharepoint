@@ -2346,7 +2346,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Log it.
                             //
-                            DoLogging(q, null, viewFields);
+                            DoLogging(innerList, q, null, viewFields);
 
                             //
                             // Get subquery results.
@@ -2383,7 +2383,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Log it.
                             //
-                            DoLogging(where, null, viewFields);
+                            DoLogging(innerList, where, null, viewFields);
 
                             //
                             // Get results.
@@ -2431,7 +2431,23 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Apply patch.
                         //
-                        e.ParentNode.ReplaceChild(patch, e);
+                        if (patch != null) //FIX
+                            e.ParentNode.ReplaceChild(patch, e);
+                        else
+                        {
+                            //
+                            // The patch didn't produce any results. We have to eliminate the Patch node as a FALSE node.
+                            // TODO: This is a quick-and-dirty solution that introduces the condition ID == null which always evaluates to false.
+                            //       It should be replaced with a query tree pruning mechanism to eliminate constant Boolean nodes in And/Or conditions.
+                            //
+                            XmlElement f = _doc.CreateElement("IsNull");
+                            XmlElement id = _doc.CreateElement("FieldRef");
+                            XmlAttribute name = _doc.CreateAttribute("Name");
+                            name.Value = "ID";
+                            id.Attributes.Append(name);
+                            f.AppendChild(id);
+                            e.ParentNode.ReplaceChild(f, e);
+                        }
                     }
                     else
                         Patch(e);
@@ -2564,7 +2580,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Perform logging of the gathered information.
             //
-            DoLogging(_where, _order, _projection);
+            DoLogging(_list.Title, _where, _order, _projection);
 
             //
             // Execute the query via the SPList object and fetch results using an iterator.
@@ -2640,7 +2656,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Perform logging of the gathered information.
             //
-            DoLogging(_where, _order, _projection);
+            DoLogging(_wsList, _where, _order, _projection);
 
             //
             // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
@@ -2681,7 +2697,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Helper method to log query information before fetching results.
         /// </summary>
-        private void DoLogging(XmlElement where, XmlElement order, XmlElement projection)
+        private void DoLogging(string list, XmlElement where, XmlElement order, XmlElement projection)
         {
             //
             // Check whether logging is enabled or not.
@@ -2692,9 +2708,9 @@ namespace BdsSoft.SharePoint.Linq
                 // List general info.
                 //
                 if (_list != null)
-                    _log.WriteLine("Query for " + _list.Title + " over object model...");
+                    _log.WriteLine("Query for " + list + " over object model...");
                 else
-                    _log.WriteLine("Query for " + _wsList + " over web services...");
+                    _log.WriteLine("Query for " + list+ " over web services...");
 
                 //
                 // We'll output XML representing various CAML elements. Output should be indented for natural reading.
