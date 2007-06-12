@@ -23,10 +23,16 @@ namespace Junkyard
             lst.Log = Console.Out;
             //lst.EnforceLookupFieldUniqueness = false;
 
+            string s = "b";
+            var res = from p in lst where "a" == s select p;//where 1 == 1 || p.Title == "Test" && p.Bar.Title.StartsWith("Bart") select p;
+            foreach (var p in res)
+                ;
+
+            /*
             var res = from p in lst where p.Title == "Test" && p.Bar.Title.StartsWith("Bart") && p.Foo.Title.StartsWith("De Smet") select p;
             foreach (var p in res)
                 Console.WriteLine(p);
-
+            */
             /*
 
             //SELECTMANY

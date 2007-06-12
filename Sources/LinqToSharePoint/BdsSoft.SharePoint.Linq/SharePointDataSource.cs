@@ -533,6 +533,7 @@ namespace BdsSoft.SharePoint.Linq
             UnaryExpression ue;
             MethodCallExpression mce;
             MemberExpression me;
+            ConstantExpression ce;
 
             //
             // By default, no Lookup field will be referenced.
@@ -906,11 +907,35 @@ namespace BdsSoft.SharePoint.Linq
                     return cond;
                 }
             }
+            //
+            // Constant values are possible if the user writes clauses like "1 == 1" in the query's where predicate.
+            //
+            else if ((ce = predicate as ConstantExpression) != null)
+            {
+                //
+                // The value should be boolean-valued.
+                //
+                if (ce.Value is bool)
+                    return GetBooleanPatch((bool)ce.Value);
+                else
+                    throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+            }
 
             //
             // Fall-through case (shouldn't occur under normal circumstances).
             //
             throw new InvalidOperationException("An unexpected error occurred in the predicate parser.");
+        }
+
+        /// <summary>
+        /// Gets a Boolean patch for use in query predicates. These patches are invalid CAML elements and should be removed by the query parser prior to query execution.
+        /// </summary>
+        /// <param name="b">Boolean value of the patch.</param>
+        /// <returns>Patch representing the specified Boolean value.</returns>
+        private XmlElement GetBooleanPatch(bool b)
+        {
+            XmlElement e = _doc.CreateElement(b ? "TRUE" : "FALSE");
+            return e;
         }
 
         /// <summary>
@@ -1069,7 +1094,23 @@ namespace BdsSoft.SharePoint.Linq
             else if (IsEntityPropertyReference(right))
                 correctOrder = false;
             else
-                throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+            {
+                //
+                // Check for references to entity properties. If none are found, the expression can be evaluated right away.
+                //
+                HashSet<PropertyInfo> eProps = new HashSet<PropertyInfo>();
+                FindEntityProperties(condition, predicateParameter, ref eProps);
+                if (eProps.Count == 0)
+                {
+                    object o = Expression.Lambda(condition).Compile().DynamicInvoke();
+                    if (o is bool)
+                        return GetBooleanPatch((bool)o);
+                    else
+                        throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+                }
+                else
+                    throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+            }
 
             //
             // Find the side of the condition that refers to an entity property (lhs).
@@ -1619,7 +1660,7 @@ namespace BdsSoft.SharePoint.Linq
             // Create the set with entity properties used in projection and populate it.
             //
             _projectProps = new HashSet<PropertyInfo>();
-            FindEntityProperties(projection.Body, projection.Parameters[0]);
+            FindEntityProperties(projection.Body, projection.Parameters[0], ref _projectProps);
 
             //
             // Populate the ViewFields element with FieldRef elements pointing to the properties used in the projection.
@@ -1648,8 +1689,9 @@ namespace BdsSoft.SharePoint.Linq
         /// Recursive method to find all references to entity properties in a projection expression.
         /// </summary>
         /// <param name="e">Expression to search for references to entity properties.</param>
-        /// <param name="projectionParameter">Parameter of the original projection expression. Used to detect references to the entity type itself.</param>
-        private void FindEntityProperties(Expression e, ParameterExpression projectionParameter)
+        /// <param name="parameter">Lambda parameter used by the expression. Used to detect references to the entity type itself.</param>
+        /// <param name="result">HashSet to store results in. Marked explicitly as a ref parameter to indicate its output characteristic.</param>
+        private void FindEntityProperties(Expression e, ParameterExpression parameter, ref HashSet<PropertyInfo> result)
         {
             #region Local variables
 
@@ -1695,7 +1737,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 PropertyInfo prop = me.Member as PropertyInfo;
                 if (prop != null && me.Member.DeclaringType == _originalType && GetFieldAttribute(prop) != null)
-                    _projectProps.Add(prop);
+                    result.Add(prop);
             }
             //
             // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
@@ -1705,68 +1747,68 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Check that the parameter matches the projection lambda expression's parameter.
                 //
-                if (pe == projectionParameter)
+                if (pe == parameter)
                     foreach (PropertyInfo prop in _originalType.GetProperties())
                         if (GetFieldAttribute(prop) != null)
-                            _projectProps.Add(prop);
+                            result.Add(prop);
             }
             //
             // b.Method(b.Left, b.Right)
             //
             else if ((be = e as BinaryExpression) != null)
             {
-                FindEntityProperties(be.Left, projectionParameter);
-                FindEntityProperties(be.Right, projectionParameter);
+                FindEntityProperties(be.Left, parameter, ref result);
+                FindEntityProperties(be.Right, parameter, ref result);
             }
             //
             // u.Method(u.Operand)
             //
             else if ((ue = e as UnaryExpression) != null)
             {
-                FindEntityProperties(ue.Operand, projectionParameter);
+                FindEntityProperties(ue.Operand, parameter, ref result);
             }
             //
             // (c.Test ? c.IfTrue : c.IfFalse)
             //
             else if ((ce = e as ConditionalExpression) != null)
             {
-                FindEntityProperties(ce.IfFalse, projectionParameter);
-                FindEntityProperties(ce.IfTrue, projectionParameter);
-                FindEntityProperties(ce.Test, projectionParameter);
+                FindEntityProperties(ce.IfFalse, parameter, ref result);
+                FindEntityProperties(ce.IfTrue, parameter, ref result);
+                FindEntityProperties(ce.Test, parameter, ref result);
             }
             //
             // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
             //
             else if ((ie = e as InvocationExpression) != null)
             {
-                FindEntityProperties(ie.Expression, projectionParameter);
+                FindEntityProperties(ie.Expression, parameter, ref result);
                 foreach (Expression ex in ie.Arguments)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             //
             // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
             //
             else if ((le = e as LambdaExpression) != null)
             {
-                FindEntityProperties(le.Body, projectionParameter);
+                FindEntityProperties(le.Body, parameter, ref result);
                 foreach (Expression ex in le.Parameters)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             //
             // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
             //
             else if ((lie = e as ListInitExpression) != null)
             {
-                FindEntityProperties(lie.NewExpression, projectionParameter);
+                FindEntityProperties(lie.NewExpression, parameter, ref result);
                 foreach (Expression ex in lie.Expressions)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             //
             // Member initialization expression requires recursive processing of MemberBinding objects.
             //
             else if ((mie = e as MemberInitExpression) != null)
             {
-                FindEntityProperties(mie.NewExpression, projectionParameter);
+                FindEntityProperties(mie.NewExpression, parameter, ref result);
 
                 //
                 // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
@@ -1787,10 +1829,10 @@ namespace BdsSoft.SharePoint.Linq
                     MemberBinding b = memberBindings.Dequeue();
 
                     if ((ma = b as MemberAssignment) != null)
-                        FindEntityProperties(ma.Expression, projectionParameter);
+                        FindEntityProperties(ma.Expression, parameter, ref result);
                     else if ((mlb = b as MemberListBinding) != null)
                         foreach (Expression ex in mlb.Expressions)
-                            FindEntityProperties(ex, projectionParameter);
+                            FindEntityProperties(ex, parameter, ref result);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //
@@ -1805,9 +1847,9 @@ namespace BdsSoft.SharePoint.Linq
             else if ((mce = e as MethodCallExpression) != null)
             {
                 if (mce.Object != null)
-                    FindEntityProperties(mce.Object, projectionParameter);
+                    FindEntityProperties(mce.Object, parameter, ref result);
                 foreach (Expression ex in mce.Arguments)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             //
             // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
@@ -1815,7 +1857,7 @@ namespace BdsSoft.SharePoint.Linq
             else if ((ne = e as NewExpression) != null)
             {
                 foreach (Expression ex in ne.Arguments)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             //
             // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
@@ -1823,11 +1865,11 @@ namespace BdsSoft.SharePoint.Linq
             else if ((nae = e as NewArrayExpression) != null)
             {
                 foreach (Expression ex in nae.Expressions)
-                    FindEntityProperties(ex, projectionParameter);
+                    FindEntityProperties(ex, parameter, ref result);
             }
             else if ((tbe = e as TypeBinaryExpression) != null)
             {
-                FindEntityProperties(tbe.Expression, projectionParameter);
+                FindEntityProperties(tbe.Expression, parameter, ref result);
             }
         }
 
@@ -2194,7 +2236,20 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Patch the query for possible Lookup field references.
             //
-            PatchQueryPredicate();
+            bool? optimized = PatchQueryPredicate();
+            if (optimized != null)
+            {
+                //
+                // Predicate evaluates to true. Remove the query predicate.
+                //
+                if (optimized.Value)
+                    _where = null;
+                //
+                // Predicate evaluates to false. No results will be fetched.
+                //
+                else
+                    return VoidResult();
+            }
 
             //
             // Perform query via the SharePoint Object Model or via SharePoint web services.
@@ -2203,6 +2258,15 @@ namespace BdsSoft.SharePoint.Linq
                 return GetEnumeratorSp();
             else
                 return GetEnumeratorWs();
+        }
+
+        /// <summary>
+        /// Helper method to return a void result if the query predicate evaluates to a constant false value.
+        /// </summary>
+        /// <returns>Empty sequence.</returns>
+        private IEnumerator<T> VoidResult()
+        {
+            yield break;
         }
 
         /// <summary>
@@ -2276,9 +2340,18 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Patches the query predicate to eliminate Lookup field references by subqueries.
         /// </summary>
-        private void PatchQueryPredicate()
+        /// <returns>Null if the query predicate wasn't optimized away; a Boolean value with the constant query predicate value if the whole query was optimized to one single constant.</returns>
+        private bool? PatchQueryPredicate()
         {
+            //
+            // Patch Lookup field references.
+            //
             Patch(_where);
+
+            //
+            // Eliminate Boolean patches by tree pruning.
+            //
+            return Prune(_where);
         }
 
         /// <summary>
@@ -2465,30 +2538,127 @@ namespace BdsSoft.SharePoint.Linq
                  */
 
                         //
-                        // Apply patch.
+                        // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
                         //
                         if (patch != null) //FIX
                             e.ParentNode.ReplaceChild(patch, e);
                         else
-                        {
-                            //
-                            // The patch didn't produce any results. We have to eliminate the Patch node as a FALSE node.
-                            // TODO: This is a quick-and-dirty solution that introduces the condition ID == null which always evaluates to false.
-                            //       It should be replaced with a query tree pruning mechanism to eliminate constant Boolean nodes in And/Or conditions.
-                            //
-                            XmlElement f = _doc.CreateElement("IsNull");
-                            XmlElement id = _doc.CreateElement("FieldRef");
-                            XmlAttribute name = _doc.CreateAttribute("Name");
-                            name.Value = "ID";
-                            id.Attributes.Append(name);
-                            f.AppendChild(id);
-                            e.ParentNode.ReplaceChild(f, e);
-                        }
+                            e.ParentNode.ReplaceChild(GetBooleanPatch(false), e);
                     }
                     else
                         Patch(e);
                 }
             }
+        }
+
+        /// <summary>
+        /// Prunes Boolean patches from the predicate tree.
+        /// </summary>
+        /// <param name="node">Predicate tree to be pruned.</param>
+        /// <returns></returns>
+        private bool? Prune(XmlNode node)
+        {
+            //
+            // Any work to do?
+            //
+            if (node == null)
+                return null;
+
+            XmlElement e = node as XmlElement;
+            if (e != null)
+            {
+                bool? b1, b2;
+
+                //
+                // Find binary nodes and Boolean patch tags.
+                //
+                switch (e.Name)
+                {
+                    case "Where":
+                        if (e.ChildNodes.Count == 1)
+                        {
+                            b1 = Prune(e.ChildNodes[0]);
+                            if (b1 == null)
+                                return null;
+                            else
+                                return b1.Value;
+                        }
+                        else
+                            return false;
+                    case "And":
+                        b1 = Prune(e.ChildNodes[0]);
+                        b2 = Prune(e.ChildNodes[1]);
+
+                        if (b1 != null && b2 != null)
+                            return b1.Value && b2.Value;
+                        else if (b1 != null)
+                        {
+                            //
+                            // (false && x) == false
+                            //
+                            if (!b1.Value)
+                                return false;
+                            //
+                            // (true && x) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[1], e);
+                        }
+                        else if (b2 != null)
+                        {
+                            //
+                            // (x && false) == false
+                            //
+                            if (!b2.Value)
+                                return false;
+                            //
+                            // (x && true) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[0], e);
+                        }
+                        break;
+                    case "Or":
+                        b1 = Prune(e.ChildNodes[0]);
+                        b2 = Prune(e.ChildNodes[1]);
+
+                        if (b1 != null && b2 != null)
+                            return b1.Value || b2.Value;
+                        else if (b1 != null)
+                        {
+                            //
+                            // (true || x) == true
+                            //
+                            if (b1.Value)
+                                return true;
+                            //
+                            // (false || x) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[1], e);
+                        }
+                        else if (b2 != null)
+                        {
+                            //
+                            // (x || true) == true
+                            //
+                            if (b2.Value)
+                                return true;
+                            //
+                            // (x || false) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[0], e);
+                        }
+                        break;
+                    case "TRUE":
+                        return true;
+                    case "FALSE":
+                        return false;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
