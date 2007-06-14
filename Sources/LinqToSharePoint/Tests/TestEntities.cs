@@ -13,6 +13,7 @@ namespace Tests
         public int ID
         {
             get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
         }
 
         [Field("First name", FieldType.Text)]

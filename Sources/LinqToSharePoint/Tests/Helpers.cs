@@ -21,7 +21,38 @@ namespace Tests
             else if (obj.GetType() != this.GetType())
                 return false;
             else
-                return true; //TODO: implement right equality check methodology
+            {
+                foreach (PropertyInfo prop in GetType().GetProperties())
+                {
+                    FieldAttribute fa = GetFieldAttribute(prop);
+                    if (fa != null)
+                    {
+                        object o1 = prop.GetValue(obj, null);
+                        object o2 = prop.GetValue(this, null);
+                        if (!object.Equals(o1, o2))
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 0;
+
+            foreach (PropertyInfo prop in GetType().GetProperties())
+            {
+                FieldAttribute fa = GetFieldAttribute(prop);
+                if (fa != null)
+                {
+                    object o = prop.GetValue(this, null);
+                    if (o != null)
+                        hash = hash ^ o.GetHashCode();
+                }
+            }
+            return hash;
         }
 
         public static void Add(SPList lst, SharePointListEntityTest e)
