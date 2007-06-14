@@ -32,6 +32,7 @@
  * 
  * - Query predicates that match a Lookup field use the display field for comparison, not the primary key value.
  *   This will cause problems when the display field hasn't a unique value or doesn't match the ID field.
+ *   SOLUTION: IsUnique property on FieldAttribute used to enforce uniqueness (should be set by the user for non-ID fields)
  */
 
 using System;
@@ -128,7 +129,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Optional number of "top" rows to query for, with the semantics of the TOP construct in SQL. Gathered by parsing Take(n) calls.
         /// </summary>
-        private int? top;
+        private int? _top;
 
         #endregion
 
@@ -393,7 +394,7 @@ namespace BdsSoft.SharePoint.Linq
             res._project = this._project;
             res._projection = this._projection;
             res._projectProps = this._projectProps;
-            res.top = this.top;
+            res._top = this._top;
 
             //
             // Maintain singleton XmlDocument instance for the query.
@@ -1887,7 +1888,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // If no top value has been set yet, take the specified value; otherwise, take the minimum of the current value and the specified value.
             //
-            top = (top == null ? limit : Math.Min(top.Value, limit));
+            _top = (_top == null ? limit : Math.Min(_top.Value, limit));
         }
 
         #endregion
@@ -2584,7 +2585,7 @@ namespace BdsSoft.SharePoint.Linq
                                 return b1.Value;
                         }
                         else
-                            return false;
+                            return true;
                     case "And":
                         b1 = Prune(e.ChildNodes[0]);
                         b2 = Prune(e.ChildNodes[1]);
@@ -2780,8 +2781,14 @@ namespace BdsSoft.SharePoint.Linq
             //
             // In case a row limit (Take) was found, set the limit on the query.
             //
-            if (top != null)
-                query.RowLimit = (uint)top.Value;
+            if (_top != null)
+            {
+                uint top = (uint)_top.Value;
+                if (top == 0) //FIX: query.RowLimit = 0 seems to be ineffective.
+                    yield break;
+                else
+                    query.RowLimit = top;
+            }
 
             //
             // Perform logging of the gathered information.
@@ -2867,7 +2874,14 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
             //
-            XmlNode res = _ws.GetListItems(_wsList, null, query, _projection, top == null ? null : top.Value.ToString(), queryOptions, null);
+            uint top = 0;
+            if (_top !=  null)
+            {
+                top = (uint)_top.Value;
+                if (top == 0) //FIX: don't roundtrip to server if no results are requested.
+                    yield break;
+            }
+            XmlNode res = _ws.GetListItems(_wsList, null, query, _projection, _top == null ? null : top.ToString(), queryOptions, null);
 
             //
             // Store results in a DataSet for easy iteration.
