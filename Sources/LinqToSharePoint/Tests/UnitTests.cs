@@ -21,6 +21,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.SharePoint;
 using BdsSoft.SharePoint.Linq;
 using Test = Tests.SharePointListEntityTest;
+using System.Diagnostics;
+using System.Linq.Expressions;
 
 namespace Tests
 {
@@ -263,10 +265,166 @@ namespace Tests
             AssertWhere(src, p => !(24 < p.Age), 1, "Invalid Leq result (negated) (inverse)");
         }
 
-        private static void AssertWhere<T>(SharePointDataSource<T> src, Func<T, bool> predicate, int expectedCount, string message)
+        [TestMethod]
+        public void BoolPredicate()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Test queries.
+            //
+            AssertWhere(src, p => p.IsMember, 1, "Invalid result for Boolean check (true)");
+            AssertWhere(src, p => !p.IsMember, 1, "Invalid result for Boolean check (false)");
+        }
+
+        [TestMethod]
+        public void NullChecks()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = null, LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Test queries.
+            //
+            AssertWhere(src, p => p.FirstName == null, 1, "Invalid IsNull result");
+            AssertWhere(src, p => null == p.FirstName, 1, "Invalid IsNull result (inverse)");
+
+            AssertWhere(src, p => p.FirstName != null, 1, "Invalid IsNotNull result");
+            AssertWhere(src, p => null != p.FirstName, 1, "Invalid IsNotNull result (inverse)");
+
+            AssertWhere(src, p => !(p.FirstName == null), 1, "Invalid IsNotNull result 2");
+            AssertWhere(src, p => !(null == p.FirstName), 1, "Invalid IsNotNull result 2 (inverse)");
+
+            //
+            // Use of variable.
+            //
+            string s = null;
+            AssertWhere(src, p => p.FirstName == s, 1, "Invalid IsNull result (variable)");
+            AssertWhere(src, p => s == p.FirstName, 1, "Invalid IsNull result (variable) (inverse)");
+
+            AssertWhere(src, p => p.FirstName != s, 1, "Invalid IsNotNull result (variable)");
+            AssertWhere(src, p => s != p.FirstName, 1, "Invalid IsNotNull result (variable) (inverse)");
+        }
+
+        [TestMethod]
+        public void ProjectSingleton()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Projections.
+            //
+            AssertProject(src, p => p.Age, new double[] { 24, 52 }, "Integer projection failure");
+            AssertProject(src, p => p.FirstName + " " + p.LastName, new string[] { "Bart De Smet", "Bill Gates" }, "String projection failure");
+        }
+
+        [TestMethod]
+        public void Ordering()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p3 = new People() { ID = 3, FirstName = "Bart", LastName = "Simpson", Age = 15, IsMember = false, ShortBio = "Funny guy" };
+            People p4 = new People() { ID = 4, FirstName = "Ray", LastName = "Ozzie", Age = 52, IsMember = false, ShortBio = "Chief Software Architect at Microsoft Corporation" };
+            People p5 = new People() { ID = 5, FirstName = "Anders", LastName = "Hejlsberg", Age = 47, IsMember = true, ShortBio = "C# language architect" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+            Test.Add(lst, p3);
+            Test.Add(lst, p4);
+            Test.Add(lst, p5);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Ascending.
+            //
+            var res1 = (from p in src orderby p.FirstName select p).AsEnumerable().ToArray();
+            Assert.IsTrue(res1.First().FirstName == "Anders" && res1.Last().FirstName == "Ray", "Ascending order failed");
+
+            //
+            // Descending.
+            //
+            var res2 = (from p in src orderby p.LastName descending select p).AsEnumerable().ToArray();
+            Assert.IsTrue(res2.First().LastName == "Simpson" && res2.Last().LastName == "De Smet", "Descending order failed");
+
+            //
+            // Multiple.
+            //
+            var res3 = (from p in src orderby p.Age ascending, p.FirstName descending select p).AsEnumerable().ToArray();
+            Assert.IsTrue(res3.First().LastName == "Simpson" && res3.Last().LastName == "Gates", "OrderBy/ThenBy failed");
+        }
+
+        private static void AssertWhere<T>(SharePointDataSource<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
         {
             IEnumerable<T> res = src.Where<T>(predicate).Select(e => e).AsEnumerable();
-            Assert.IsTrue(res.Count() == expectedCount && res.All(predicate), message);
+            Assert.IsTrue(res.Count() == expectedCount && res.All(predicate.Compile()), message);
+        }
+
+        private static void AssertProject<T, R>(SharePointDataSource<T> src, Expression<Func<T, R>> selector, IEnumerable<R> results, string message)
+        {
+            IEnumerable<R> res = src.Select(selector).AsEnumerable();
+            Assert.IsTrue(res.SequenceEqual(results));
         }
 
         #region Scratch pad
