@@ -173,16 +173,19 @@ namespace Tests
             // Using ==
             //
             AssertWhere(src, p => p.FirstName == "Bart", 1, "Equality check failed (==)");
+            AssertWhere(src, p => p.FirstName != "Bart", 1, "Inequality check failed (!=)");
 
             //
             // Using .Equals
             //
             AssertWhere(src, p => p.FirstName.Equals("Bart"), 1, "Equality check failed (.Equals)");
+            AssertWhere(src, p => !p.FirstName.Equals("Bart"), 1, "Inequality check failed (!.Equals)");
 
             //
             // Using == inverse order
             //
             AssertWhere(src, p => "Bart" == p.FirstName, 1, "Equality check failed (== inverse order)");
+            AssertWhere(src, p => "Bart" != p.FirstName, 1, "Inquality check failed (!= inverse order)");
 
             //
             // Using .Equals inverse order (NOT SUPPORTED)
@@ -295,6 +298,82 @@ namespace Tests
         }
 
         [TestMethod]
+        public void StartsWith()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // StartsWith empty string.
+            //
+            AssertWhere(src, p => p.LastName.StartsWith(""), 2, "StartsWith with empty string failed");
+
+            //
+            // StartsWith with valid parameter.
+            //
+            AssertWhere(src, p => p.LastName.StartsWith("De"), 1, "StartsWith with valid parameter failed");
+
+            //
+            // StartsWith without results.
+            //
+            AssertWhere(src, p => p.FirstName.StartsWith("C"), 0, "Empty StartsWith failed");
+        }
+
+        [TestMethod]
+        public void Contains()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Contains empty string.
+            //
+            AssertWhere(src, p => p.ShortBio.Contains(""), 2, "Contains with empty string failed");
+
+            //
+            // Contains with valid parameter.
+            //
+            AssertWhere(src, p => p.ShortBio.Contains("Corp"), 1, "Contains with valid parameter failed");
+
+            //
+            // Contains without results.
+            //
+            AssertWhere(src, p => p.ShortBio.Contains("azerty"), 0, "Empty Contains failed");
+        }
+
+        [TestMethod]
         public void NullChecks()
         {
             //
@@ -320,9 +399,11 @@ namespace Tests
             // Test queries.
             //
             AssertWhere(src, p => p.FirstName == null, 1, "Invalid IsNull result");
+            //AssertWhere(src, p => p.FirstName.Equals(null), 1, "Invalid IsNull result (.Equals)");
             AssertWhere(src, p => null == p.FirstName, 1, "Invalid IsNull result (inverse)");
 
             AssertWhere(src, p => p.FirstName != null, 1, "Invalid IsNotNull result");
+            //AssertWhere(src, p => !p.FirstName.Equals(null), 1, "Invalid IsNotNull result (.Equals)");
             AssertWhere(src, p => null != p.FirstName, 1, "Invalid IsNotNull result (inverse)");
 
             AssertWhere(src, p => !(p.FirstName == null), 1, "Invalid IsNotNull result 2");
@@ -366,6 +447,86 @@ namespace Tests
             //
             AssertProject(src, p => p.Age, new double[] { 24, 52 }, "Integer projection failure");
             AssertProject(src, p => p.FirstName + " " + p.LastName, new string[] { "Bart De Smet", "Bill Gates" }, "String projection failure");
+        }
+
+        [TestMethod]
+        public void ComplexProjection()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Complex projection. Should trigger recursive parsing of the projection expression to find view fields.
+            //
+            var res = (from p in src
+                       where p.Age == 24
+                       select new
+                              {
+                                  p.FirstName,
+                                  Ages = new double[] { p.Age },
+                                  Ages2 = new List<double>() { p.Age },
+                                  DoubleAge = p.Age * 2,
+                                  Member = p.IsMember ? p.IsMember : p.IsMember,
+                                  NoMember = !p.IsMember,
+                                  NameLower = (p.FirstName + " " + p.LastName).ToLower(),
+                                  LastName = new String(p.LastName.ToCharArray()),
+                                  CharactersInBio = Helper(p.ShortBio)
+                              }).AsEnumerable().First();
+            Assert.IsTrue(res.FirstName == "Bart" && res.Ages[0] == 24 && res.Ages2[0] == 24 && res.DoubleAge == 48 && res.Member == true && res.NoMember == false && res.NameLower == "bart de smet" && res.LastName == "De Smet" && res.CharactersInBio == 15);
+        }
+
+        private int Helper(string s)
+        {
+            return s.Length;
+        }
+
+        [TestMethod]
+        public void Take()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Take operation.
+            //
+            var res1 = (from p in src select p).Take(1).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1, "Take failed (1).");
+            var res2 = (from p in src select p).Take(0).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 0, "Take failed (2).");
+            var res3 = (from p in src select p).Take(3).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 2, "Take failed (3).");
         }
 
         [TestMethod]
@@ -413,6 +574,100 @@ namespace Tests
             //
             var res3 = (from p in src orderby p.Age ascending, p.FirstName descending select p).AsEnumerable().ToArray();
             Assert.IsTrue(res3.First().LastName == "Simpson" && res3.Last().LastName == "Gates", "OrderBy/ThenBy failed");
+        }
+
+        [TestMethod]
+        public void AndOr()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p3 = new People() { ID = 3, FirstName = "Bart", LastName = "Simpson", Age = 15, IsMember = false, ShortBio = "Funny guy" };
+            People p4 = new People() { ID = 4, FirstName = "Ray", LastName = "Ozzie", Age = 52, IsMember = false, ShortBio = "Chief Software Architect at Microsoft Corporation" };
+            People p5 = new People() { ID = 5, FirstName = "Anders", LastName = "Hejlsberg", Age = 47, IsMember = true, ShortBio = "C# language architect" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+            Test.Add(lst, p3);
+            Test.Add(lst, p4);
+            Test.Add(lst, p5);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // And.
+            //
+            AssertWhere(src, p => p.FirstName == "Bart" && p.Age >= 24, 1, "And failed (1).");
+            AssertWhere(src, p => p.ShortBio.Contains("Microsoft") && p.Age == 52, 2, "And failed (2).");
+            AssertWhere(src, p => p.FirstName.StartsWith("B") && p.IsMember && p.ShortBio.Contains("founder"), 1, "And failed (3).");
+
+            //
+            // Or.
+            //
+            AssertWhere(src, p => p.Age == 24 || p.Age == 52, 3, "Or failed (1).");
+            AssertWhere(src, p => p.Age == 52 || p.FirstName == "Bart", 4, "Or failed (2).");
+            AssertWhere(src, p => p.Age >= 40 || p.Age <= 20 || p.Age == 24, 5, "Or failed (3).");
+
+            //
+            // Mixed.
+            //
+            AssertWhere(src, p => p.FirstName.StartsWith("B") && (p.Age == 24 || p.Age == 52), 2, "And/Or failed (1).");
+            AssertWhere(src, p => p.FirstName.StartsWith("B") || (p.FirstName == "Anders" && p.Age >= 40), 4, "And/Or failed (2).");
+
+            //
+            // De Morgan.
+            //
+            AssertWhere(src, p => !(p.FirstName == "Bart" && p.Age <= 24), 3, "De Morgan failed (1).");
+            AssertWhere(src, p => !(p.FirstName == "Bill" || p.LastName == "De Smet"), 3, "De Morgan failed (2).");
+        }
+
+        [TestMethod]
+        public void BooleanOptimizations()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p3 = new People() { ID = 3, FirstName = "Bart", LastName = "Simpson", Age = 15, IsMember = false, ShortBio = "Funny guy" };
+            People p4 = new People() { ID = 4, FirstName = "Ray", LastName = "Ozzie", Age = 52, IsMember = false, ShortBio = "Chief Software Architect at Microsoft Corporation" };
+            People p5 = new People() { ID = 5, FirstName = "Anders", LastName = "Hejlsberg", Age = 47, IsMember = true, ShortBio = "C# language architect" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+            Test.Add(lst, p3);
+            Test.Add(lst, p4);
+            Test.Add(lst, p5);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Optimize.
+            //
+            AssertWhere(src, p => 1 == 1, 5, "Boolean optimization failed (1).");
+            AssertWhere(src, p => 1 == 0, 0, "Boolean optimization failed (2).");
+            AssertWhere(src, p => p.FirstName == "Bart" && 1 == 1, 2, "Boolean optimization failed (3).");
+            AssertWhere(src, p => p.FirstName == "Bart" && 1 == 0, 0, "Boolean optimization failed (4).");
+            AssertWhere(src, p => p.FirstName == "Bart" || 1 == 1, 5, "Boolean optimization failed (5).");
+            AssertWhere(src, p => p.FirstName == "Bart" || 1 == 0, 2, "Boolean optimization failed (6).");
         }
 
         private static void AssertWhere<T>(SharePointDataSource<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
