@@ -20,6 +20,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.SharePoint;
 using BdsSoft.SharePoint.Linq;
+using Test = Tests.SharePointListEntityTest;
 
 namespace Tests
 {
@@ -81,6 +82,47 @@ namespace Tests
         [TestMethod]
         public void TestMethod1()
         {
+            //
+            // Create list People.
+            //
+            SPList lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Empty list test.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+            var res1 = from p in src
+                       select p;
+
+            Assert.IsTrue(res1.AsEnumerable().Count() == 0, "Query on empty list did return results.");
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // Test default query.
+            //
+            var res2 = from p in src
+                       select p;
+
+            Assert.IsTrue(res2.AsEnumerable().Count() == 1, "Query did not return results.");
+
+            //
+            // Get entity by id.
+            //
+            People _p1 = src.GetEntityById(1, false);
+            Assert.IsTrue(p1.Equals(_p1), "Invalid entity returned by GetEntityById method");
+
+            //Assert.IsTrue(true);
+        }
+
+        #region Scratch pad
+
+        /*
             SPList list = CreateList(
                 new CustomList()
                     {
@@ -103,49 +145,32 @@ namespace Tests
             item["IsMember"] = true;
             item["Age"] = 24;
             item.Update();
+             */
 
-            //SharePointDataSource<int> src = new SharePointDataSource<int>(site);
+        //private SPList CreateList(CustomList list)
+        //{
+        //    SPList lst;
+        //    try
+        //    {
+        //        lst = web.Lists[list.Name];
+        //        if (lst != null)
+        //            lst.Delete();
+        //    }
+        //    catch { }
 
-            Assert.IsTrue(true);
-        }
+        //    web.Lists.Add(list.Name, list.Description, SPListTemplateType.GenericList);
+        //    lst = web.Lists[list.Name];
+        //    lst.OnQuickLaunch = true;
+        //    lst.Update();
 
-        private SPList CreateList(CustomList list)
-        {
-            SPList lst;
-            try
-            {
-                lst = web.Lists[list.Name];
-                if (lst != null)
-                    lst.Delete();
-            }
-            catch { }
+        //    foreach (Field f in list.Fields)
+        //    {
+        //        lst.Fields.Add(f.Name, f.Type, f.Required);
+        //        lst.Views[0].ViewFields.Add(lst.Fields[f.Name]);
+        //    }
 
-            web.Lists.Add(list.Name, list.Description, SPListTemplateType.GenericList);
-            lst = web.Lists[list.Name];
-            lst.OnQuickLaunch = true;
-            lst.Update();
-
-            foreach (Field f in list.Fields)
-            {
-                lst.Fields.Add(f.Name, f.Type, f.Required);
-                lst.Views[0].ViewFields.Add(lst.Fields[f.Name]);
-            }
-
-            return lst;
-        }
-    }
-
-    class CustomList
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<Field> Fields { get; set; }
-    }
-
-    class Field
-    {
-        public string Name { get; set; }
-        public SPFieldType Type { get; set; }
-        public bool Required { get; set; }
+        //    return lst;
+        //}
+        #endregion
     }
 }
