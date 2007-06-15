@@ -2180,8 +2180,79 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>A value of type TResult representing the result of the specified query.</returns>
         /// <remarks>Currently not implemented for LINQ-to-SharePoint.</remarks>
         public TResult Execute<TResult>(Expression expression)
-        {
-            throw new NotImplementedException();
+        {   
+            /*
+             * Support candidates:
+             * - First (!)
+             * 
+             * Following operators are not supported due to CAML restrictions. Users should insert AsEnumerable() call:
+             * - Sum
+             * - Max
+             * - Min
+             * - Average
+             * - Count
+             * - LongCount
+             */
+            
+            MethodCallExpression mc = expression as MethodCallExpression;
+            if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
+            {
+                switch (mc.Method.Name)
+                {
+                    case "First":
+                    case "FirstOrDefault":
+                        {
+                            if (mc.Arguments.Count >= 1)
+                            {
+                                ConstantExpression ce = mc.Arguments[0] as ConstantExpression;
+                                if (ce != null)
+                                {
+                                    SharePointDataSource<TResult> src = ce.Value as SharePointDataSource<TResult>;
+                                    if (src != null)
+                                    {
+                                        if (mc.Arguments.Count == 1)
+                                        {
+                                            src.SetResultRestriction(1);
+                                            if (mc.Method.Name == "First")
+                                                return src.AsEnumerable().First();
+                                            else
+                                                return src.AsEnumerable().FirstOrDefault();
+                                        }
+                                /*
+                                 * DESIGN CHOICE - No support for constructs that cannot be translated to CAML. Users should insert AsEnumerable() call.
+                                 * 
+                                        else if (mc.Arguments.Count == 2)
+                                        {
+                                            //
+                                            // Dynamic compile to LINQ to Objects equivalent
+                                            // An additional where clause isn't possible because ordering operations can be present
+                                            // and post-filtering can't be done!
+                                            //
+                                            UnaryExpression ue = mc.Arguments[1] as UnaryExpression;
+                                            if (ue != null)
+                                            {
+                                                LambdaExpression le = ue.Operand as LambdaExpression;
+                                                if (le != null)
+                                                {
+                                                    if (mc.Method.Name == "First")
+                                                        return src.AsEnumerable().First((Func<TResult, bool>)le.Compile());
+                                                    else
+                                                        return src.AsEnumerable().FirstOrDefault((Func<TResult, bool>)le.Compile());
+                                                }
+                                            }
+                                        }
+                                 */
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException(); //TODO
+                }
+            }
+
+            throw new NotSupportedException(); //TODO
         }
 
         #endregion

@@ -670,6 +670,43 @@ namespace Tests
             AssertWhere(src, p => p.FirstName == "Bart" || 1 == 0, 2, "Boolean optimization failed (6).");
         }
 
+        [TestMethod]
+        public void Junk()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Test.
+            //
+            //var res = (from p in src select p.Age).First(); //24.0
+            //var res = (from p in src where p.Age > 100 select p.Age).First(); //empty sequence
+            //var res = (from p in src select p.Age).First(p => p > 50); //52.0
+            //var res = (from p in src select p).First(); //Bart
+
+            /*
+             * TODO: coalescing of two or more adjacent where clauses; last where clause can't be translated in this case
+             * 
+             * var res = from p in src where p.Age == 24 where p.FirstName == "Bart" orderby p.LastName where p.IsMember select p;
+             */
+        }
+
         private static void AssertWhere<T>(SharePointDataSource<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
         {
             IEnumerable<T> res = src.Where<T>(predicate).Select(e => e).AsEnumerable();
