@@ -7,6 +7,7 @@ using System.Xml;
 using System.Net;
 using BdsSoft.SharePoint.Linq;
 using Microsoft.SharePoint;
+using System.Data.Linq.SqlClient;
 
 namespace Junkyard
 {
@@ -19,14 +20,45 @@ namespace Junkyard
             //SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));
             //lst.Log = Console.Out;
             //usr.Log = Console.Out;
-            SharePointDataSource<Parent> lst = new SharePointDataSource<Parent>(site);
-            lst.Log = Console.Out;
+            //SharePointDataSource<Parent> lst = new SharePointDataSource<Parent>(site);
+            //lst.Log = Console.Out;
             //lst.EnforceLookupFieldUniqueness = false;
 
+            /*
             string s = "b";
             var res = from p in lst where "a" == s select p;//where 1 == 1 || p.Title == "Test" && p.Bar.Title.StartsWith("Bart") select p;
             foreach (var p in res)
                 ;
+            */
+
+            /*
+            var lst = new SharePointDataSource<Tasks>(site);
+            lst.Log = Console.Out;
+            //var res = from t in lst where t.Created == DateTime.Today select t;
+            //var res = from t in lst where t.Created == DateTime.Today.AddDays(1) select t;
+            var res = from t in lst where CamlElements.DateRangesOverlap(DateTime.Now, t.Created, t.StartDate) select t;
+            foreach (var t in res)
+                ;
+             */
+            /*
+            var lst = new SharePointDataSource<Test>(site);
+            lst.Log = Console.Out;
+            var res = from t in lst where CamlMethods.DateRangesOverlap(DateTime.Now.AddDays(1), t.User.Modified, t.User.Created) select t;
+            foreach (var t in res)
+                ;
+             */
+
+            /*
+            var lst = new SharePointDataSource<Test>(site);
+            lst.Log = Console.Out;
+            //var res = from t in lst where t.FirstName == "Bart" where t.Age == 24 select t;
+            //var res = from t in lst where 1 == 1 where t.Age == 24 select t;
+            //var res = from t in lst where t.FirstName == "Bart" where 1 == 1 select t;
+            //var res = from t in lst where 1 == 0 where t.Age == 24 select t;
+            //var res = from t in lst where t.FirstName == "Bart" where 1 == 0 select t;
+            foreach (var t in res)
+                ;
+             */
 
             /*
             var res = from p in lst where p.Title == "Test" && p.Bar.Title.StartsWith("Bart") && p.Foo.Title.StartsWith("De Smet") select p;
@@ -338,7 +370,7 @@ class Users : SharePointListEntity
     /// <summary>
     /// Title
     /// </summary>
-    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
+    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", IsUnique = true)]
     public string Title
     {
         get { return (string)GetValue("Title"); }

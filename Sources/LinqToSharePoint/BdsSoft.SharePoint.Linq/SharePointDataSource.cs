@@ -24,9 +24,14 @@
  * 0.2.0 - Support for entity types deriving from SharePointEntityType
  *         Support for Counter field type for primary key values
  *         GetEntityById method
- *         Support for Lookup fields
+ *         Support for Lookup and LookupMulti fields
  *         Optimizations for StartsWith, Contains calls with ""
  *         Bug fixes for null-valued string operations in predicates
+ *         Predicate optimizations
+ *         Support for Take, First and FirstOrDefault query operators
+ *         Support for Now and Today elements
+ *         Support for DateRangesOverlap
+ *         Multipe where predicates are supported
  * 
  * Known issues:
  * 
@@ -323,7 +328,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             get { return _enforceLookupFieldUniqueness; }
             set { _enforceLookupFieldUniqueness = value; }
-        }	
+        }
 
         #endregion
 
@@ -488,13 +493,10 @@ namespace BdsSoft.SharePoint.Linq
         private void ParsePredicate(LambdaExpression predicate)
         {
             //
-            // If no predicate has been encountered before, construct the Where CAML element.
-            // There should only be one predicate per query.
+            // We can support multiple predicates as long no projection operation was carried out.
             //
-            if (_where == null)
-                _where = _doc.CreateElement("Where");
-            else
-                throw new InvalidOperationException("Second predicate expression encountered during parsing. Only one predicate expression can be translated for each query. Did you use LINQ query syntax?");
+            if (_where != null && _projection != null)
+                throw new InvalidOperationException("Can't add another predicate expression to the query.");
 
             //
             // Parse the predicate recursively, starting without negation (last parameter "positive" set to true).
@@ -514,9 +516,24 @@ namespace BdsSoft.SharePoint.Linq
                     PatchQueryExpressionNode(lookup, ref pred);
 
                 //
-                // Final <Where> CAML element composition.
+                // If this is the first predicate, create a new <Where> element.
                 //
-                _where.AppendChild(pred);
+                if (_where == null)
+                {
+                    _where = _doc.CreateElement("Where");
+                    _where.AppendChild(pred);
+                }
+                //
+                // Otherwise, add the new predicate to the existing one using an <And> element.
+                //
+                else
+                {
+                    XmlElement and = _doc.CreateElement("And");
+                    and.AppendChild(pred);
+                    and.AppendChild(_where.FirstChild);
+                    _where = _doc.CreateElement("Where");
+                    _where.AppendChild(and);
+                }
             }
         }
 
@@ -695,13 +712,12 @@ namespace BdsSoft.SharePoint.Linq
                         if (lookup1 != null)
                             lookup = lookup1;
                     }
-                    
+
                     return c;
                 }
                 else
                     throw new NotSupportedException("Unsupported query expression detected: " + predicate.ToString() + ".");
             }
-            /* <ADD Version="0.1.1"> */
             //
             // Converts the unary boolean evaluation like "where u.Member.Value select" or "where u.Age.HasValue select".
             // 
@@ -759,12 +775,113 @@ namespace BdsSoft.SharePoint.Linq
                 else
                     throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
             }
-            /* </ADD> */
             //
             // Method calls are supported for a limited set of string operations and for LookupMulti fields.
             //
             else if ((mce = predicate as MethodCallExpression) != null)
             {
+                //
+                // Check for CamlElements methods.
+                //
+                if (mce.Method.DeclaringType == typeof(CamlMethods))
+                {
+                    //
+                    // DateRangesOverlap support.
+                    //
+                    if (mce.Method.Name == "DateRangesOverlap")
+                    {
+                        //
+                        // Get value argument.
+                        //
+                        Expression valEx = mce.Arguments[0];
+
+                        bool? isNullableHasValue;
+                        valEx = CheckForNullableType(valEx, out isNullableHasValue);
+
+                        //
+                        // Value argument shouldn't be an entity property reference.
+                        //
+                        if (IsEntityPropertyReference(valEx))
+                            throw new NotSupportedException("A call to DateRangesOverlap should not have an entity property reference as its value argument.");
+
+                        //
+                        // Get value element.
+                        //
+                        XmlElement value = GetDateValue(valEx);
+
+                        //
+                        // Field references.
+                        //
+                        NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
+                        if (fields == null)
+                            throw new InvalidOperationException("An unexpected error occurred in the predicate parser (DateRangesOverlap).");
+
+                        List<XmlElement> fieldRefs = new List<XmlElement>();
+
+                        //
+                        // Exception object for unsupported DateRangesOverlap constructs.
+                        //
+                        Exception drEx = new NotSupportedException("A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.");
+
+                        //
+                        // Find all field expressions.
+                        //
+                        foreach (Expression fieldEx in fields.Expressions)
+                        {
+                            //
+                            // Clean-up the field expression.
+                            //
+                            Expression fEx = fieldEx;
+                            while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
+                                fEx = ((UnaryExpression)fEx).Operand;
+
+                            fEx = DropToString(fEx);
+                            fEx = CheckForNullableType(fEx, out isNullableHasValue);
+
+                            if (!IsEntityPropertyReference(fEx))
+                                throw drEx;
+
+                            MemberExpression mex = fEx as MemberExpression;
+                            if (mex == null || !(mex.Member is PropertyInfo))
+                                throw drEx;
+
+                            //
+                            // Lookup properties are supported only if all property references are of the same lookup type.
+                            //
+                            if (mex.Member.DeclaringType != _originalType)
+                            {
+                                MemberExpression outer = mex.Expression as MemberExpression;
+                                if (!IsEntityPropertyReference(outer))
+                                    throw drEx;
+
+                                PropertyInfo lookup1 = (PropertyInfo)outer.Member;
+
+                                //
+                                // We've already found field references; check that all of these refer to the same entity type.
+                                //
+                                if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
+                                    throw drEx;
+                                else
+                                    lookup = lookup1;
+                            }
+
+                            //
+                            // Add field reference element.
+                            //
+                            fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
+                        }
+
+                        //
+                        // Construct and return DateRangesOverlap element.
+                        //
+                        XmlElement dro = _doc.CreateElement("DateRangesOverlap");
+                        dro.AppendChild(value);
+                        foreach (XmlElement fieldRef in fieldRefs)
+                            dro.AppendChild(fieldRef);
+                        return dro;
+                    }
+                }
+
                 //
                 // Only method calls on entity type properties are supported.
                 //
@@ -974,8 +1091,6 @@ namespace BdsSoft.SharePoint.Linq
             node = p;
         }
 
-        /* <ADD Version="0.1.1" /> */
-
         /// <summary>
         /// Helper method to check whether the given expression is Nullable type wrapper and removes it.
         /// </summary>
@@ -998,10 +1113,6 @@ namespace BdsSoft.SharePoint.Linq
             isHasValue = null;
             return e;
         }
-
-        /* </ADD> */
-
-        /* <ADD Version="0.1.2"> */
 
         /// <summary>
         /// Detects the use of Microsoft.VisualBasic.CompilerServices.Operators.CompareString and Microsoft.VisualBasic.Strings.StrComp for string equality checks.
@@ -1034,8 +1145,6 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
-        /* </ADD> */
-
         /// <summary>
         /// Get the CAML representation for the specified condition.
         /// </summary>
@@ -1050,8 +1159,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             lookup = null;
 
-            /* <ADD Version="0.1.2"> */
-
             Expression left = condition.Left;
             Expression right = condition.Right;
 
@@ -1059,8 +1166,6 @@ namespace BdsSoft.SharePoint.Linq
             // Detect use of Microsoft.VisualBasic.CompilerServices.Operators.CompareString or Microsoft.VisualBasic.Strings.StrComp.
             //
             FindVisualBasicCompareStringCondition(condition, ref left, ref right);
-
-            /* </ADD> */
 
             //
             // Trim Convert nodes on the both operandi before examining the nodes further on and remove excessive ToString method calls at the end.
@@ -1073,8 +1178,6 @@ namespace BdsSoft.SharePoint.Linq
                 right = ((UnaryExpression)right).Operand;
             right = DropToString(right);
 
-            /* <ADD Version="0.1.1"> */
-
             //
             // Detect and trim Nullable wrappers on both arguments. Keep track of .HasValue calls.
             //
@@ -1082,8 +1185,6 @@ namespace BdsSoft.SharePoint.Linq
             left = CheckForNullableType(left, out leftIsNullableHasValue);
             bool? rightIsNullableHasValue;
             right = CheckForNullableType(right, out rightIsNullableHasValue);
-
-            /* </ADD> */
 
             //
             // If the left operand is a member expression (pointing to an entity property), we'll assume "normal ordering".
@@ -1132,32 +1233,43 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
-            // Ensure that the value side (rhs) of the condition is lambda parameter free and get the value by dynamic execution.
+            // Ensure that the value side (rhs) of the condition is lambda parameter free.
             //
             Expression rhs = (correctOrder ? right : left);
             EnsureLambdaFree(rhs, predicateParameter);
-            object value = Expression.Lambda(rhs).Compile().DynamicInvoke();
 
+            //
+            // Find DateTime values, possibly special ones including Today and Now.
+            //
+            XmlElement dateValue = null;
+            if (lhs.Type == typeof(DateTime) || lhs.Type == typeof(DateTime?))
+                dateValue = GetDateValue(rhs);
+
+            object value = null;
             XmlElement c;
 
-            /* <ADD Version="0.1.1"> */
-
-            //
-            // Any Nullable.HasValue calls detected? Convert to IsNull or IsNotNull elements based on the rhs value, the context positivity and the node type.
-            //
-            if ((leftIsNullableHasValue.HasValue && leftIsNullableHasValue.Value) || (rightIsNullableHasValue.HasValue && rightIsNullableHasValue.Value))
+            if (dateValue == null)
             {
-                bool isEquality = condition.NodeType == ExpressionType.Equal;
-                bool checkValue = (bool)value;
-                bool isNull = !(checkValue ^ isEquality) ^ isPositive;
+                //
+                // Get the rhs value by dynamic execution.
+                //
+                value = Expression.Lambda(rhs).Compile().DynamicInvoke();
 
-                c = _doc.CreateElement(isNull ? "IsNull" : "IsNotNull");
-                c.AppendChild(GetFieldRef(entityProperty));
+                //
+                // Any Nullable.HasValue calls detected? Convert to IsNull or IsNotNull elements based on the rhs value, the context positivity and the node type.
+                //
+                if ((leftIsNullableHasValue.HasValue && leftIsNullableHasValue.Value) || (rightIsNullableHasValue.HasValue && rightIsNullableHasValue.Value))
+                {
+                    bool isEquality = condition.NodeType == ExpressionType.Equal;
+                    bool checkValue = (bool)value;
+                    bool isNull = !(checkValue ^ isEquality) ^ isPositive;
 
-                return c;
+                    c = _doc.CreateElement(isNull ? "IsNull" : "IsNotNull");
+                    c.AppendChild(GetFieldRef(entityProperty));
+
+                    return c;
+                }
             }
-
-            /* </ADD> */
 
             //
             // Variable that holds the CAML equivalent of the condition.
@@ -1249,9 +1361,17 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
+            // Special treatment for detected date values.
+            //
+            if (dateValue != null)
+            {
+                c = _doc.CreateElement(camlQueryElement);
+                c.AppendChild(dateValue);
+            }
+            //
             // If the calculated value is null, we'll use a IsNull or IsNotNull (if isPositive == false) element for the condition in CAML.
             //
-            if (value == null)
+            else if (value == null)
             {
                 //
                 // lhs == null  <=(!isPositive)=>  lhs != null
@@ -1282,15 +1402,11 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 if (enumCheck != null && enumCheck.IsSubclassOf(typeof(Enum))) //FIX v0.1.2
                 {
-                    /* <ADD Version="0.1.2"> */
-
                     //
                     // Visual Basic uses ConvertChecked to represent enums as numeric values; reconstruct the enum back if needed.
                     //
                     if (!(value is Enum) && value is uint)
                         value = Enum.ToObject(enumCheck, (uint)value);
-
-                    /* </ADD> */
 
                     //
                     // Check whether the type of the value has been marked as [Flags].
@@ -1370,6 +1486,44 @@ namespace BdsSoft.SharePoint.Linq
             //
             c.AppendChild(GetFieldRef(entityProperty));
             return c;
+        }
+
+        private XmlElement GetDateValue(Expression dateValue)
+        {
+            bool isNow = false;
+            bool isToday = false;
+
+            MemberExpression me = dateValue as MemberExpression;
+            if (me != null && me.Type == typeof(DateTime))
+            {
+                Type dt = me.Member.DeclaringType;
+                if (dt == typeof(DateTime) || dt == typeof(CamlMethods))
+                {
+                    isNow = me.Member.Name == "Now";
+                    isToday = me.Member.Name == "Today";
+                }
+            }
+
+            //
+            // Value element.
+            //
+            XmlElement valueElement = _doc.CreateElement("Value");
+            XmlAttribute type = _doc.CreateAttribute("Type");
+            type.Value = "DateTime";
+            valueElement.Attributes.Append(type);
+
+            //
+            // [DateTime|CamlElements].Now and [DateTime|CamlElements].Today calls require special treatment.
+            //
+            if (isNow || isToday)
+                valueElement.AppendChild(_doc.CreateElement(isNow ? "Now" : "Today"));
+            else
+            {
+                object value = Expression.Lambda(dateValue).Compile().DynamicInvoke();
+                valueElement.InnerText = SPUtility.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
+            }
+
+            return valueElement;
         }
 
         /// <summary>
@@ -1490,39 +1644,6 @@ namespace BdsSoft.SharePoint.Linq
                     throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupField + ". Did you mean a null-check on the Lookup field instead?");
 
                 valueElement.InnerText = o.ToString();
-
-        /*
-         * DESIGN CHANGE - Lookup field uniqueness enforcement
-         * 
-                //
-                // Find primary key value for the referenced entity.
-                //
-                FieldAttribute pkField = null;
-                PropertyInfo pkProp = null;
-                foreach (PropertyInfo property in value.GetType().GetProperties())
-                {
-                    FieldAttribute f = GetFieldAttribute(property);
-                    if (f != null && f.PrimaryKey && f.FieldType == FieldType.Counter)
-                    {
-                        if (pkField != null)
-                            throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
-
-                        pkField = f;
-                        pkProp = property;
-                        break;
-                    }
-                }
-                if (pkField == null)
-                    throw new InvalidOperationException("Missing primary key on referenced entity type.");
-                int fk = (int)pkProp.GetValue(value, null);
-
-                //
-                // Primary key value of the referenced entity acts as a post-filter criterion.
-                //
-                if (!postFilters.ContainsKey(field.Field))
-                    postFilters.Add(field.Field, new HashSet<int>());
-                postFilters[field.Field].Add(fk);
-        */
             }
             //
             // Other types will be converted to a string.
@@ -1582,20 +1703,17 @@ namespace BdsSoft.SharePoint.Linq
             //
             MemberExpression me = orderExpression as MemberExpression;
 
-            /* <ADD Version="0.1.2"> */
-
             bool? isHasValue;
             me = (MemberExpression)CheckForNullableType(me, out isHasValue);
-
-            /* </ADD> */
 
             //
             // Make sure the expression is a MemberExpression and points to a property on the entity type.
             //
             if (me != null && me.Member.DeclaringType == _originalType && me.Member is PropertyInfo
-                /* <ADD Version="0.1.2"> - If nullable, it shouldn't be a call to HasValue. */
+                //
+                // If nullable, it shouldn't be a call to HasValue.
+                //
                 && (!isHasValue.HasValue || (isHasValue.HasValue && !isHasValue.Value))
-                /* </ADD> */
                 )
             {
                 //
@@ -1633,15 +1751,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Only one projection expression can be parsed per query.</remarks>
         private void ParseProjection(LambdaExpression projection)
         {
-            /* <ADD Version="0.1.2"> */
-
             //
             // Equiprojections (u => u) can be ignored.
             //
             if (projection.Parameters[0] == projection.Body)
                 return;
-
-            /* </ADD> */
 
             //
             // If no projection has been encountered before, construct the ViewFields CAML element.
@@ -1726,12 +1840,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             if ((me = e as MemberExpression) != null)
             {
-                /* <ADD Version="0.1.2"> */
-
                 bool? isHasValue;
                 me = (MemberExpression)CheckForNullableType(me, out isHasValue);
-
-                /* </ADD> */
 
                 //
                 // Check that the member expression refers to a property on the entity type of the original query.
@@ -2180,7 +2290,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>A value of type TResult representing the result of the specified query.</returns>
         /// <remarks>Currently not implemented for LINQ-to-SharePoint.</remarks>
         public TResult Execute<TResult>(Expression expression)
-        {   
+        {
             /*
              * Support candidates:
              * - First (!)
@@ -2193,66 +2303,59 @@ namespace BdsSoft.SharePoint.Linq
              * - Count
              * - LongCount
              */
-            
+
             MethodCallExpression mc = expression as MethodCallExpression;
             if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
             {
                 switch (mc.Method.Name)
                 {
+                    //
+                    // First and FirstOrDefault are based on the Take(1) operation (row number restriction).
+                    //
                     case "First":
                     case "FirstOrDefault":
                         {
+                            //
+                            // At least one parameter (the 'this' extension parameter).
+                            //
                             if (mc.Arguments.Count >= 1)
                             {
+                                //
+                                // Lhs should be referring to the SharePointDataSource object.
+                                //
                                 ConstantExpression ce = mc.Arguments[0] as ConstantExpression;
                                 if (ce != null)
                                 {
                                     SharePointDataSource<TResult> src = ce.Value as SharePointDataSource<TResult>;
                                     if (src != null)
                                     {
+                                        //
+                                        // One method parameter: no additional predicate parameter supplied. Only this overload is supported.
+                                        //
                                         if (mc.Arguments.Count == 1)
                                         {
+                                            //
+                                            // Set row restriction (first = 1 row only).
+                                            //
                                             src.SetResultRestriction(1);
+
+                                            //
+                                            // Call appropriate Enumerable extension method on the retrieved result.
+                                            //
                                             if (mc.Method.Name == "First")
                                                 return src.AsEnumerable().First();
                                             else
                                                 return src.AsEnumerable().FirstOrDefault();
                                         }
-                                /*
-                                 * DESIGN CHOICE - No support for constructs that cannot be translated to CAML. Users should insert AsEnumerable() call.
-                                 * 
-                                        else if (mc.Arguments.Count == 2)
-                                        {
-                                            //
-                                            // Dynamic compile to LINQ to Objects equivalent
-                                            // An additional where clause isn't possible because ordering operations can be present
-                                            // and post-filtering can't be done!
-                                            //
-                                            UnaryExpression ue = mc.Arguments[1] as UnaryExpression;
-                                            if (ue != null)
-                                            {
-                                                LambdaExpression le = ue.Operand as LambdaExpression;
-                                                if (le != null)
-                                                {
-                                                    if (mc.Method.Name == "First")
-                                                        return src.AsEnumerable().First((Func<TResult, bool>)le.Compile());
-                                                    else
-                                                        return src.AsEnumerable().FirstOrDefault((Func<TResult, bool>)le.Compile());
-                                                }
-                                            }
-                                        }
-                                 */
                                     }
                                 }
                             }
                         }
                         break;
-                    default:
-                        throw new NotSupportedException(); //TODO
                 }
             }
 
-            throw new NotSupportedException(); //TODO
+            throw new NotSupportedException("Unsupported query operator detected.");
         }
 
         #endregion
@@ -2270,8 +2373,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (_checkVersion)
                 _CheckVersion();
-
-            /* <ADD Version="0.1.3"> */
 
             //
             // We don't want the default view, so we'll make an exhaustive list of all the properties to retrieve.
@@ -2302,8 +2403,6 @@ namespace BdsSoft.SharePoint.Linq
                     }
                 }
             }
-
-            /* </ADD> */
 
             //
             // Patch the query for possible Lookup field references.
@@ -2400,15 +2499,6 @@ namespace BdsSoft.SharePoint.Linq
                 throw new InvalidOperationException("Missing ListAttribute on the entity type.");
         }
 
-    /*
-     * DESIGN CHANGE - Lookup field uniqueness enforcement
-     * 
-        /// <summary>
-        /// Dictionary of post filters used to filter by foreign key value for Lookup fields.
-        /// </summary>
-        private Dictionary<string, HashSet<int>> postFilters = new Dictionary<string, HashSet<int>>();
-     */
-
         /// <summary>
         /// Patches the query predicate to eliminate Lookup field references by subqueries.
         /// </summary>
@@ -2472,38 +2562,17 @@ namespace BdsSoft.SharePoint.Linq
                         // Only retrieve the lookup column value (display column).
                         //
                         XmlElement viewFields = _doc.CreateElement("ViewFields");
-                        
+
                         XmlElement viewLookupField = _doc.CreateElement("FieldRef");
                         XmlAttribute lookupFieldName = _doc.CreateAttribute("Name");
                         lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupField);
                         viewLookupField.Attributes.Append(lookupFieldName);
                         viewFields.AppendChild(viewLookupField);
 
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                        XmlElement viewId = _doc.CreateElement("FieldRef");
-                        XmlAttribute idFieldName = _doc.CreateAttribute("Name");
-                        idFieldName.Value = "ID";
-                        viewId.Attributes.Append(idFieldName);
-                        viewFields.AppendChild(viewId);
-                 */
-
                         //
                         // Prepare list of subquery results.
                         //
                         ArrayList fks = new ArrayList();
-
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                        //
-                        // List of post-filter criteria. Used to match the foreign key field by ID.
-                        // This is required because SharePoint doesn't allow filters by foreign keys on Lookup fields.
-                        // Therefore, we need to apply additional filtering logic once results have been fetched.
-                        //
-                        List<int> ids = new List<int>();
-                 */
 
                         //
                         // Use SharePoint object model.
@@ -2535,11 +2604,6 @@ namespace BdsSoft.SharePoint.Linq
                             foreach (SPListItem item in _site.RootWeb.Lists[innerList].GetItems(query))
                             {
                                 fks.Add(item[lookup.LookupField]);
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                                ids.Add(int.Parse(item["ID"].ToString()));
-                 */
                             }
                         }
                         //
@@ -2580,11 +2644,6 @@ namespace BdsSoft.SharePoint.Linq
                             foreach (DataRow row in tbl.Rows)
                             {
                                 fks.Add(row["ows_" + lookup.LookupField]);
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                                ids.Add(int.Parse(row["ows_ID"].ToString()));
-                 */
                             }
                         }
 
@@ -2597,17 +2656,6 @@ namespace BdsSoft.SharePoint.Linq
                             XmlElement val = GetValue(o, lookup);
                             patch = CreatePatch("Eq", lookupField, val, patch);
                         }
-
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                        //
-                        // Register post-filter criteria list.
-                        //
-                        if (!postFilters.ContainsKey(lookupField.Name))
-                            postFilters.Add(lookupField.Name, new HashSet<int>());
-                        postFilters[lookupField.Name].UnionWith(ids);
-                 */
 
                         //
                         // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
@@ -2821,31 +2869,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (_projection != null)
             {
-    /*
-     * DESIGN CHANGE - Lookup field uniqueness enforcement
-     * 
-                //
-                // Make sure fields required in post-filters are present.
-                //
-                if (postFilters.Count != 0)
-                {
-                    foreach (string prop in postFilters.Keys)
-                    {
-                        XmlElement field = GetFieldRef(_originalType.GetProperty(prop));
-                        bool found = false;
-                        foreach (XmlElement node in _projection.ChildNodes)
-                        {
-                            if (node.GetAttribute("Name") == field.GetAttribute("Name"))
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found)
-                            _projection.AppendChild(field);
-                    }
-                }
-     */
                 query.ViewFields = _projection.InnerXml;
             }
 
@@ -2871,14 +2894,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             foreach (SPListItem item in _list.GetItems(query))
             {
-    /*
-     * DESIGN CHANGE - Lookup field uniqueness enforcement
-     * 
-                bool ret;
-                T result = GetItem(item, null, out ret);
-                if (ret)
-                    yield return result;
-    */
                 yield return GetItem(item, null);
             }
         }
@@ -2903,40 +2918,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             XmlNode queryOptions = _doc.CreateElement("QueryOptions");
 
-            /* <FIX Version="0.1.3"> */
-
-            //XmlNode includeMandatoryColumns = _doc.CreateElement("IncludeMandatoryColumns");
-            //includeMandatoryColumns.InnerText = "FALSE";
-            //queryOptions.AppendChild(includeMandatoryColumns);
-
-            /* </FIX> */
-
-    /*
-     * DESIGN CHANGE - Lookup field uniqueness enforcement
-     * 
-            //
-            // Make sure fields required in post-filters are present.
-            //
-            if (_projection != null && postFilters.Count != 0)
-            {
-                foreach (string prop in postFilters.Keys)
-                {
-                    XmlElement field = GetFieldRef(_originalType.GetProperty(prop));
-                    bool found = false;
-                    foreach (XmlElement node in _projection.ChildNodes)
-                    {
-                        if (node.GetAttribute("Name") == field.GetAttribute("Name"))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
-                        _projection.AppendChild(field);
-                }
-            }
-     */
-
             //
             // Perform logging of the gathered information.
             //
@@ -2946,7 +2927,7 @@ namespace BdsSoft.SharePoint.Linq
             // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
             //
             uint top = 0;
-            if (_top !=  null)
+            if (_top != null)
             {
                 top = (uint)_top.Value;
                 if (top == 0) //FIX: don't roundtrip to server if no results are requested.
@@ -2973,14 +2954,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             foreach (DataRow row in tbl.Rows)
             {
-    /*
-     * DESIGN CHANGE - Lookup field uniqueness enforcement
-     * 
-                bool ret;
-                T result = GetItem(null, row, out ret);
-                if (ret)
-                    yield return result;
-    */
                 yield return GetItem(null, row);
             }
         }
@@ -3001,7 +2974,7 @@ namespace BdsSoft.SharePoint.Linq
                 if (_list != null)
                     _log.WriteLine("Query for " + list + " over object model...");
                 else
-                    _log.WriteLine("Query for " + list+ " over web services...");
+                    _log.WriteLine("Query for " + list + " over web services...");
 
                 //
                 // We'll output XML representing various CAML elements. Output should be indented for natural reading.
@@ -3033,10 +3006,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Spacing to distinguish between subsequent queries.
                 //
                 _log.WriteLine();
-
-                /* <ADD Version="0.1.1"> */
                 _log.Flush();
-                /* </ADD> */
             }
         }
 
@@ -3103,22 +3073,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
         /// <param name="property">Property to set on the entity object.</param>
         /// <param name="target">Entity object to set the property for.</param>
-        /// <!--<param name="validItem">Indicates whether or not the retrieved item should be returned in the result set.</param>-->
         private void AssignResultProperty(SPListItem item, DataRow row, PropertyInfo property, object target)//, out bool validItem)
         {
-            //
-            // Normally the item should be okay. Post-filter criteria can override this (see Lookup field case).
-            //
-            //validItem = true;
-
-            /* <ADD Version="0.2.0.0"> */
-
             //
             // Convert to entity to set property values via SetValue method if an entity type is used.
             //
             SharePointListEntity entity = target as SharePointListEntity;
-
-            /* </ADD> */
 
             //
             // Get the field mapping attribute for the given property.
@@ -3272,27 +3232,6 @@ namespace BdsSoft.SharePoint.Linq
                         int fkey = int.Parse(fk[0]);
                         string fval = fk[1];
 
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                        //
-                        // Perform post-filtering; required for foreign key check on Lookup fields.
-                        //
-                        if (postFilters.ContainsKey(property.Name))
-                        {
-                            HashSet<int> ids = postFilters[property.Name];
-
-                            //
-                            // Key wasn't in the retrieved foreign key set; result shouldn't be returned.
-                            //
-                            if (!ids.Contains(fkey))
-                            {
-                                validItem = false;
-                                break;
-                            }
-                        }
-                 */
-
                         //
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
                         //
@@ -3322,36 +3261,6 @@ namespace BdsSoft.SharePoint.Linq
                         for (int i = 0; i < fks.Length; i += 2)
                             lstFkeys.Add(int.Parse(fks[i]));
                         int[] fkeys = lstFkeys.ToArray();
-
-                /*
-                 * DESIGN CHANGE - Lookup field uniqueness enforcement
-                 * 
-                        //
-                        // Perform post-filtering; required for foreign key check on Lookup fields.
-                        //
-                        if (postFilters.ContainsKey(property.Name))
-                        {
-                            HashSet<int> ids = postFilters[property.Name];
-
-                            //
-                            // At least one foreign key should be found for the item to be valid.
-                            //
-                            bool found = false;
-                            foreach (int key in fkeys)
-                            {
-                                if (ids.Contains(key))
-                                {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found)
-                            {
-                                validItem = false;
-                                break;
-                            }
-                        }
-                 */
 
                         //
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
@@ -3395,14 +3304,10 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Value of the enum corresponding to the val parameter.</returns>
         private static object AssignResultPropertyAsEnum(PropertyInfo property, object target, FieldAttribute field, object val, Type propertyType)
         {
-            /* <ADD Version="0.2.0.0"> */
-
             //
             // Convert to entity to set property values via SetValue method if an entity type is used.
             //
             SharePointListEntity entity = target as SharePointListEntity;
-
-            /* </ADD> */
 
             //
             // Find all of the choices of the enum type. A reverse mapping from SharePoint CHOICE names to enum field names is maintained, which will be used to allow Enum.Parse calls further on.
@@ -3629,7 +3534,7 @@ namespace BdsSoft.SharePoint.Linq
                 else
                     o = new SharePointDataSource<R>(_site);
                 o.Log = _log;
-                
+
                 datasources.Add(r, o);
             }
 

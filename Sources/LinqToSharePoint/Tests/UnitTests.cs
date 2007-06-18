@@ -671,6 +671,50 @@ namespace Tests
         }
 
         [TestMethod]
+        public void MultiWhere()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Multipe where clauses.
+            //
+            var res1 = (from p in src where p.Age >= 24 where p.FirstName == "Bart" select p).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1 && res1.First().FirstName == "Bart", "Invalid result for multiple where clauses (1).");
+
+            var res2 = (from p in src where p.FirstName == "Bart" where p.Age >= 24 select p).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 1 && res2.First().FirstName == "Bart", "Invalid result for multiple where clauses (2).");
+
+            var res3 = (from p in src where 1 == 1 where p.FirstName == "Bart" select p).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 1 && res3.First().FirstName == "Bart", "Invalid result for multiple where clauses (3).");
+
+            var res4 = (from p in src where p.FirstName == "Bart" where 1 == 1 select p).AsEnumerable();
+            Assert.IsTrue(res4.Count() == 1 && res4.First().FirstName == "Bart", "Invalid result for multiple where clauses (4).");
+
+            var res5 = (from p in src where 1 == 0 where p.FirstName == "Bart" select p).AsEnumerable();
+            Assert.IsTrue(res5.Count() == 0, "Invalid result for multiple where clauses (5).");
+
+            var res6 = (from p in src where p.FirstName == "Bart" where 1 == 0 select p).AsEnumerable();
+            Assert.IsTrue(res6.Count() == 0, "Invalid result for multiple where clauses (6).");
+        }
+
+        [TestMethod]
         public void Junk()
         {
             //

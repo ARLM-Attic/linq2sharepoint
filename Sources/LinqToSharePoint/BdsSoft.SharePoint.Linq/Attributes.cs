@@ -119,6 +119,9 @@ namespace BdsSoft.SharePoint.Linq
 
         private bool isUnique;
 
+        /// <summary>
+        /// Indicates that the field is unique across all list entries. Used for Lookup field references that require uniqueness enforcement.
+        /// </summary>
         public bool IsUnique
         {
             get { return isUnique; }
