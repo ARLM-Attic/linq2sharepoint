@@ -862,6 +862,119 @@ namespace Tests
         }
 
         [TestMethod]
+        public void LookupSubquery()
+        {
+            //
+            // Get lists with sample data.
+            //
+            SPList child, parent;
+            GetLookupLists(out child, out parent);
+
+            //
+            // Parent source.
+            //
+            SharePointDataSource<LookupParent> src = new SharePointDataSource<LookupParent>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Subqueries.
+            //
+            var res1 = (from p in src where p.Child.Number >= 2 select p).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 4 && res1.First().Title == "Parent 21" && res1.Last().Title == "Parent 32", "LookupSubquery test failed (1).");
+            var res2 = (from p in src where p.Child.Number < 3 && p.Child.Title.Contains("ld 2") && p.Title.Contains("22") select p).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Parent 22", "LookupSubquery test failed (2).");
+            var res3 = (from p in src where p.Title.Contains("22") && p.Child.Number < 3 && p.Child.Title.Contains("ld 2") select p).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "Parent 22", "LookupSubquery test failed (3).");
+            var res4 = (from p in src where p.Child.Number == 5 select p).AsEnumerable();
+            Assert.IsTrue(res4.Count() == 0, "LookupSubquery test failed (4).");
+        }
+
+        [TestMethod]
+        public void LookupLazyLoad()
+        {
+            //
+            // Get lists with sample data.
+            //
+            SPList child, parent;
+            GetLookupLists(out child, out parent);
+
+            //
+            // Parent source.
+            //
+            SharePointDataSource<LookupParent> src = new SharePointDataSource<LookupParent>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Subqueries.
+            //
+            var res1 = (from p in src where p.Title == "Parent 22" select p).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1 && res1.First().Child.ID == 2, "LookupLazyLoad test failed (1).");
+        }
+
+        private void GetLookupLists(out SPList child, out SPList parent)
+        {
+            //
+            // Child list.
+            //
+            child = Test.Create<LookupChild>(site.RootWeb);
+
+            //
+            // Parent list.
+            //
+            parent = Test.CreateList<LookupParent>(site.RootWeb);
+            parent.Fields.AddLookup("Child", child.ID, false);
+            parent.Update();
+            SPFieldLookup lookup = new SPFieldLookup(parent.Fields, "Child");
+            lookup.LookupField = "Title";
+            lookup.Update();
+            parent.Update();
+
+            //
+            // Add child items.
+            //
+            SPListItem c = child.Items.Add();
+            c["Title"] = "Child 1";
+            c["Number"] = 1;
+            c.Update();
+            c = child.Items.Add();
+            c["Title"] = "Child 2";
+            c["Number"] = 2;
+            c.Update();
+            c = child.Items.Add();
+            c["Title"] = "Child 3";
+            c["Number"] = 3;
+            c.Update();
+
+            //
+            // Add parent items.
+            //
+            SPListItem p = parent.Items.Add();
+            p["Title"] = "Parent 11";
+            p["Child"] = "1;#Child 1";
+            p.Update();
+            p = parent.Items.Add();
+            p["Title"] = "Parent 12";
+            p["Child"] = "1;#Child 1";
+            p.Update();
+            p = parent.Items.Add();
+            p["Title"] = "Parent 21";
+            p["Child"] = "2;#Child 2";
+            p.Update();
+            p = parent.Items.Add();
+            p["Title"] = "Parent 22";
+            p["Child"] = "2;#Child 2";
+            p.Update();
+            p = parent.Items.Add();
+            p["Title"] = "Parent 31";
+            p["Child"] = "3;#Child 3";
+            p.Update();
+            p = parent.Items.Add();
+            p["Title"] = "Parent 32";
+            p["Child"] = "3;#Child 3";
+            p.Update();
+        }
+
+        [TestMethod]
         public void Junk()
         {
             //

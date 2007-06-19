@@ -31,7 +31,7 @@
  *         Support for Take, First and FirstOrDefault query operators
  *         Support for Now and Today elements
  *         Support for DateRangesOverlap
- *         Multipe where predicates are supported
+ *         Multiple where predicates are supported
  * 
  * Known issues:
  * 
@@ -3534,6 +3534,8 @@ namespace BdsSoft.SharePoint.Linq
                 else
                     o = new SharePointDataSource<R>(_site);
                 o.Log = _log;
+                o.CheckListVersion = _checkVersion;
+                o.EnforceLookupFieldUniqueness = _enforceLookupFieldUniqueness;
 
                 datasources.Add(r, o);
             }

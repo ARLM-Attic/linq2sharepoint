@@ -113,4 +113,54 @@ namespace Tests
 
     [Flags]
     enum Options2 : uint { A = 1, B = 2, [Choice("C & D")] CD = 4 }
+
+    [List("LookupParent", Path = "/Lists/LookupParent", Version = 1)]
+    class LookupParent : SharePointListEntityTest
+    {
+        [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
+        }
+
+        [Field("Title", FieldType.Text)]
+        public string Title
+        {
+            get { return (string)base.GetValue("Title"); }
+            set { base.SetValue("Title", value); }
+        }
+
+        [Field("Child", FieldType.Lookup, LookupField = "Title")]
+        public LookupChild Child
+        {
+            get { return (LookupChild)base.GetValue("Child"); }
+            set { base.SetValue("Child", value); }
+        }
+    }
+
+    [List("LookupChild", Path = "/Lists/LookupChild", Version = 1)]
+    class LookupChild : SharePointListEntityTest
+    {
+        [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
+        }
+
+        [Field("Title", FieldType.Text, IsUnique = true)]
+        public string Title
+        {
+            get { return (string)base.GetValue("Title"); }
+            set { base.SetValue("Title", value); }
+        }
+
+        [Field("Number", FieldType.Number)]
+        public double Number
+        {
+            get { return (double)base.GetValue("Number"); }
+            set { base.SetValue("Number", value); }
+        }
+    }
 }
