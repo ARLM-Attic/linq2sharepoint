@@ -69,12 +69,10 @@ namespace Tests
             item.Update();
         }
 
-        public static SPList Create<T>(SPWeb web) where T : SharePointListEntityTest, new()
+        public static SPList CreateList<T>(SPWeb web) where T : SharePointListEntityTest
         {
-            T e = new T();
-
             ListAttribute la = GetListAttribute(typeof(T));
-            
+
             SPList lst;
             try
             {
@@ -83,13 +81,20 @@ namespace Tests
                     lst.Delete();
             }
             catch { }
-            
+
             web.Lists.Add(la.List, "", SPListTemplateType.GenericList);
             lst = web.Lists[la.List];
             lst.OnQuickLaunch = true;
             lst.Update();
 
-            foreach (PropertyInfo prop in e.GetType().GetProperties())
+            return lst;
+        }
+
+        public static SPList Create<T>(SPWeb web) where T : SharePointListEntityTest, new()
+        {
+            SPList lst = CreateList<T>(web);
+
+            foreach (PropertyInfo prop in typeof(T).GetProperties())
             {
                 FieldAttribute fa = GetFieldAttribute(prop);
                 if (fa != null && !fa.PrimaryKey)

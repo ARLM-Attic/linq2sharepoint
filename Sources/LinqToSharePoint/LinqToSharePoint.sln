@@ -10,7 +10,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5527A76A-AFF5-4694-B9CA-FD9E698CD06A}"
 	ProjectSection(SolutionItems) = preProject
 		LinqToSharePoint.vsmdi = LinqToSharePoint.vsmdi
-		LocalTestRun.testrunconfig = LocalTestRun.testrunconfig
 	EndProjectSection
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "DemoVb", "DemoVb\DemoVb.vbproj", "{68CEACDD-531B-4F38-9807-BF3E2BA2474F}"

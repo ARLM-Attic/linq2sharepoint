@@ -51,4 +51,59 @@ namespace Tests
             set { base.SetValue("Age", value); }
         }
     }
+
+    [List("ChoiceTest", Path = "/Lists/ChoiceTest", Version = 1)]
+    class ChoiceTest : SharePointListEntityTest
+    {
+        [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
+        }
+
+        [Field("Title", FieldType.Text)]
+        public string Title
+        {
+            get { return (string)base.GetValue("Title"); }
+            set { base.SetValue("Title", value); }
+        }
+
+        [Field("Options", FieldType.Choice)]
+        public Options Options
+        {
+            get { return (Options)base.GetValue("Options"); }
+            set { base.SetValue("Options", value); }
+        }
+    }
+
+    enum Options : uint { A, B, [Choice("C & D")]CD }
+
+    [List("ChoiceTest2", Path = "/Lists/ChoiceTest2", Version = 1)]
+    class ChoiceTest2 : SharePointListEntityTest
+    {
+        [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
+        }
+
+        [Field("Title", FieldType.Text)]
+        public string Title
+        {
+            get { return (string)base.GetValue("Title"); }
+            set { base.SetValue("Title", value); }
+        }
+
+        [Field("Options", FieldType.Choice)]
+        public Options2 Options
+        {
+            get { return (Options2)base.GetValue("Options"); }
+            set { base.SetValue("Options", value); }
+        }
+    }
+
+    [Flags]
+    enum Options2 : uint { A = 1, B = 2, [Choice("C & D")] CD = 4 }
 }

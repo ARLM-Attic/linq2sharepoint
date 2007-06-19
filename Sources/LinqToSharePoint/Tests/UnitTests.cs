@@ -715,6 +715,116 @@ namespace Tests
         }
 
         [TestMethod]
+        public void Choice()
+        {
+            //
+            // Create list.
+            //
+            SPList lst = Test.CreateList<ChoiceTest>(site.RootWeb);
+
+            //
+            // Add fields.
+            //
+            lst.Fields.Add("Options", SPFieldType.Choice, true);
+            lst.Update();
+            SPFieldChoice fld = new SPFieldChoice(lst.Fields, "Options");
+            fld.Choices.Add("A");
+            fld.Choices.Add("B");
+            fld.Choices.Add("C & D");
+            fld.Update();
+            lst.Update();
+
+            //
+            // Add items.
+            //
+            SPListItem item = lst.Items.Add();
+            item["Title"] = "1";
+            item["Options"] = "A";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "2";
+            item["Options"] = "C & D";
+            item.Update();
+
+            //
+            // List source.
+            //
+            SharePointDataSource<ChoiceTest> src = new SharePointDataSource<ChoiceTest>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Queries.
+            //
+            var res1 = (from c in src where c.Options == Options.A select c).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "1", "Test for Choice fields failed (1).");
+            var res2 = (from c in src where c.Options == Options.CD select c).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "2", "Test for Choice fields failed (2).");
+            var res3 = (from c in src where c.Options == Options.A || c.Options == Options.CD select c).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 2, "Test for Choice fields failed (3).");
+        }
+
+        [TestMethod]
+        public void MultiChoice()
+        {
+            //
+            // Create list.
+            //
+            SPList lst = Test.CreateList<ChoiceTest2>(site.RootWeb);
+
+            //
+            // Add fields.
+            //
+            lst.Fields.Add("Options", SPFieldType.MultiChoice, true);
+            lst.Update();
+            SPFieldMultiChoice fld = new SPFieldMultiChoice(lst.Fields, "Options");
+            fld.Choices.Add("A");
+            fld.Choices.Add("B");
+            fld.Choices.Add("C & D");
+            fld.Update();
+            lst.Update();
+
+            //
+            // Add items.
+            //
+            SPListItem item = lst.Items.Add();
+            item["Title"] = "1";
+            item["Options"] = "A";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "2";
+            item["Options"] = "C & D";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "3";
+            item["Options"] = "A;#C & D";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "4";
+            item["Options"] = "B";
+            item.Update();
+
+            //
+            // List source.
+            //
+            SharePointDataSource<ChoiceTest2> src = new SharePointDataSource<ChoiceTest2>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Queries.
+            //
+            var res1 = (from c in src where c.Options == Options2.A select c).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoice fields failed (1).");
+            var res2 = (from c in src where c.Options == Options2.CD select c).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3", "Test for MultiChoice fields failed (2).");
+            var res3 = (from c in src where c.Options == (Options2.A | Options2.B) select c).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 0, "Test for MultiChoice fields failed (3).");
+            var res4 = (from c in src where c.Options == Options2.A || c.Options == Options2.B select c).AsEnumerable();
+            Assert.IsTrue(res4.Count() == 3, "Test for MultiChoice fields failed (4).");
+            var res5 = (from c in src where c.Options != Options2.A select c).AsEnumerable();
+            Assert.IsTrue(res5.Count() == 2, "Test for MultiChoice fields failed (5).");
+        }
+
+        [TestMethod]
         public void Junk()
         {
             //

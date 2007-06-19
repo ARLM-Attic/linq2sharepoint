@@ -1403,9 +1403,9 @@ namespace BdsSoft.SharePoint.Linq
                 if (enumCheck != null && enumCheck.IsSubclassOf(typeof(Enum))) //FIX v0.1.2
                 {
                     //
-                    // Visual Basic uses ConvertChecked to represent enums as numeric values; reconstruct the enum back if needed.
+                    // Enums might be compiled to numeric values; reconstruct the enum back if needed.
                     //
-                    if (!(value is Enum) && value is uint)
+                    if (!(value is Enum) && value is uint) // TODO: require uint base type for enums (spec)
                         value = Enum.ToObject(enumCheck, (uint)value);
 
                     //
