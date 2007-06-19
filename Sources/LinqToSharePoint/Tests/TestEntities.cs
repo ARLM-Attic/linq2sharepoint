@@ -50,6 +50,13 @@ namespace Tests
             get { return (double)base.GetValue("Age"); }
             set { base.SetValue("Age", value); }
         }
+
+        [Field("SecondAge", FieldType.Number)]
+        public double? SecondAge
+        {
+            get { return (double?)base.GetValue("SecondAge"); }
+            set { base.SetValue("SecondAge", value); }
+        }
     }
 
     [List("ChoiceTest", Path = "/Lists/ChoiceTest", Version = 1)]

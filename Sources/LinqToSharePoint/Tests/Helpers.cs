@@ -99,7 +99,11 @@ namespace Tests
                 FieldAttribute fa = GetFieldAttribute(prop);
                 if (fa != null && !fa.PrimaryKey)
                 {
-                    lst.Fields.Add(fa.Field, (SPFieldType)fa.FieldType, false); //TODO: add extended information
+                    bool nullable = false;
+                    if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        nullable = true;
+
+                    lst.Fields.Add(fa.Field, (SPFieldType)fa.FieldType, !nullable); //TODO: add extended information
                     lst.Views[0].ViewFields.Add(lst.Fields[fa.Field]);
                 }
             }

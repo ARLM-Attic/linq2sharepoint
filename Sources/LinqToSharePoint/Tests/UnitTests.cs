@@ -298,6 +298,42 @@ namespace Tests
         }
 
         [TestMethod]
+        public void Nullable()
+        {
+            //
+            // Create list People.
+            //
+            lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, SecondAge = 24, IsMember = true, ShortBio = "Project founder" };
+            People p2 = new People() { ID = 2, FirstName = "Bill", LastName = "Gates", Age = 52, SecondAge = null, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p3 = new People() { ID = 3, FirstName = "William", LastName = "Gates", Age = 52, SecondAge = null, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+            Test.Add(lst, p3);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Test queries.
+            //
+            AssertWhere(src, p => p.SecondAge.HasValue, 1, "Invalid result for nullable query (1)");
+            AssertWhere(src, p => !p.SecondAge.HasValue, 2, "Invalid result for nullable query (2)");
+            AssertWhere(src, p => p.SecondAge != null, 1, "Invalid result for nullable query (3)");
+            AssertWhere(src, p => p.SecondAge == null, 2, "Invalid result for nullable query (4)");
+            AssertWhere(src, p => p.SecondAge == 24, 1, "Invalid result for nullable query (5)");
+            AssertWhere(src, p => p.SecondAge.Value == 24, 1, "Invalid result for nullable query (6)");
+            AssertWhere(src, p => p.SecondAge >= 25, 0, "Invalid result for nullable query (7)");
+        }
+
+        [TestMethod]
         public void StartsWith()
         {
             //
@@ -728,6 +764,7 @@ namespace Tests
             lst.Fields.Add("Options", SPFieldType.Choice, true);
             lst.Update();
             SPFieldChoice fld = new SPFieldChoice(lst.Fields, "Options");
+            SPFieldLookup l;
             fld.Choices.Add("A");
             fld.Choices.Add("B");
             fld.Choices.Add("C & D");
