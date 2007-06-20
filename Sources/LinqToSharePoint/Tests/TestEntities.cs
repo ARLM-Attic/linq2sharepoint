@@ -163,4 +163,29 @@ namespace Tests
             set { base.SetValue("Number", value); }
         }
     }
+
+    [List("DateTimeTest", Path = "/Lists/DateTimeTest", Version = 1)]
+    class DateTimeTest : SharePointListEntityTest
+    {
+        [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+            set { base.SetValue("ID", value); }
+        }
+
+        [Field("Name", FieldType.Text)]
+        public string Name
+        {
+            get { return (string)base.GetValue("Name"); }
+            set { base.SetValue("Name", value); }
+        }
+
+        [Field("DateTime", FieldType.DateTime)]
+        public DateTime DateTime
+        {
+            get { return (DateTime)base.GetValue("DateTime"); }
+            set { base.SetValue("DateTime", value); }
+        }
+    }
 }

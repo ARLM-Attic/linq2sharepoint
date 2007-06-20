@@ -8,11 +8,6 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
-/*
- * NOTE: For the moment, the unit testing framework for LINQ to SharePoint is in the planning stage.
- *       Therefore, this class will be of little use to project "readers" at the moment (05/04/07).
- */
-
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -972,6 +967,52 @@ namespace Tests
             p["Title"] = "Parent 32";
             p["Child"] = "3;#Child 3";
             p.Update();
+        }
+
+        [TestMethod]
+        public void DateTime()
+        {
+            //
+            // Create list DateTimeTest.
+            //
+            var lst = Test.Create<DateTimeTest>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            System.DateTime now = System.DateTime.Now; //new System.DateTime(2007, 5, 21, 11, 11, 0);
+            DateTimeTest t1 = new DateTimeTest() { ID = 1, Name = "Yesterday", DateTime = System.DateTime.Today.AddDays(-1) };
+            DateTimeTest t2 = new DateTimeTest() { ID = 2, Name = "Today", DateTime = System.DateTime.Today };
+            DateTimeTest t3 = new DateTimeTest() { ID = 3, Name = "Tomorrow", DateTime = System.DateTime.Today.AddDays(1) };
+            DateTimeTest t4 = new DateTimeTest() { ID = 4, Name = "Now", DateTime = now };
+            Test.Add(lst, t1);
+            Test.Add(lst, t2);
+            Test.Add(lst, t3);
+            Test.Add(lst, t4);
+
+            //
+            // List source.
+            //
+            SharePointDataSource<DateTimeTest> src = new SharePointDataSource<DateTimeTest>(site);
+            src.CheckListVersion = false;
+
+            //
+            // Queries.
+            //
+            var res1 = (from t in src where t.DateTime == now select t).AsEnumerable(); //KNOWN ISSUE with Eq check on hh:MM:ss (2032)
+            Assert.IsTrue(res1.Count() == 2, "DateTime test failure (1).");
+            var res2 = (from t in src where t.DateTime > System.DateTime.Today select t).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 1, "DateTime test failure (2).");
+            var res3 = (from t in src where t.DateTime < System.DateTime.Today select t).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 1, "DateTime test failure (3).");
+            var res4 = (from t in src where t.DateTime == System.DateTime.Today select t).AsEnumerable();
+            Assert.IsTrue(res4.Count() == 2, "DateTime test failure (4).");
+            var res5 = (from t in src where t.DateTime <= System.DateTime.Today select t).AsEnumerable();
+            Assert.IsTrue(res5.Count() == 3, "DateTime test failure (5).");
+
+            //
+            // TODO: Check for eligible use of Now.
+            //
         }
 
         [TestMethod]

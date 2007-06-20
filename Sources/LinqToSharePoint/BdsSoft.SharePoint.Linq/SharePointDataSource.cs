@@ -1488,8 +1488,17 @@ namespace BdsSoft.SharePoint.Linq
             return c;
         }
 
+        /// <summary>
+        /// Retrieves the XM -representation for the DateTime value represented in the specified expression.
+        /// </summary>
+        /// <param name="dateValue">Expression containing a DateTime value to be converted to XML.</param>
+        /// <returns>XML representation for the specified DateTime value expression.</returns>
         private XmlElement GetDateValue(Expression dateValue)
         {
+            /*
+             * KNOWN ISSUES: see work item 2032
+             */
+
             bool isNow = false;
             bool isToday = false;
 
