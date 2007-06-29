@@ -19,8 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Junkyard", "Junkyard\Junkyard.csproj", "{41C163BA-F4E9-4188-B41D-405F32AA704A}"
 EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "TestHelpersVb", "TestHelpersVb\TestHelpersVb.vbproj", "{EB178CF2-C2CF-4412-979B-6FC32DEF4646}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{9F054971-94A5-4E61-98D6-E54D077DE662}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Library", "Library", "{EDF1B637-946E-4F00-895E-4FC86A2B068B}"
@@ -32,6 +30,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{6D9F34B5-4A7A-4296-B232-5E3AD7D0643B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestEntities", "TestEntities\TestEntities.csproj", "{3BD9FFBB-B9AD-4249-8975-CFEA38088211}"
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "TestHelpersVb", "TestHelpersVb\TestHelpersVb.vbproj", "{F92DDC6F-0912-42AD-AB4E-7708B2E412AC}"
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
@@ -63,14 +63,14 @@ Global
 		SccProjectTopLevelParentUniqueName6 = LinqToSharePoint.sln
 		SccProjectName6 = Junkyard
 		SccLocalPath6 = Junkyard
-		SccProjectUniqueName7 = TestHelpersVb\\TestHelpersVb.vbproj
+		SccProjectUniqueName7 = TestEntities\\TestEntities.csproj
 		SccProjectTopLevelParentUniqueName7 = LinqToSharePoint.sln
-		SccProjectName7 = TestHelpersVb
-		SccLocalPath7 = TestHelpersVb
-		SccProjectUniqueName8 = TestEntities\\TestEntities.csproj
+		SccProjectName7 = TestEntities
+		SccLocalPath7 = TestEntities
+		SccProjectUniqueName8 = TestHelpersVb\\TestHelpersVb.vbproj
 		SccProjectTopLevelParentUniqueName8 = LinqToSharePoint.sln
-		SccProjectName8 = TestEntities
-		SccLocalPath8 = TestEntities
+		SccProjectName8 = TestHelpersVb
+		SccLocalPath8 = TestHelpersVb
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = LinqToSharePoint.vsmdi
@@ -104,26 +104,26 @@ Global
 		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41C163BA-F4E9-4188-B41D-405F32AA704A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB178CF2-C2CF-4412-979B-6FC32DEF4646}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB178CF2-C2CF-4412-979B-6FC32DEF4646}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB178CF2-C2CF-4412-979B-6FC32DEF4646}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB178CF2-C2CF-4412-979B-6FC32DEF4646}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3BD9FFBB-B9AD-4249-8975-CFEA38088211}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3BD9FFBB-B9AD-4249-8975-CFEA38088211}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BD9FFBB-B9AD-4249-8975-CFEA38088211}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BD9FFBB-B9AD-4249-8975-CFEA38088211}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F92DDC6F-0912-42AD-AB4E-7708B2E412AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F92DDC6F-0912-42AD-AB4E-7708B2E412AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F92DDC6F-0912-42AD-AB4E-7708B2E412AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F92DDC6F-0912-42AD-AB4E-7708B2E412AC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A} = {9F054971-94A5-4E61-98D6-E54D077DE662}
 		{B19723C2-779B-4FE5-B5BB-A9CAC927F96A} = {EDF1B637-946E-4F00-895E-4FC86A2B068B}
-		{FE478C15-9B55-4100-A619-07FCB2031CD9} = {6606A2AF-D58C-4B09-B058-FE374DD124AE}
 		{68CEACDD-531B-4F38-9807-BF3E2BA2474F} = {6606A2AF-D58C-4B09-B058-FE374DD124AE}
-		{41C163BA-F4E9-4188-B41D-405F32AA704A} = {EA99290B-36F6-4A53-A855-53AD053E24B3}
-		{EB178CF2-C2CF-4412-979B-6FC32DEF4646} = {6D9F34B5-4A7A-4296-B232-5E3AD7D0643B}
+		{FE478C15-9B55-4100-A619-07FCB2031CD9} = {6606A2AF-D58C-4B09-B058-FE374DD124AE}
+		{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A} = {9F054971-94A5-4E61-98D6-E54D077DE662}
 		{1ACE901B-0691-4795-BBA6-69A856D7B372} = {6D9F34B5-4A7A-4296-B232-5E3AD7D0643B}
 		{3BD9FFBB-B9AD-4249-8975-CFEA38088211} = {6D9F34B5-4A7A-4296-B232-5E3AD7D0643B}
+		{F92DDC6F-0912-42AD-AB4E-7708B2E412AC} = {6D9F34B5-4A7A-4296-B232-5E3AD7D0643B}
+		{41C163BA-F4E9-4188-B41D-405F32AA704A} = {EA99290B-36F6-4A53-A855-53AD053E24B3}
 	EndGlobalSection
 EndGlobal
