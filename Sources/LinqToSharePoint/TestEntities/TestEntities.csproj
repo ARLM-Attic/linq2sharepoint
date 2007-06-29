@@ -4,14 +4,13 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.20404</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{1ACE901B-0691-4795-BBA6-69A856D7B372}</ProjectGuid>
+    <ProjectGuid>{3BD9FFBB-B9AD-4249-8975-CFEA38088211}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Tests</RootNamespace>
-    <AssemblyName>Tests</AssemblyName>
+    <RootNamespace>TestEntities</RootNamespace>
+    <AssemblyName>TestEntities</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
@@ -36,30 +35,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SharePoint, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnitTests.cs" />
+    <Compile Include="TestEntities.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BdsSoft.SharePoint.Linq\BdsSoft.SharePoint.Linq.csproj">
       <Project>{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}</Project>
       <Name>BdsSoft.SharePoint.Linq</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TestEntities\TestEntities.csproj">
-      <Project>{3BD9FFBB-B9AD-4249-8975-CFEA38088211}</Project>
-      <Name>TestEntities</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TestHelpersVb\TestHelpersVb.vbproj">
-      <Project>{EB178CF2-C2CF-4412-979B-6FC32DEF4646}</Project>
-      <Name>TestHelpersVb</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

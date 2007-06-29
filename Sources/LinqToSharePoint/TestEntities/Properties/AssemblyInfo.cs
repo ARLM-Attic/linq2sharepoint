@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("LINQ to SharePoint C# Demo")]
+[assembly: AssemblyTitle("TestEntities")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Bart De Smet")]
-[assembly: AssemblyProduct("LINQ to SharePoint")]
-[assembly: AssemblyCopyright("Copyright © Bart De Smet 2007")]
+[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyProduct("TestEntities")]
+[assembly: AssemblyCopyright("Copyright © Microsoft 2007")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("d3391b36-2ef5-4b43-bd48-cdf5c404733a")]
+[assembly: Guid("c1d82cd2-c5a6-499a-adff-0d70bdd21264")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.2.0.0")]
-[assembly: AssemblyFileVersion("0.2.0.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]

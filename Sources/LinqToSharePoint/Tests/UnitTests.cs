@@ -30,10 +30,11 @@ namespace Tests
         private SPSite site;
         private SPWeb web;
         private SPList lst;
+        private Uri url = new Uri("http://wss3demo");
 
         public UnitTests()
         {
-            site = new SPSite("http://wss3demo");
+            site = new SPSite(url.ToString());
             web = site.RootWeb;
         }
 
@@ -759,7 +760,6 @@ namespace Tests
             lst.Fields.Add("Options", SPFieldType.Choice, true);
             lst.Update();
             SPFieldChoice fld = new SPFieldChoice(lst.Fields, "Options");
-            SPFieldLookup l;
             fld.Choices.Add("A");
             fld.Choices.Add("B");
             fld.Choices.Add("C & D");
@@ -1013,6 +1013,90 @@ namespace Tests
             //
             // TODO: Check for eligible use of Now.
             //
+        }
+
+        [TestMethod]
+        public void TestWsAndSp()
+        {
+            /*
+             * Temporary test to check ws results against sp results.
+             */
+
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // Sources.
+            //
+            SharePointDataSource<People> sp = new SharePointDataSource<People>(site);
+            sp.CheckListVersion = false;
+
+            SharePointDataSource<People> ws = new SharePointDataSource<People>(url);
+            ws.CheckListVersion = false;
+            
+            //
+            // Test.
+            //
+            AssertWsEqualsSp<People>(ws, sp, p => p.FirstName.StartsWith("B"), "WS and SP data source did not return the same results.");
+        }
+
+        [TestMethod]
+        public void TestVbStringCompare()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+            People p2 = new People() { FirstName = "John", LastName = "De Smet", Age = 54, IsMember = false, ShortBio = "Family" };
+            Test.Add(lst, p2);
+
+            //
+            // Get query with Visual Basic string compare.
+            //
+            var res = TestHelpersVb.Helpers.StrCompare(site).AsEnumerable();
+            Assert.IsTrue(res.Count() == 1 && res.First().FirstName == "Bart", "Visual Basic string compare parse failure in query predicate.");
+        }
+
+        [TestMethod]
+        public void TestVbStrComp()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+            People p2 = new People() { FirstName = "John", LastName = "De Smet", Age = 54, IsMember = false, ShortBio = "Family" };
+            Test.Add(lst, p2);
+
+            //
+            // Get query with Visual Basic string compare.
+            //
+            var res = TestHelpersVb.Helpers.StrCmp(site).AsEnumerable();
+            Assert.IsTrue(res.Count() == 1 && res.First().FirstName == "Bart", "Visual Basic string compare parse failure in query predicate.");
+        }
+
+        private static void AssertWsEqualsSp<T>(SharePointDataSource<T> ws, SharePointDataSource<T> sp, Expression<Func<T, bool>> predicate, string message)
+        {
+            Assert.IsTrue(ws.Where(predicate).AsEnumerable().SequenceEqual(sp.Where(predicate).AsEnumerable()), message);
         }
 
         [TestMethod]

@@ -232,9 +232,9 @@ namespace BdsSoft.SharePoint.Linq
         Boolean = SPFieldType.Boolean,
 
         /// <summary>
-        /// Calculcated field.
+        /// Calculated field.
         /// </summary>
-        [Obsolete]
+        [Obsolete("Calculated fields are not directly supported; use the underlying type of the Calculated field.")]
         Calculated = SPFieldType.Calculated,
 
         /// <summary>
@@ -270,6 +270,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Multiple lookup field.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Multi")]
         LookupMulti = 101,
 
         /// <summary>

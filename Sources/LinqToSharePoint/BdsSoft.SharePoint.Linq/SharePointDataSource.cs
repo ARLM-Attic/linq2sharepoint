@@ -366,7 +366,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query provider instance that allows further parsing and/or result fetching.</returns>
         public IQueryable CreateQuery(Expression expression)
         {
-            return CreateQuery(expression);
+            return CreateQuery<T>(expression);
         }
 
         /// <summary>
@@ -748,7 +748,7 @@ namespace BdsSoft.SharePoint.Linq
                         lookup = (PropertyInfo)outer.Member;
                     }
 
-                    me = (MemberExpression)res;
+                    me = mRes;// (MemberExpression)res;
 
                     XmlElement c;
 
@@ -919,6 +919,7 @@ namespace BdsSoft.SharePoint.Linq
                     // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
                     //
                     object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+                    string sval = val as string;
 
                     //
                     // Build the condition.
@@ -930,7 +931,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Contains "" is always true.
                             //
-                            if ((string)val == String.Empty)
+                            if (String.IsNullOrEmpty(sval))
                                 return null;
 
                             if (!isPositive)
@@ -941,7 +942,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // StartsWith "" is always true.
                             //
-                            if ((string)val == String.Empty)
+                            if (String.IsNullOrEmpty(sval))
                                 return null;
 
                             if (!isPositive)
@@ -1120,7 +1121,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="condition">Condition to check for CompareString or StrComp presence.</param>
         /// <param name="left">Left operand, will be rewritten by the CompareString or StrComp first parameter if CompareString or StrComp usage was detected.</param>
         /// <param name="right">Right operand, will be rewritten by the CompareString or StrComp second parameter if CompareString or StrComp usage was detected.</param>
-        private void FindVisualBasicCompareStringCondition(BinaryExpression condition, ref Expression left, ref Expression right)
+        private static void FindVisualBasicCompareStringCondition(BinaryExpression condition, ref Expression left, ref Expression right)
         {
             //
             // Right hand side should be 0 to indicate string equality.
@@ -2019,7 +2020,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="e">Expression to be checked.</param>
         /// <returns>True if the expression refers to an entity property; otherwise false.</returns>
-        private bool IsEntityPropertyReference(Expression e)
+        private static bool IsEntityPropertyReference(Expression e)
         {
             MemberExpression me = e as MemberExpression;
 
@@ -2361,6 +2362,8 @@ namespace BdsSoft.SharePoint.Linq
                             }
                         }
                         break;
+                    default:
+                        throw new NotSupportedException("Unsupported query operator detected (" + mc.Method.Name + ").");
                 }
             }
 
@@ -2644,6 +2647,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             XmlNode res = _ws.GetListItems(innerList, null, query, viewFields, null, queryOptions, null);
                             DataSet ds = new DataSet();
+                            ds.Locale = CultureInfo.InvariantCulture;
                             ds.ReadXml(new StringReader(res.OuterXml));
                             DataTable tbl = ds.Tables["row"];
 
@@ -3238,8 +3242,7 @@ namespace BdsSoft.SharePoint.Linq
                         string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
                         if (fk.Length != 2)
                             break;
-                        int fkey = int.Parse(fk[0]);
-                        string fval = fk[1];
+                        int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
 
                         //
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
@@ -3268,7 +3271,7 @@ namespace BdsSoft.SharePoint.Linq
                             break;
                         List<int> lstFkeys = new List<int>();
                         for (int i = 0; i < fks.Length; i += 2)
-                            lstFkeys.Add(int.Parse(fks[i]));
+                            lstFkeys.Add(int.Parse(fks[i], CultureInfo.InvariantCulture.NumberFormat));
                         int[] fkeys = lstFkeys.ToArray();
 
                         //

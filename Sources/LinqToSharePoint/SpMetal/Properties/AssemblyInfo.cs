@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("SharePoint List Definition Export tool for entity type creation.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Bart De Smet")]
-[assembly: AssemblyProduct("SpMetal")]
+[assembly: AssemblyProduct("LINQ to SharePoint")]
 [assembly: AssemblyCopyright("Copyright © Bart De Smet 2007")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

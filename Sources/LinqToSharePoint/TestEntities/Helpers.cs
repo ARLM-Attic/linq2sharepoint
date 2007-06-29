@@ -1,4 +1,14 @@
-﻿using System;
+﻿/*
+ * LINQ-to-SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +18,7 @@ using System.Reflection;
 
 namespace Tests
 {
-    class SharePointListEntityTest : SharePointListEntity
+    public class SharePointListEntityTest : SharePointListEntity
     {
         public SharePointListEntityTest() : base()
         {

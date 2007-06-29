@@ -15,6 +15,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Class with helper methods and other members for CAML queries.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
     public static class CamlMethods
     {
         /// <summary>

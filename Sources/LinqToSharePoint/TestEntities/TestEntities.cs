@@ -1,4 +1,14 @@
-﻿using System;
+﻿/*
+ * LINQ-to-SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +17,7 @@ using BdsSoft.SharePoint.Linq;
 namespace Tests
 {
     [List("People", Path = "/Lists/People", Version = 1)]
-    class People : SharePointListEntityTest
+    public class People : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
@@ -60,7 +70,7 @@ namespace Tests
     }
 
     [List("ChoiceTest", Path = "/Lists/ChoiceTest", Version = 1)]
-    class ChoiceTest : SharePointListEntityTest
+    public class ChoiceTest : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
@@ -84,10 +94,10 @@ namespace Tests
         }
     }
 
-    enum Options : uint { A, B, [Choice("C & D")]CD }
+    public enum Options : uint { A, B, [Choice("C & D")]CD }
 
     [List("ChoiceTest2", Path = "/Lists/ChoiceTest2", Version = 1)]
-    class ChoiceTest2 : SharePointListEntityTest
+    public class ChoiceTest2 : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
@@ -112,10 +122,10 @@ namespace Tests
     }
 
     [Flags]
-    enum Options2 : uint { A = 1, B = 2, [Choice("C & D")] CD = 4 }
+    public enum Options2 : uint { A = 1, B = 2, [Choice("C & D")] CD = 4 }
 
     [List("LookupParent", Path = "/Lists/LookupParent", Version = 1)]
-    class LookupParent : SharePointListEntityTest
+    public class LookupParent : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
@@ -140,7 +150,7 @@ namespace Tests
     }
 
     [List("LookupChild", Path = "/Lists/LookupChild", Version = 1)]
-    class LookupChild : SharePointListEntityTest
+    public class LookupChild : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
@@ -165,7 +175,7 @@ namespace Tests
     }
 
     [List("DateTimeTest", Path = "/Lists/DateTimeTest", Version = 1)]
-    class DateTimeTest : SharePointListEntityTest
+    public class DateTimeTest : SharePointListEntityTest
     {
         [Field("ID", FieldType.Counter, PrimaryKey = true, ReadOnly = true)]
         public int ID
