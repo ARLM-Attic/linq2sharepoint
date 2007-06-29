@@ -57,6 +57,7 @@ using System.Xml;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
 using System.Runtime.Serialization;
+using System.Web.Services.Protocols;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -2907,9 +2908,22 @@ namespace BdsSoft.SharePoint.Linq
             DoLogging(_list.Title, _where, _order, _projection);
 
             //
-            // Execute the query via the SPList object and fetch results using an iterator.
+            // Execute the query via the SPList object.
             //
-            foreach (SPListItem item in _list.GetItems(query))
+            SPListItemCollection items;
+            try
+            {
+                items = _list.GetItems(query);
+            }
+            catch (Exception ex)
+            {
+                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint site at " + _site.Url + ".", ex);
+            }
+
+            //
+            // Fetch results using an iterator.
+            //
+            foreach (SPListItem item in items)
             {
                 yield return GetItem(item, null);
             }
@@ -2950,7 +2964,16 @@ namespace BdsSoft.SharePoint.Linq
                 if (top == 0) //FIX: don't roundtrip to server if no results are requested.
                     yield break;
             }
-            XmlNode res = _ws.GetListItems(_wsList, null, query, _projection, _top == null ? null : top.ToString(), queryOptions, null);
+
+            XmlNode res;
+            try
+            {
+                res = _ws.GetListItems(_wsList, null, query, _projection, _top == null ? null : top.ToString(), queryOptions, null);
+            }
+            catch (SoapException ex)
+            {
+                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint web service at " + _ws.Url + ".", ex);
+            }
 
             //
             // Store results in a DataSet for easy iteration.
@@ -3655,5 +3678,20 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Exception for SharePoint connection failures, either via web services or via the object model.
+    /// </summary>
+    [Serializable]
+    public class SharePointConnectionException : Exception
+    {
+        public SharePointConnectionException() { }
+        public SharePointConnectionException(string message) : base(message) { }
+        public SharePointConnectionException(string message, Exception inner) : base(message, inner) { }
+        protected SharePointConnectionException(
+          SerializationInfo info,
+          StreamingContext context)
+            : base(info, context) { }
     }
 }
