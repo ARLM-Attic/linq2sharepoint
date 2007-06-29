@@ -16,6 +16,13 @@ namespace Junkyard
         static void Main(string[] args)
         {
             SPSite site = new SPSite("http://wss3demo");
+
+            /*
+            SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);
+            var res = from t in lst where t.Age >= 24 orderby t.FirstName descending select t;
+            SharePointDataSourceVisualizer.TestShowVisualizer(res);
+            */
+
             //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
             //SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));
             //lst.Log = Console.Out;

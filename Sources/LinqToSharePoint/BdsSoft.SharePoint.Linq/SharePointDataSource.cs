@@ -41,9 +41,10 @@
  */
 
 using System;
-using System.Data;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -55,6 +56,7 @@ using System.Xml;
 
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
+using System.Runtime.Serialization;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -62,7 +64,9 @@ namespace BdsSoft.SharePoint.Linq
     /// Query provider for SharePoint lists.
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list items.</typeparam>
-    public sealed class SharePointDataSource<T> : IOrderedQueryable<T>, IDisposable
+    [DebuggerVisualizer(typeof(SharePointDataSourceVisualizer))]
+    [Serializable]
+    public sealed class SharePointDataSource<T> : IOrderedQueryable<T>, IDisposable, ISerializable
     {
         #region Private members
 
@@ -2974,6 +2978,10 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Helper method to log query information before fetching results.
         /// </summary>
+        /// <param name="list">List that's being queried.</param>
+        /// <param name="where">Query predicate.</param>
+        /// <param name="order">Ordering clause.</param>
+        /// <param name="projection">Projection clause.</param>
         private void DoLogging(string list, XmlElement where, XmlElement order, XmlElement projection)
         {
             //
@@ -2990,30 +2998,9 @@ namespace BdsSoft.SharePoint.Linq
                     _log.WriteLine("Query for " + list + " over web services...");
 
                 //
-                // We'll output XML representing various CAML elements. Output should be indented for natural reading.
+                // Do the remainder of the logging (CAML).
                 //
-                XmlTextWriter xw = new XmlTextWriter(_log);
-                xw.Formatting = Formatting.Indented;
-
-                //
-                // Write the query, including the predicate and the ordering element.
-                //
-                xw.WriteStartElement("Query");
-                if (where != null && where.ChildNodes.Count != 0)
-                    where.WriteTo(xw);
-                if (order != null)
-                    order.WriteTo(xw);
-                xw.WriteEndElement();
-
-                //
-                // If a projection clause is present, we'll print that too.
-                //
-                if (projection != null)
-                {
-                    XmlDocument projectDoc = new XmlDocument();
-                    projectDoc.LoadXml(projection.OuterXml);
-                    projectDoc.Save(xw);
-                }
+                DoLoggingTo(_log, where, order, projection);
 
                 //
                 // Spacing to distinguish between subsequent queries.
@@ -3021,6 +3008,48 @@ namespace BdsSoft.SharePoint.Linq
                 _log.WriteLine();
                 _log.Flush();
             }
+        }
+
+        /// <summary>
+        /// Helper method to log query information before fetching results.
+        /// </summary>
+        /// <param name="output">Output to write log information to.</param>
+        /// <param name="list">List that's being queried.</param>
+        /// <param name="where">Query predicate.</param>
+        /// <param name="order">Ordering clause.</param>
+        /// <param name="projection">Projection clause.</param>
+        private void DoLoggingTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
+        {
+            //
+            // We'll output XML representing various CAML elements. Output should be indented for natural reading.
+            //
+            XmlTextWriter xw = new XmlTextWriter(output);
+            xw.Formatting = Formatting.Indented;
+
+            //
+            // Write the query, including the predicate and the ordering element.
+            //
+            xw.WriteStartElement("Query");
+            if (where != null && where.ChildNodes.Count != 0)
+                where.WriteTo(xw);
+            if (order != null)
+                order.WriteTo(xw);
+            xw.WriteEndElement();
+
+            //
+            // If a projection clause is present, we'll print that too.
+            //
+            if (projection != null)
+            {
+                XmlDocument projectDoc = new XmlDocument();
+                projectDoc.LoadXml(projection.OuterXml);
+                projectDoc.Save(xw);
+            }
+
+            //
+            // Flush output.
+            //
+            output.Flush();
         }
 
         /// <summary>
@@ -3577,6 +3606,52 @@ namespace BdsSoft.SharePoint.Linq
         {
             SharePointDataSource<R> src = GetSharePointDataSource<R>();
             return src.GetEntitiesById(ids, true);
+        }
+
+        #endregion
+
+        #region Debugger visualizer support
+
+        /*
+         * This region contains temporary support for debugger visualizers, primarily as an aid during LINQ to SharePoint development.
+         * Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.
+         * 
+         * Debugger visualizer support will become part of the "Developer Tools Integration Toolkit" for LINQ to SharePoint.
+         */
+
+        private string _camlForDebuggerVisualizer;
+        private string _entityForDebuggerVisualizer;
+
+        /// <summary>
+        /// Constructor to support debugger visualizers. Not for direct use in end-user code.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
+        public SharePointDataSource(SerializationInfo info, StreamingContext context)
+        {
+            _camlForDebuggerVisualizer = (string)info.GetValue("Caml", typeof(string));
+            _entityForDebuggerVisualizer = (string)info.GetValue("Entity", typeof(string));
+        }
+
+        /// <summary>
+        /// Serialization support for debugger visualizers. Not for direct use in end-user code.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            StringBuilder caml = new StringBuilder();
+
+            StringWriter sw = new StringWriter(caml);
+            XmlTextWriter writer = new XmlTextWriter(sw);
+            writer.Formatting = Formatting.Indented;
+
+            DoLoggingTo(sw, _where, _order, _projection);
+
+            info.AddValue("Caml", caml.ToString());
+            info.AddValue("Entity", typeof(T).Name);
         }
 
         #endregion
