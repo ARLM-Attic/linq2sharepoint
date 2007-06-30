@@ -3674,7 +3674,7 @@ namespace BdsSoft.SharePoint.Linq
             DoLoggingTo(sw, _where, _order, _projection);
 
             info.AddValue("Caml", caml.ToString());
-            info.AddValue("Entity", typeof(T).Name);
+            info.AddValue("Entity", _originalType.Name);
         }
 
         #endregion

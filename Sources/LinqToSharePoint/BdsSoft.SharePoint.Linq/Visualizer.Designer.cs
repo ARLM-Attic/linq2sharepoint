@@ -57,6 +57,7 @@
             this.txtCaml.Location = new System.Drawing.Point(13, 52);
             this.txtCaml.Multiline = true;
             this.txtCaml.Name = "txtCaml";
+            this.txtCaml.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.txtCaml.Size = new System.Drawing.Size(267, 180);
             this.txtCaml.TabIndex = 3;
             // 
