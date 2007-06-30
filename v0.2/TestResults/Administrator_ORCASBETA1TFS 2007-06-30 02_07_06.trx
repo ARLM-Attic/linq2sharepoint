@@ -1,0 +1,395 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TestRun id="1a96a096-e325-4ec4-9ee7-b420e564176f" name="Administrator@ORCASBETA1TFS 2007-06-30 02:07:06" runUser="ORCASBETA1TFS\Administrator" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2006">
+  <TestRunConfiguration name="Local Test Run" id="e9b8577b-42b7-43e4-90e4-a210b04ec22b">
+    <Description>This is a default test run configuration for a local test run.</Description>
+    <CodeCoverage enabled="true" keyFile="C:\TFS03\LINQtoSharePoint\v0.2\BdsSoft.SharePoint.Linq\key.snk">
+      <Regular>
+        <CodeCoverageItem binaryFile="C:\TFS03\LINQtoSharePoint\v0.2\BdsSoft.SharePoint.Linq\bin\Debug\BdsSoft.SharePoint.Linq.dll" pdbFile="C:\TFS03\LINQtoSharePoint\v0.2\BdsSoft.SharePoint.Linq\bin\Debug\BdsSoft.SharePoint.Linq.instr.pdb" instrumentInPlace="true">
+          <KeyFile path="C:\TFS03\LINQtoSharePoint\v0.2\BdsSoft.SharePoint.Linq\key.snk" />
+        </CodeCoverageItem>
+      </Regular>
+    </CodeCoverage>
+    <Deployment runDeploymentRoot="C:\TFS03\LINQtoSharePoint\v0.2\TestResults\Administrator_ORCASBETA1TFS 2007-06-30 02_07_06">
+      <DeploymentItem filename="C:\TFS03\LINQtoSharePoint\v0.2\BdsSoft.SharePoint.Linq\bin\Debug\BdsSoft.SharePoint.Linq.dll" />
+      <DeploymentItem filename="C:\TFS03\LINQtoSharePoint\v0.2\TestEntities\bin\Debug\TestEntities.dll" />
+      <DeploymentItem filename="C:\TFS03\LINQtoSharePoint\v0.2\TestHelpersVb\bin\Debug\TestHelpersVb.dll" />
+    </Deployment>
+    <Hosts>
+      <RunConfigData name="VS IDE">Microsoft.Samples.VisualStudio.TestTools.HostAdapters.VsIde.RunConfigData</RunConfigData>
+    </Hosts>
+    <Plugins>
+      <Plugin>Microsoft.VisualStudio.TestTools.CodeCoverage.CoveragePlugIn, Microsoft.VisualStudio.QualityTools.Plugins.CodeCoverage, PublicKeyToken=b03f5f7f11d50a3a</Plugin>
+    </Plugins>
+    <TestTypeSpecific>
+      <WebTestRunConfiguration testTypeId="4e7599fa-5ecb-43e9-a887-cd63cf72d207">
+        <Browser name="Internet Explorer 7.0">
+          <Headers>
+            <Header name="User-Agent" value="Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)" />
+            <Header name="Accept" value="*/*" />
+            <Header name="Accept-Language" value="{{$IEAcceptLanguage}}" />
+            <Header name="Accept-Encoding" value="GZIP" />
+          </Headers>
+        </Browser>
+        <Network Name="LAN" BandwidthInKbps="0" />
+      </WebTestRunConfiguration>
+    </TestTypeSpecific>
+  </TestRunConfiguration>
+  <ResultSummary outcome="Warning">
+    <Counters total="26" executed="26" passed="26" error="0" failed="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <RunInfos>
+      <RunInfo computerName="ORCASBETA1TFS" outcome="Warning" timestamp="2007-06-30T02:07:20.2737648-07:00">
+        <Text>Code coverage instrumentation warning while processing file BdsSoft.SharePoint.Linq.dll:
+Warning VSP2013 : Instrumenting this image requires it to run as a 32-bit process.  The CLR header flags have been updated to reflect this.</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+  <Times creation="2007-06-30T02:07:06.8945264-07:00" queuing="2007-06-30T02:07:22.3868032-07:00" start="2007-06-30T02:07:24.8403312-07:00" finish="2007-06-30T02:08:59.3662528-07:00" />
+  <TestDefinitions>
+    <UnitTest name="StringEquality" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="faccd0db-3e24-acb1-61d2-66a873ea4d7e">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="827a21bc-7d57-41ec-895f-d3bef54bd5a7" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="StringEquality" />
+    </UnitTest>
+    <UnitTest name="Junk" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="415f154b-8b50-f396-1e0c-6bbb7fee7e26">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="613c8a29-8ca9-4593-aff1-2dbc0bd4b82d" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Junk" />
+    </UnitTest>
+    <UnitTest name="LtLeqGtGeq" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="1106b9ad-b17b-05bf-9c65-6f403cef3fb5">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="cded1602-de46-4fe2-bba5-749e8f54e875" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="LtLeqGtGeq" />
+    </UnitTest>
+    <UnitTest name="TestWsAndSp" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="b13d590e-7b6e-75f6-7020-fcfee126b627">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="57446dea-73b9-4755-a2d2-70d1ded9b258" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="TestWsAndSp" />
+    </UnitTest>
+    <UnitTest name="MultiChoice" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="2327ede9-155d-c927-9e4f-9f5e69713e3d">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="4805e4a4-611f-4568-b96e-013a7967081f" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="MultiChoice" />
+    </UnitTest>
+    <UnitTest name="Take" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="18514234-e3dd-2071-a059-43c7bddea41c">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="795293bf-a1f1-4a7e-836b-97c0b8dbcfe1" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Take" />
+    </UnitTest>
+    <UnitTest name="LookupSubquery" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="456b5a82-ba4c-cb48-165b-b0610575a51d">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="0b428056-0eb1-4d05-a4be-a0e02e9d50b6" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="LookupSubquery" />
+    </UnitTest>
+    <UnitTest name="StartsWith" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="aed5c090-95e1-aad5-4b4a-0813c2e2e94d">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="952729a9-d434-4865-87a6-a09511589d6a" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="StartsWith" />
+    </UnitTest>
+    <UnitTest name="EmptyList" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="ac606722-6498-e3e5-9fe2-3860ff8c1741">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="4ea1c277-5ec6-4668-a1ee-48a33b5d9898" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="EmptyList" />
+    </UnitTest>
+    <UnitTest name="Ordering" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="bdbf6be5-888a-1ca1-c788-dcb8aa75ff08">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="6b3e5d54-2705-469d-ba75-ae9a32cf75af" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Ordering" />
+    </UnitTest>
+    <UnitTest name="Nullable" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="12941288-69a8-cd73-8485-bd2d1c93b939">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="79671877-7788-44c4-97b4-5c6b3e93ea0a" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Nullable" />
+    </UnitTest>
+    <UnitTest name="TestVbStrComp" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="7de9715f-f29f-5374-380a-96d0033652c6">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="c37fe653-158a-45c2-b0db-11b1e7d1e0a1" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="TestVbStrComp" />
+    </UnitTest>
+    <UnitTest name="DefaultQuery" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="96cdd5c5-2c11-c5f3-89e5-024cab3854ea">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="d5eb8591-c13a-43de-a5c9-580fcaeadd08" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="DefaultQuery" />
+    </UnitTest>
+    <UnitTest name="GetEntityById" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="08b859c4-b08f-bf9a-0619-a4e5245dffa3">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="b4d5d383-fe80-4ce2-9612-9b24c70063dd" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="GetEntityById" />
+    </UnitTest>
+    <UnitTest name="Choice" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="0e2a0454-4ed1-efe6-160b-62be912b4a94">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="784e8f0a-d01c-4f1e-bc8c-2fb22a4b939e" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Choice" />
+    </UnitTest>
+    <UnitTest name="Contains" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="a5ed2a1c-8326-bdb6-e439-ba57d3501f43">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="fd43831d-f033-4586-9c5d-ec0efa6f9659" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="Contains" />
+    </UnitTest>
+    <UnitTest name="MultiWhere" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="adac9469-730e-579e-6d5a-3b20e2a550a0">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="880da597-3b92-4946-baf2-ebfb8bdfeaa9" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="MultiWhere" />
+    </UnitTest>
+    <UnitTest name="DateTime" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="93d7e95a-b450-86f5-ee6b-a974e953b051">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="7fdee441-19b1-4532-90ff-811cc24aa77d" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="DateTime" />
+    </UnitTest>
+    <UnitTest name="LookupLazyLoad" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="50b65e17-3beb-6063-9e6a-5cc3edd5563f">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="767589dd-0669-4e87-aa2d-f622649d1873" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="LookupLazyLoad" />
+    </UnitTest>
+    <UnitTest name="ComplexProjection" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="2db087f7-d3e9-34c7-01be-277effbeb8ae">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="073c1032-17de-43ea-ae43-db4f5bcff823" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="ComplexProjection" />
+    </UnitTest>
+    <UnitTest name="AndOr" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="a20c6d2a-47fa-fb58-0657-7c0a520d52c4">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="1412b3ce-e6b1-401f-9fa2-69b7133afcec" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="AndOr" />
+    </UnitTest>
+    <UnitTest name="BoolPredicate" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="6de31613-d809-3484-0bcb-9e72596e4080">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="521b42c6-bcba-4a84-a84a-d9e916714bb1" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="BoolPredicate" />
+    </UnitTest>
+    <UnitTest name="BooleanOptimizations" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="0c0d9588-f990-77df-f6b2-0fbba542c9b5">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="e5e70c27-09b8-4514-99d2-1fc69d39585c" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="BooleanOptimizations" />
+    </UnitTest>
+    <UnitTest name="NullChecks" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="18fd18b0-c4c1-fa62-a6b2-327d9e9bfe90">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="f8a43e46-1e2c-4b87-89a5-a7dc0cf84d13" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="NullChecks" />
+    </UnitTest>
+    <UnitTest name="ProjectSingleton" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="6271ba81-aa17-f9ce-2b6c-0afcc90f3776">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="4a59f2b5-3a1e-4463-9015-25f8bc5d3e42" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="ProjectSingleton" />
+    </UnitTest>
+    <UnitTest name="TestVbStringCompare" storage="c:\tfs03\linqtosharepoint\v0.2\tests\bin\debug\tests.dll" id="b5af7462-eba9-5d80-07d8-b7ccb16134b8">
+      <Css projectStructure="" iteration="" />
+      <Owners>
+        <Owner name="" />
+      </Owners>
+      <Execution id="9e4a7c14-ede6-4e9c-8d93-9279aba10ed1" />
+      <TestMethod codeBase="C:\TFS03\LINQtoSharePoint\v0.2\Tests\bin\Debug\Tests.dll" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="Tests.UnitTests, Tests" name="TestVbStringCompare" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <TestEntries>
+    <TestEntry testId="08b859c4-b08f-bf9a-0619-a4e5245dffa3" executionId="b4d5d383-fe80-4ce2-9612-9b24c70063dd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0c0d9588-f990-77df-f6b2-0fbba542c9b5" executionId="e5e70c27-09b8-4514-99d2-1fc69d39585c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0e2a0454-4ed1-efe6-160b-62be912b4a94" executionId="784e8f0a-d01c-4f1e-bc8c-2fb22a4b939e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1106b9ad-b17b-05bf-9c65-6f403cef3fb5" executionId="cded1602-de46-4fe2-bba5-749e8f54e875" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12941288-69a8-cd73-8485-bd2d1c93b939" executionId="79671877-7788-44c4-97b4-5c6b3e93ea0a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18514234-e3dd-2071-a059-43c7bddea41c" executionId="795293bf-a1f1-4a7e-836b-97c0b8dbcfe1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18fd18b0-c4c1-fa62-a6b2-327d9e9bfe90" executionId="f8a43e46-1e2c-4b87-89a5-a7dc0cf84d13" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2327ede9-155d-c927-9e4f-9f5e69713e3d" executionId="4805e4a4-611f-4568-b96e-013a7967081f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2db087f7-d3e9-34c7-01be-277effbeb8ae" executionId="073c1032-17de-43ea-ae43-db4f5bcff823" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="415f154b-8b50-f396-1e0c-6bbb7fee7e26" executionId="613c8a29-8ca9-4593-aff1-2dbc0bd4b82d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="456b5a82-ba4c-cb48-165b-b0610575a51d" executionId="0b428056-0eb1-4d05-a4be-a0e02e9d50b6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="50b65e17-3beb-6063-9e6a-5cc3edd5563f" executionId="767589dd-0669-4e87-aa2d-f622649d1873" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6271ba81-aa17-f9ce-2b6c-0afcc90f3776" executionId="4a59f2b5-3a1e-4463-9015-25f8bc5d3e42" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6de31613-d809-3484-0bcb-9e72596e4080" executionId="521b42c6-bcba-4a84-a84a-d9e916714bb1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7de9715f-f29f-5374-380a-96d0033652c6" executionId="c37fe653-158a-45c2-b0db-11b1e7d1e0a1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="93d7e95a-b450-86f5-ee6b-a974e953b051" executionId="7fdee441-19b1-4532-90ff-811cc24aa77d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="96cdd5c5-2c11-c5f3-89e5-024cab3854ea" executionId="d5eb8591-c13a-43de-a5c9-580fcaeadd08" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a20c6d2a-47fa-fb58-0657-7c0a520d52c4" executionId="1412b3ce-e6b1-401f-9fa2-69b7133afcec" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a5ed2a1c-8326-bdb6-e439-ba57d3501f43" executionId="fd43831d-f033-4586-9c5d-ec0efa6f9659" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ac606722-6498-e3e5-9fe2-3860ff8c1741" executionId="4ea1c277-5ec6-4668-a1ee-48a33b5d9898" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="adac9469-730e-579e-6d5a-3b20e2a550a0" executionId="880da597-3b92-4946-baf2-ebfb8bdfeaa9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aed5c090-95e1-aad5-4b4a-0813c2e2e94d" executionId="952729a9-d434-4865-87a6-a09511589d6a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b13d590e-7b6e-75f6-7020-fcfee126b627" executionId="57446dea-73b9-4755-a2d2-70d1ded9b258" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b5af7462-eba9-5d80-07d8-b7ccb16134b8" executionId="9e4a7c14-ede6-4e9c-8d93-9279aba10ed1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bdbf6be5-888a-1ca1-c788-dcb8aa75ff08" executionId="6b3e5d54-2705-469d-ba75-ae9a32cf75af" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="faccd0db-3e24-acb1-61d2-66a873ea4d7e" executionId="827a21bc-7d57-41ec-895f-d3bef54bd5a7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <Results>
+    <UnitTestResult executionId="b4d5d383-fe80-4ce2-9612-9b24c70063dd" testId="08b859c4-b08f-bf9a-0619-a4e5245dffa3" testName="GetEntityById" computerName="ORCASBETA1TFS" duration="00:00:35.5622379" startTime="2007-06-30T02:07:26.4927072-07:00" endTime="2007-06-30T02:08:02.7848928-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e5e70c27-09b8-4514-99d2-1fc69d39585c" testId="0c0d9588-f990-77df-f6b2-0fbba542c9b5" testName="BooleanOptimizations" computerName="ORCASBETA1TFS" duration="00:00:02.8848417" startTime="2007-06-30T02:08:02.8049216-07:00" endTime="2007-06-30T02:08:05.7391408-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="784e8f0a-d01c-4f1e-bc8c-2fb22a4b939e" testId="0e2a0454-4ed1-efe6-160b-62be912b4a94" testName="Choice" computerName="ORCASBETA1TFS" duration="00:00:04.7145327" startTime="2007-06-30T02:08:05.7591696-07:00" endTime="2007-06-30T02:08:10.4859664-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="cded1602-de46-4fe2-bba5-749e8f54e875" testId="1106b9ad-b17b-05bf-9c65-6f403cef3fb5" testName="LtLeqGtGeq" computerName="ORCASBETA1TFS" duration="00:00:04.6680494" startTime="2007-06-30T02:08:10.4959808-07:00" endTime="2007-06-30T02:08:15.1727056-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="79671877-7788-44c4-97b4-5c6b3e93ea0a" testId="12941288-69a8-cd73-8485-bd2d1c93b939" testName="Nullable" computerName="ORCASBETA1TFS" duration="00:00:02.0445207" startTime="2007-06-30T02:08:15.2528208-07:00" endTime="2007-06-30T02:08:17.3458304-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="795293bf-a1f1-4a7e-836b-97c0b8dbcfe1" testId="18514234-e3dd-2071-a059-43c7bddea41c" testName="Take" computerName="ORCASBETA1TFS" duration="00:00:01.7404709" startTime="2007-06-30T02:08:17.3658592-07:00" endTime="2007-06-30T02:08:19.1183792-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="f8a43e46-1e2c-4b87-89a5-a7dc0cf84d13" testId="18fd18b0-c4c1-fa62-a6b2-327d9e9bfe90" testName="NullChecks" computerName="ORCASBETA1TFS" duration="00:00:00.7377496" startTime="2007-06-30T02:08:19.1384080-07:00" endTime="2007-06-30T02:08:19.8794736-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4805e4a4-611f-4568-b96e-013a7967081f" testId="2327ede9-155d-c927-9e4f-9f5e69713e3d" testName="MultiChoice" computerName="ORCASBETA1TFS" duration="00:00:00.5817203" startTime="2007-06-30T02:08:19.9095168-07:00" endTime="2007-06-30T02:08:20.5003664-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="073c1032-17de-43ea-ae43-db4f5bcff823" testId="2db087f7-d3e9-34c7-01be-277effbeb8ae" testName="ComplexProjection" computerName="ORCASBETA1TFS" duration="00:00:00.6528578" startTime="2007-06-30T02:08:20.5203952-07:00" endTime="2007-06-30T02:08:21.1813456-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="613c8a29-8ca9-4593-aff1-2dbc0bd4b82d" testId="415f154b-8b50-f396-1e0c-6bbb7fee7e26" testName="Junk" computerName="ORCASBETA1TFS" duration="00:00:01.4435602" startTime="2007-06-30T02:08:21.1913600-07:00" endTime="2007-06-30T02:08:22.6534624-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="0b428056-0eb1-4d05-a4be-a0e02e9d50b6" testId="456b5a82-ba4c-cb48-165b-b0610575a51d" testName="LookupSubquery" computerName="ORCASBETA1TFS" duration="00:00:05.2003885" startTime="2007-06-30T02:08:22.6734912-07:00" endTime="2007-06-30T02:08:27.9811232-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="767589dd-0669-4e87-aa2d-f622649d1873" testId="50b65e17-3beb-6063-9e6a-5cc3edd5563f" testName="LookupLazyLoad" computerName="ORCASBETA1TFS" duration="00:00:01.3741436" startTime="2007-06-30T02:08:28.0011520-07:00" endTime="2007-06-30T02:08:29.3931536-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4a59f2b5-3a1e-4463-9015-25f8bc5d3e42" testId="6271ba81-aa17-f9ce-2b6c-0afcc90f3776" testName="ProjectSingleton" computerName="ORCASBETA1TFS" duration="00:00:00.7237891" startTime="2007-06-30T02:08:29.4131824-07:00" endTime="2007-06-30T02:08:30.1342192-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="521b42c6-bcba-4a84-a84a-d9e916714bb1" testId="6de31613-d809-3484-0bcb-9e72596e4080" testName="BoolPredicate" computerName="ORCASBETA1TFS" duration="00:00:00.5132998" startTime="2007-06-30T02:08:30.4046080-07:00" endTime="2007-06-30T02:08:30.9453856-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="c37fe653-158a-45c2-b0db-11b1e7d1e0a1" testId="7de9715f-f29f-5374-380a-96d0033652c6" testName="TestVbStrComp" computerName="ORCASBETA1TFS" duration="00:00:00.6547924" startTime="2007-06-30T02:08:30.9554000-07:00" endTime="2007-06-30T02:08:31.6263648-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="7fdee441-19b1-4532-90ff-811cc24aa77d" testId="93d7e95a-b450-86f5-ee6b-a974e953b051" testName="DateTime" computerName="ORCASBETA1TFS" duration="00:00:00.5743185" startTime="2007-06-30T02:08:31.6363792-07:00" endTime="2007-06-30T02:08:32.2272288-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d5eb8591-c13a-43de-a5c9-580fcaeadd08" testId="96cdd5c5-2c11-c5f3-89e5-024cab3854ea" testName="DefaultQuery" computerName="ORCASBETA1TFS" duration="00:00:00.5181300" startTime="2007-06-30T02:08:32.2572720-07:00" endTime="2007-06-30T02:08:32.7780208-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="1412b3ce-e6b1-401f-9fa2-69b7133afcec" testId="a20c6d2a-47fa-fb58-0657-7c0a520d52c4" testName="AndOr" computerName="ORCASBETA1TFS" duration="00:00:01.3244823" startTime="2007-06-30T02:08:32.7880352-07:00" endTime="2007-06-30T02:08:34.1199504-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="fd43831d-f033-4586-9c5d-ec0efa6f9659" testId="a5ed2a1c-8326-bdb6-e439-ba57d3501f43" testName="Contains" computerName="ORCASBETA1TFS" duration="00:00:00.5180027" startTime="2007-06-30T02:08:34.1399792-07:00" endTime="2007-06-30T02:08:34.6607280-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4ea1c277-5ec6-4668-a1ee-48a33b5d9898" testId="ac606722-6498-e3e5-9fe2-3860ff8c1741" testName="EmptyList" computerName="ORCASBETA1TFS" duration="00:00:00.2825012" startTime="2007-06-30T02:08:34.6807568-07:00" endTime="2007-06-30T02:08:34.9811888-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="880da597-3b92-4946-baf2-ebfb8bdfeaa9" testId="adac9469-730e-579e-6d5a-3b20e2a550a0" testName="MultiWhere" computerName="ORCASBETA1TFS" duration="00:00:00.6763418" startTime="2007-06-30T02:08:34.9912032-07:00" endTime="2007-06-30T02:08:35.6721824-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="952729a9-d434-4865-87a6-a09511589d6a" testId="aed5c090-95e1-aad5-4b4a-0813c2e2e94d" testName="StartsWith" computerName="ORCASBETA1TFS" duration="00:00:00.4557154" startTime="2007-06-30T02:08:35.6821968-07:00" endTime="2007-06-30T02:08:36.1528736-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="57446dea-73b9-4755-a2d2-70d1ded9b258" testId="b13d590e-7b6e-75f6-7020-fcfee126b627" testName="TestWsAndSp" computerName="ORCASBETA1TFS" duration="00:00:16.2043712" startTime="2007-06-30T02:08:36.1628880-07:00" endTime="2007-06-30T02:08:53.5679152-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="9e4a7c14-ede6-4e9c-8d93-9279aba10ed1" testId="b5af7462-eba9-5d80-07d8-b7ccb16134b8" testName="TestVbStringCompare" computerName="ORCASBETA1TFS" duration="00:00:01.1542494" startTime="2007-06-30T02:08:53.5779296-07:00" endTime="2007-06-30T02:08:54.7295856-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6b3e5d54-2705-469d-ba75-ae9a32cf75af" testId="bdbf6be5-888a-1ca1-c788-dcb8aa75ff08" testName="Ordering" computerName="ORCASBETA1TFS" duration="00:00:00.9524109" startTime="2007-06-30T02:08:54.7496144-07:00" endTime="2007-06-30T02:08:55.7109968-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="827a21bc-7d57-41ec-895f-d3bef54bd5a7" testId="faccd0db-3e24-acb1-61d2-66a873ea4d7e" testName="StringEquality" computerName="ORCASBETA1TFS" duration="00:00:00.5518162" startTime="2007-06-30T02:08:55.7210112-07:00" endTime="2007-06-30T02:08:56.2818176-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d">
+      <Output>
+      </Output>
+    </UnitTestResult>
+  </Results>
+</TestRun>
