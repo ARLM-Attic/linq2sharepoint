@@ -1,22 +1,12 @@
-﻿/*
- * LINQ-to-SharePoint
- * http://www.codeplex.com/LINQtoSharePoint
- * 
- * Copyright Bart De Smet (C) 2007
- * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
- * 
- * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
- */
-
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SpMetal")]
-[assembly: AssemblyDescription("SharePoint List Definition Export tool for entity type creation.")]
+[assembly: AssemblyTitle("EntityGenerator")]
+[assembly: AssemblyDescription("Entity type creation library.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Bart De Smet")]
 [assembly: AssemblyProduct("LINQ to SharePoint")]
@@ -30,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("ddd88333-9489-4596-b9e3-c63cb4653fd8")]
+[assembly: Guid("a67db249-e82a-4b08-96a7-9fcf5ef90ced")]
 
 // Version information for an assembly consists of the following four values:
 //

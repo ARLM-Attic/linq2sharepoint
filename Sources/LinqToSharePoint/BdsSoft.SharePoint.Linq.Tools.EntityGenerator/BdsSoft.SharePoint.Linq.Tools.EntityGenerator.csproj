@@ -4,17 +4,19 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.20404</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3FBD2C31-0D90-42FA-BC23-CBE8A5DDE45A}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{67AA3765-542B-44BA-8B26-49402555D0B6}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BdsSoft.SharePoint.Linq.Tools.SpMetal</RootNamespace>
-    <AssemblyName>SpMetal</AssemblyName>
+    <RootNamespace>BdsSoft.SharePoint.Linq.Tools.EntityGenerator</RootNamespace>
+    <AssemblyName>BdsSoft.SharePoint.Linq.Tools.EntityGenerator</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,21 +40,33 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
     <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Args.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="EntityGenerator.cs" />
+    <Compile Include="Events.cs" />
+    <Compile Include="Field.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="List.cs" />
+    <Compile Include="Lists.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BdsSoft.SharePoint.Linq.Tools.EntityGenerator\BdsSoft.SharePoint.Linq.Tools.EntityGenerator.csproj">
-      <Project>{67AA3765-542B-44BA-8B26-49402555D0B6}</Project>
-      <Name>BdsSoft.SharePoint.Linq.Tools.EntityGenerator</Name>
+    <ProjectReference Include="..\BdsSoft.SharePoint.Linq\BdsSoft.SharePoint.Linq.csproj">
+      <Project>{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}</Project>
+      <Name>BdsSoft.SharePoint.Linq</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="key.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
