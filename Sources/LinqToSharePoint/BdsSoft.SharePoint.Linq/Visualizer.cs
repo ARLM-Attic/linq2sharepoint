@@ -19,8 +19,18 @@ using System.Windows.Forms;
 
 namespace BdsSoft.SharePoint.Linq
 {
+    /// <summary>
+    /// Windows Form for debugger visualizer.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Visualizer")]
     public partial class Visualizer : Form
     {
+        /// <summary>
+        /// Creates a visualizer form for the specified entity and the specified piece of CAML.
+        /// </summary>
+        /// <param name="entity">Entity for which the query was written.</param>
+        /// <param name="caml">CAML representing the query to be visualized.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "caml")]
         public Visualizer(string entity, string caml)
         {
             InitializeComponent();
@@ -34,6 +44,7 @@ namespace BdsSoft.SharePoint.Linq
             this.Close();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
         private void btnExecute_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Not implemented yet. Please check back later.", "LINQ to SharePoint Query Visualizer", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);

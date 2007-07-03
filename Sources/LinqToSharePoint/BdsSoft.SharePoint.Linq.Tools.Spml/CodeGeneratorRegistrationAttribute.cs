@@ -147,9 +147,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 if (GeneratesSharedDesignTimeSource)
                     childKey.SetValue("GeneratesSharedDesignTimeSource", 1);
-
             }
-
         }
 
         /// <summary>

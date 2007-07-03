@@ -245,7 +245,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Counter field. Used for primary key fields.
         /// </summary>
-        Counter = SPFieldType.Counter, //v0.2.0.0
+        Counter = SPFieldType.Counter,
 
         /// <summary>
         /// Currency field.

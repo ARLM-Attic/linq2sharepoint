@@ -22,6 +22,9 @@ using System.Xml;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
+    /// <summary>
+    /// Code generator for SPML files. Translates an SPML definition into a set of entity classes in either C# or VB, using the Entity Generator.
+    /// </summary>
     [ComVisible(true)]
     [Guid("8943CA47-BF10-4f25-9E5C-AE42A21338D9")]
     [CodeGeneratorRegistration(typeof(SpmlCodeGenerator), "C# LINQ to SharePoint Entity Class Generator", vsContextGuids.vsContextGuidVCSProject, GeneratesDesignTimeSource = true, GeneratorRegKeyName = "LINQtoSharePointGenerator")]
@@ -29,6 +32,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     [ProvideObject(typeof(SpmlCodeGenerator))]
     public class SpmlCodeGenerator : BaseCodeGeneratorWithSite
     {
+        /// <summary>
+        /// Get the default extension for the generated code file.
+        /// </summary>
+        /// <returns>The language's default language extension, prefixed with ".designer".</returns>
+        protected override string GetDefaultExtension()
+        {
+            return ".designer" + base.GetDefaultExtension();
+        }
+
+        /// <summary>
+        /// Generates code for the SPML definition that's passed in.
+        /// </summary>
+        /// <param name="inputFileContent">SPML definition.</param>
+        /// <returns>Code in the appropriate source language.</returns>
         protected override byte[] GenerateCode(string inputFileContent)
         {
             if (this.CodeGeneratorProgress != null)
@@ -98,6 +115,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     progress += step;
                 };
 
+            return GenerateCode(lists, gen);
+        }
+
+        private byte[] GenerateCode(List<string> lists, EG.EntityGenerator gen)
+        {
             CodeCompileUnit compileUnit = gen.Generate(lists.ToArray());
 
             CodeDomProvider provider = GetCodeProvider();

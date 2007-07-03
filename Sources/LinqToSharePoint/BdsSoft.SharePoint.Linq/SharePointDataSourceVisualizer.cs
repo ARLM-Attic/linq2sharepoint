@@ -19,8 +19,14 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Debugger visualizer for SharePointDataSource.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Visualizer")]
     public class SharePointDataSourceVisualizer : DialogDebuggerVisualizer
     {
+        /// <summary>
+        /// Displays the debugger visualizer.
+        /// </summary>
+        /// <param name="windowService">Window service for use in the debugger visualizer.</param>
+        /// <param name="objectProvider">Object provider to gain access to the object to be visualized.</param>
         protected override void Show(IDialogVisualizerService windowService, IVisualizerObjectProvider objectProvider)
         {
             object data = objectProvider.GetObject();
@@ -37,10 +43,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Tests the visualizer by hosting it outside of the debugger.
         /// </summary>
-        /// <param name="objectToVisualize">The object to display in the visualizer.</param>
-        public static void TestShowVisualizer(object objectToVisualize)
+        /// <param name="value">The object to display in the visualizer.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Visualizer")]
+        public static void TestShowVisualizer(object value)
         {
-            VisualizerDevelopmentHost visualizerHost = new VisualizerDevelopmentHost(objectToVisualize, typeof(SharePointDataSourceVisualizer));
+            VisualizerDevelopmentHost visualizerHost = new VisualizerDevelopmentHost(value, typeof(SharePointDataSourceVisualizer));
             visualizerHost.ShowVisualizer();
         }
     }

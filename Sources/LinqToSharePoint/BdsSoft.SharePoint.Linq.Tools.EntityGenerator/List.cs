@@ -16,20 +16,46 @@ using System.Xml;
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {
+    /// <summary>
+    /// Represents a SharePoint list with all the information required by LINQ to SharePoint.
+    /// </summary>
     public class List
     {
+        /// <summary>
+        /// List identifier.
+        /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// List name.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// List description.
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Version of the list, retrieved at entity generation time.
+        /// </summary>
         public int Version { get; set; }
+
+        /// <summary>
+        /// Relative path to the list on the SharePoint site.
+        /// </summary>
         public string Path { get; set; }
+
+        /// <summary>
+        /// List of exported list fields.
+        /// </summary>
         public List<Field> Fields { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets a List definition object from a CAML list definition.
         /// </summary>
-        /// <param name="listDefinition">SharePoint list definition.</param>
-        /// <returns></returns>
+        /// <param name="listDefinition">SharePoint list definition in CAML.</param>
+        /// <returns>List definition object for the specified list.</returns>
         public static List FromCaml(XmlNode listDefinition)
         {
             //

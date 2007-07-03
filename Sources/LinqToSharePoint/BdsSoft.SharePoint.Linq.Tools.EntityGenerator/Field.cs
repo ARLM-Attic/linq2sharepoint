@@ -17,23 +17,95 @@ using System.CodeDom;
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {
+    /// <summary>
+    /// Represents a SharePoint list field with all the information required by LINQ to SharePoint.
+    /// </summary>
     public class Field
     {
+        /// <summary>
+        /// Field identifier.
+        /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// Field name.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Field display name.
+        /// </summary>
         public string DisplayName { get; set; }
+
+        /// <summary>
+        /// Field description.
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Textual representation of the SharePoint field type.
+        /// </summary>
         public string SharePointType { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field is hidden or not.
+        /// </summary>
         public bool IsHidden { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field is read-only or not.
+        /// </summary>
         public bool IsReadOnly { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field acts as a primary key or not.
+        /// </summary>
         public bool IsPrimaryKey { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field is a calculated field or not.
+        /// </summary>
         public bool IsCalculated { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field is required or not.
+        /// </summary>
         public bool IsRequired { get; set; }
+
+        /// <summary>
+        /// Runtime type to be used in entity classes.
+        /// This value will be null in case the field type doesn't have a direct mapping to a runtime type,
+        /// e.g. when using Lookup or Choice fields. In such a case, it's up to the entity mapper to cook up
+        /// the appropriate types at a later stage.
+        /// </summary>
         public Type RuntimeType { get; set; }
+
+        /// <summary>
+        /// Field type used by LINQ to SharePoint.
+        /// </summary>
+        /// <seealso cref="SharePointType"/>
         public FieldType FieldType { get; set; }
+
+        /// <summary>
+        /// For Lookup and LookupMulti fields only. Contains the list used for the lookup.
+        /// </summary>
+        /// <seealso cref="LookupField"/>
         public string LookupList { get; set; }
+
+        /// <summary>
+        /// For Lookup and LookupMulti fields only. Contains the field in the LookupList used for the lookup.
+        /// </summary>
+        /// <seealso cref="LookupList"/>
         public string LookupField { get; set; }
+
+        /// <summary>
+        /// For Choice and MultiChoice fields only. Indicates whether or not a fill-in choice is enabled for this field.
+        /// </summary>
         public bool FillInChoiceEnabled { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public List<string> Choices { get; set; }
 
         /// <summary>

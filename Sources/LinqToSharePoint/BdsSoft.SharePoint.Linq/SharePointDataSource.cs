@@ -58,6 +58,7 @@ using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
 using System.Runtime.Serialization;
 using System.Web.Services.Protocols;
+using System.Security.Permissions;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -3037,11 +3038,10 @@ namespace BdsSoft.SharePoint.Linq
         /// Helper method to log query information before fetching results.
         /// </summary>
         /// <param name="output">Output to write log information to.</param>
-        /// <param name="list">List that's being queried.</param>
         /// <param name="where">Query predicate.</param>
         /// <param name="order">Ordering clause.</param>
         /// <param name="projection">Projection clause.</param>
-        private void DoLoggingTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
+        private static void DoLoggingTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
         {
             //
             // We'll output XML representing various CAML elements. Output should be indented for natural reading.
@@ -3642,7 +3642,9 @@ namespace BdsSoft.SharePoint.Linq
          * Debugger visualizer support will become part of the "Developer Tools Integration Toolkit" for LINQ to SharePoint.
          */
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private string _camlForDebuggerVisualizer;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private string _entityForDebuggerVisualizer;
 
         /// <summary>
@@ -3651,7 +3653,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="info"></param>
         /// <param name="context"></param>
         /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
-        public SharePointDataSource(SerializationInfo info, StreamingContext context)
+        private SharePointDataSource(SerializationInfo info, StreamingContext context)
         {
             _camlForDebuggerVisualizer = (string)info.GetValue("Caml", typeof(string));
             _entityForDebuggerVisualizer = (string)info.GetValue("Entity", typeof(string));
@@ -3663,11 +3665,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="info"></param>
         /// <param name="context"></param>
         /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             StringBuilder caml = new StringBuilder();
 
-            StringWriter sw = new StringWriter(caml);
+            StringWriter sw = new StringWriter(caml, CultureInfo.InvariantCulture);
             XmlTextWriter writer = new XmlTextWriter(sw);
             writer.Formatting = Formatting.Indented;
 
@@ -3686,9 +3689,29 @@ namespace BdsSoft.SharePoint.Linq
     [Serializable]
     public class SharePointConnectionException : Exception
     {
+        /// <summary>
+        /// Creates a SharePoint connection exception object.
+        /// </summary>
         public SharePointConnectionException() { }
+
+        /// <summary>
+        /// Creates a SharePoint connection exception object with the specified message.
+        /// </summary>
+        /// <param name="message">Exception message.</param>
         public SharePointConnectionException(string message) : base(message) { }
+
+        /// <summary>
+        /// Creates a SharePoint connection exception object with the specified message and inner exception.
+        /// </summary>
+        /// <param name="message">Exception message.</param>
+        /// <param name="inner">Inner exception.</param>
         public SharePointConnectionException(string message, Exception inner) : base(message, inner) { }
+
+        /// <summary>
+        /// Creates a SharePoint connection exception object from serialization information.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Context for serialization.</param>
         protected SharePointConnectionException(
           SerializationInfo info,
           StreamingContext context)

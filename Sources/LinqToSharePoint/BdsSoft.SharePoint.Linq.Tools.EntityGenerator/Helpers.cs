@@ -15,6 +15,9 @@ using System.Text;
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {
+    /// <summary>
+    /// Set of helper methods used in code generation.
+    /// </summary>
     internal static class Helpers
     {
         /// <summary>
@@ -53,16 +56,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 }
             }
 
-            /* <ADD Version="0.1.3"> */
-
             //
             // Check for starting with digit case.
             //
             string res = sb.ToString();
             if (res.Length != 0 && char.IsDigit(res[0]))
                 res = '_' + res;
-
-            /* </ADD> */
 
             return res;
         }
