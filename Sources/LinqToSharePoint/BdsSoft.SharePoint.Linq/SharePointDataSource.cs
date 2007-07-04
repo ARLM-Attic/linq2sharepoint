@@ -32,6 +32,7 @@
  *         Support for Now and Today elements
  *         Support for DateRangesOverlap
  *         Multiple where predicates are supported
+ * 0.2.1 - This class is obsolete. SharePointDataContext and SharePointDataList<T> replace it.
  * 
  * Known issues:
  * 
@@ -68,6 +69,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <typeparam name="T">Entity type for the underlying SharePoint list items.</typeparam>
     [DebuggerVisualizer(typeof(SharePointDataSourceVisualizer))]
     [Serializable]
+    [Obsolete("As of 0.2.1 this class is obsolete. Use SharePointDataList<T> instead.", true)]
     public sealed class SharePointDataSource<T> : IOrderedQueryable<T>, IDisposable, ISerializable
     {
         #region Private members

@@ -11,7 +11,7 @@
 /*
  * Version history:
  *
- * 0.2.1 - Introduction of SharePointListSource<T> and SharePointListQuery<T>
+ * 0.2.1 - Introduction of SharePointListSource<T>
  */
 
 using System;
@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
 using System.Collections;
+using System.Reflection;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -27,6 +28,7 @@ namespace BdsSoft.SharePoint.Linq
     /// Data source object for querying of a SharePoint list as specified by <typeparamref name="T">T</typeparamref>.
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
     public class SharePointListSource<T> : IOrderedQueryable<T> where T : SharePointListEntity
     {
         /// <summary>
@@ -43,33 +45,17 @@ namespace BdsSoft.SharePoint.Linq
             _context = context;
         }
 
-        /// <summary>
-        /// Creates a query for the list source.
-        /// </summary>
-        /// <typeparam name="TElement">Type of the query result objects.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Query object representing the list query.</returns>
-        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        {
-            return new SharePointListQuery<TElement>(_context, expression);
-        }
+        #region Properties
 
         /// <summary>
-        /// Gets all entity objects from the SharePoint list.
+        /// Gets the SharePoint data context object used to connect to this list.
         /// </summary>
-        /// <returns>All entity objects from the SharePoint list.</returns>
-        public IEnumerator<T> GetEnumerator()
+        public SharePointDataContext Context
         {
-            return _context.ExecuteQuery<T>(this.Expression).GetEnumerator();
-        }
-
-        /// <summary>
-        /// Gets all entity objects from the SharePoint list.
-        /// </summary>
-        /// <returns>All entity objects from the SharePoint list.</returns>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _context.ExecuteQuery<T>(this.Expression).GetEnumerator();
+            get
+            {
+                return _context;
+            }
         }
 
         /// <summary>
@@ -94,6 +80,37 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        #endregion
+
+        /// <summary>
+        /// Creates a query for the list source.
+        /// </summary>
+        /// <typeparam name="TElement">Type of the query result objects.</typeparam>
+        /// <param name="expression">Expression representing the query.</param>
+        /// <returns>Query object representing the list query.</returns>
+        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
+        {
+            return new SharePointListQuery<TElement>(_context, expression);
+        }
+
+        /// <summary>
+        /// Gets all entity objects from the SharePoint list.
+        /// </summary>
+        /// <returns>All entity objects from the SharePoint list.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _context.ExecuteQuery<T>(this.Expression);
+        }
+
+        /// <summary>
+        /// Gets all entity objects from the SharePoint list.
+        /// </summary>
+        /// <returns>All entity objects from the SharePoint list.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _context.ExecuteQuery<T>(this.Expression);
+        }
+
         /// <summary>
         /// Executes the query and returns a single result of the specified type.
         /// </summary>
@@ -102,7 +119,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Singleton query result object.</returns>
         public TResult Execute<TResult>(Expression expression)
         {
-            return _context.ExecuteQuery<TResult>(expression).Single();
+            IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
+            if (res.MoveNext())
+                return res.Current;
+            else
+                throw new InvalidOperationException("Query did not return any results.");
         }
 
         #region Not implemented
@@ -118,107 +139,93 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
-    }
 
-    /// <summary>
-    /// Represents a SharePoint list query.
-    /// </summary>
-    /// <typeparam name="T">Type of the query result objects.</typeparam>
-    class SharePointListQuery<T> : IOrderedQueryable<T>
-    {
-        /// <summary>
-        /// Data context object used to connect to SharePoint.
-        /// </summary>
-        private SharePointDataContext _context;
+        #region Support for entity retrieval by key value
 
         /// <summary>
-        /// Expression representing the query.
+        /// Cache of entities retrieved using a *ById method.
         /// </summary>
-        private Expression _expression;
+        private Dictionary<int, T> cache = new Dictionary<int, T>();
 
         /// <summary>
-        /// Creates a query object for querying a SharePoint list.
+        /// Retrieves an entity by the given ID (primary key field).
         /// </summary>
-        /// <param name="context">Data context object used to connect to SharePoint.</param>
-        /// <param name="expression">Expression representing the query.</param>
-        public SharePointListQuery(SharePointDataContext context, Expression expression)
+        /// <param name="id">ID of the entity to retrieve.</param>
+        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
+        /// <returns>Entity object with the given ID; null if not found.</returns>
+        public T GetEntityById(int id, bool fromCache)
         {
-            _context = context;
-            _expression = expression;
-        }
+            //
+            // Look in cache first.
+            //
+            if (fromCache && cache.ContainsKey(id))
+                return cache[id];
 
-        /// <summary>
-        /// Creates a query on top of the existing query. Allows incremental query definition as done in LINQ.
-        /// </summary>
-        /// <typeparam name="TElement">Type of the query result objects.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Query object representing the combined list query.</returns>
-        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        {
-            return new SharePointListQuery<TElement>(_context, expression);
-        }
+            FieldAttribute pkField = null;
+            PropertyInfo pkProp = null;
 
-        /// <summary>
-        /// Triggers the query and fetches results.
-        /// </summary>
-        /// <returns>Query results.</returns>
-        public IEnumerator<T> GetEnumerator()
-        {
-            return _context.ExecuteQuery<T>(_expression).GetEnumerator();
-        }
-
-        /// <summary>
-        /// Triggers the query and fetches results.
-        /// </summary>
-        /// <returns>Query results.</returns>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _context.ExecuteQuery<T>(_expression).GetEnumerator();
-        }
-
-        /// <summary>
-        /// Gets the type of the elements returned by the query.
-        /// </summary>
-        public Type ElementType
-        {
-            get
+            //
+            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
+            //
+            foreach (PropertyInfo property in typeof(T).GetProperties())
             {
-                return typeof(T);
+                FieldAttribute field = Helpers.GetFieldAttribute(property);
+                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
+                {
+                    if (pkField != null)
+                        throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
+
+                    pkField = field;
+                    pkProp = property;
+                    break;
+                }
             }
+
+            //
+            // Primary key field should be present in order to make the query.
+            //
+            if (pkField == null || pkProp == null)
+                throw new InvalidOperationException("No primary key field found on entity type.");
+
+            //
+            // Build a manual query representing this.Where(e => e.ID = id) with ID property being variable, based on pkProp.
+            //
+            ParameterExpression parameter = Expression.Parameter(typeof(T), "e");
+            MemberExpression pk = Expression.Property(parameter, pkProp);
+            BinaryExpression byID = Expression.Equal(pk, Expression.Constant(id, typeof(int)));
+            Expression<Func<T, bool>> filter = Expression.Lambda<Func<T, bool>>(byID, parameter);
+
+            //
+            // Return the result if found, null otherwise.
+            // Remark: AsEnumerable() is required because calling SingleOrDefualt on the IQueryable directly triggers the Execute method (not implemented).
+            //
+            T result = Queryable.Where<T>(this, filter).AsEnumerable().SingleOrDefault();
+
+            //
+            // Cache the result and return it.
+            //
+            cache[id] = result;
+            return result;
         }
 
         /// <summary>
-        /// Gets the expression representing the query.
+        /// Retrieves a list of entities by the given set of IDs (primary key field).
         /// </summary>
-        public Expression Expression
+        /// <param name="ids">IDs of the entities to retrieve.</param>
+        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
+        /// <returns>List of entity objects with the given IDs; null if not found.</returns>
+        public IList<T> GetEntitiesById(int[] ids, bool fromCache)
         {
-            get
-            {
-                return _expression;
-            }
-        }
-
-        /// <summary>
-        /// Executes the query and returns a single result of the specified type.
-        /// </summary>
-        /// <typeparam name="TResult">Type of the query result object.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Singleton query result object.</returns>
-        public TResult Execute<TResult>(Expression expression)
-        {
-            return _context.ExecuteQuery<TResult>(expression).Single();
-        }
-
-        #region Not implemented
-
-        public IQueryable CreateQuery(Expression expression)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-
-        public object Execute(Expression expression)
-        {
-            throw new Exception("The method or operation is not implemented.");
+            //
+            // TODO
+            //
+            // Replace naive implementation with <Or>-based query on identifier field, excluding items already in cache.
+            // This implementation will launch a lot of small queries for each individual referenced entity.
+            //
+            List<T> lst = new List<T>();
+            foreach (int id in ids)
+                lst.Add(GetEntityById(id, fromCache));
+            return lst;
         }
 
         #endregion

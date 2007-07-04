@@ -30,19 +30,19 @@ namespace Demo
 
         static void Main(string[] args)
         {
-            SharePointDataSource<Demo> users = GetWsDataSource<Demo>(); //GetSpDataSource<Demo>();
-            users.Log = Console.Out;
-            users.CheckListVersion = false;
+            var users = GetWsDataSource<Demo>(); //GetSpDataSource<Demo>();
+            users.Context.Log = Console.Out;
+            users.Context.CheckListVersion = false;
 
 
-            SharePointDataSource<Demo2> demo2 = GetWsDataSource<Demo2>();
-            demo2.Log = Console.Out;
-            demo2.CheckListVersion = false;
+            var demo2 = GetWsDataSource<Demo2>();
+            demo2.Context.Log = Console.Out;
+            demo2.Context.CheckListVersion = false;
 
 
-            SharePointDataSource<Users2> users2 = GetWsDataSource<Users2>();
-            users2.Log = Console.Out;
-            users2.CheckListVersion = false;
+            var users2 = GetWsDataSource<Users2>();
+            users2.Context.Log = Console.Out;
+            users2.Context.CheckListVersion = false;
 
 
             Console.WriteLine("BY ID 1");
@@ -874,18 +874,16 @@ namespace Demo
             return false;
         }
 
-        static SharePointDataSource<T> GetWsDataSource<T>()
+        static SharePointListSource<T> GetWsDataSource<T>() where T : SharePointListEntity
         {
-            SharePointDataSource<T> src = new SharePointDataSource<T>(new Uri(URL));
-            src.Credentials = CredentialCache.DefaultNetworkCredentials;
+            SharePointListSource<T> src = new SharePointListSource<T>(new SharePointDataContext(new Uri(URL)));
+            src.Context.Credentials = CredentialCache.DefaultNetworkCredentials;
             return src;
         }
 
-        static SharePointDataSource<T> GetSpDataSource<T>()
+        static SharePointListSource<T> GetSpDataSource<T>() where T : SharePointListEntity
         {
-            SPSite s = new SPSite(URL);
-            //SPList l = s.RootWeb.GetList("/Lists/" + list);
-            return new SharePointDataSource<T>(s);
+            return new SharePointListSource<T>(new SharePointDataContext(new SPSite(URL)));
         }
     }
 }

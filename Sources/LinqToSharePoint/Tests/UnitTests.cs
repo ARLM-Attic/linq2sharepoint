@@ -18,6 +18,7 @@ using BdsSoft.SharePoint.Linq;
 using Test = Tests.SharePointListEntityTest;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Net;
 
 namespace Tests
 {
@@ -29,13 +30,21 @@ namespace Tests
     {
         private SPSite site;
         private SPWeb web;
-        private SPList lst;
         private Uri url = new Uri("http://wss3demo");
+        private SharePointDataContext spContext;
+        private SharePointDataContext wsContext;
 
         public UnitTests()
         {
             site = new SPSite(url.ToString());
             web = site.RootWeb;
+
+            spContext = new SharePointDataContext(site);
+            spContext.CheckListVersion = false;
+
+            wsContext = new SharePointDataContext(url);
+            wsContext.CheckListVersion = false;
+            wsContext.Credentials = CredentialCache.DefaultNetworkCredentials;
         }
 
         private TestContext testContextInstance;
@@ -84,13 +93,12 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Empty list test.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
             var res1 = (from p in src select p).AsEnumerable();
 
             Assert.IsTrue(res1.Count() == 0, "Query on empty list did return results.");
@@ -102,7 +110,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -113,8 +121,7 @@ namespace Tests
             //
             // Test default query.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
             var res1 = (from p in src select p).AsEnumerable();
 
             Assert.IsTrue(res1.Count() == 1, "Query did not return results.");
@@ -126,7 +133,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -137,8 +144,7 @@ namespace Tests
             //
             // Get entity by id.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
             People _p1 = src.GetEntityById(1, false);
             Assert.IsTrue(p1.Equals(_p1), "Invalid entity returned by GetEntityById method");
         }
@@ -149,7 +155,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -162,8 +168,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Using ==
@@ -215,7 +220,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -228,8 +233,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Gt
@@ -270,7 +274,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -283,8 +287,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Test queries.
@@ -299,7 +302,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -314,8 +317,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Test queries.
@@ -335,7 +337,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -348,8 +350,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // StartsWith empty string.
@@ -373,7 +374,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -386,8 +387,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Contains empty string.
@@ -411,7 +411,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -424,8 +424,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Test queries.
@@ -458,7 +457,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -471,8 +470,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Projections.
@@ -487,7 +485,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -500,8 +498,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Complex projection. Should trigger recursive parsing of the projection expression to find view fields.
@@ -534,7 +531,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -547,8 +544,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Take operation.
@@ -567,7 +563,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -586,8 +582,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Ascending.
@@ -614,7 +609,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -633,8 +628,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // And.
@@ -669,7 +663,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -688,8 +682,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Optimize.
@@ -708,7 +701,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -721,8 +714,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Multipe where clauses.
@@ -752,7 +744,7 @@ namespace Tests
             //
             // Create list.
             //
-            SPList lst = Test.CreateList<ChoiceTest>(site.RootWeb);
+            var lst = Test.CreateList<ChoiceTest>(site.RootWeb);
 
             //
             // Add fields.
@@ -781,8 +773,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<ChoiceTest> src = new SharePointDataSource<ChoiceTest>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<ChoiceTest>(spContext);
 
             //
             // Queries.
@@ -801,7 +792,7 @@ namespace Tests
             //
             // Create list.
             //
-            SPList lst = Test.CreateList<ChoiceTest2>(site.RootWeb);
+            var lst = Test.CreateList<ChoiceTest2>(site.RootWeb);
 
             //
             // Add fields.
@@ -838,8 +829,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<ChoiceTest2> src = new SharePointDataSource<ChoiceTest2>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<ChoiceTest2>(spContext);
 
             //
             // Queries.
@@ -868,8 +858,7 @@ namespace Tests
             //
             // Parent source.
             //
-            SharePointDataSource<LookupParent> src = new SharePointDataSource<LookupParent>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<LookupParent>(spContext);
 
             //
             // Subqueries.
@@ -896,8 +885,7 @@ namespace Tests
             //
             // Parent source.
             //
-            SharePointDataSource<LookupParent> src = new SharePointDataSource<LookupParent>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<LookupParent>(spContext);
 
             //
             // Subqueries.
@@ -993,8 +981,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<DateTimeTest> src = new SharePointDataSource<DateTimeTest>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<DateTimeTest>(spContext);
 
             //
             // Queries.
@@ -1036,11 +1023,8 @@ namespace Tests
             //
             // Sources.
             //
-            SharePointDataSource<People> sp = new SharePointDataSource<People>(site);
-            sp.CheckListVersion = false;
-
-            SharePointDataSource<People> ws = new SharePointDataSource<People>(url);
-            ws.CheckListVersion = false;
+            var sp = new SharePointListSource<People>(spContext);
+            var ws = new SharePointListSource<People>(wsContext);
             
             //
             // Test.
@@ -1094,7 +1078,7 @@ namespace Tests
             Assert.IsTrue(res.Count() == 1 && res.First().FirstName == "Bart", "Visual Basic string compare parse failure in query predicate.");
         }
 
-        private static void AssertWsEqualsSp<T>(SharePointDataSource<T> ws, SharePointDataSource<T> sp, Expression<Func<T, bool>> predicate, string message)
+        private static void AssertWsEqualsSp<T>(IQueryable<T> ws, IQueryable<T> sp, Expression<Func<T, bool>> predicate, string message)
         {
             Assert.IsTrue(ws.Where(predicate).AsEnumerable().SequenceEqual(sp.Where(predicate).AsEnumerable()), message);
         }
@@ -1105,7 +1089,7 @@ namespace Tests
             //
             // Create list People.
             //
-            lst = Test.Create<People>(site.RootWeb);
+            var lst = Test.Create<People>(site.RootWeb);
 
             //
             // Add items.
@@ -1118,8 +1102,7 @@ namespace Tests
             //
             // List source.
             //
-            SharePointDataSource<People> src = new SharePointDataSource<People>(site);
-            src.CheckListVersion = false;
+            var src = new SharePointListSource<People>(spContext);
 
             //
             // Test.
@@ -1136,13 +1119,13 @@ namespace Tests
              */
         }
 
-        private static void AssertWhere<T>(SharePointDataSource<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
+        private static void AssertWhere<T>(IQueryable<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
         {
             IEnumerable<T> res = src.Where<T>(predicate).Select(e => e).AsEnumerable();
             Assert.IsTrue(res.Count() == expectedCount && res.All(predicate.Compile()), message);
         }
 
-        private static void AssertProject<T, R>(SharePointDataSource<T> src, Expression<Func<T, R>> selector, IEnumerable<R> results, string message)
+        private static void AssertProject<T, R>(IQueryable<T> src, Expression<Func<T, R>> selector, IEnumerable<R> results, string message)
         {
             IEnumerable<R> res = src.Select(selector).AsEnumerable();
             Assert.IsTrue(res.SequenceEqual(results));

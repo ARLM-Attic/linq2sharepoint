@@ -20,6 +20,8 @@ using System.Linq;
 using System.Text;
 using Microsoft.SharePoint;
 using System.Linq.Expressions;
+using System.Net;
+using System.IO;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -28,6 +30,10 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     public class SharePointDataContext : IDisposable
     {
+        #region Private members
+
+        #region Connection information
+
         /// <summary>
         /// Web services URI to connect to SharePoint.
         /// Will be null when using the SharePoint object model instead of web services.
@@ -38,18 +44,39 @@ namespace BdsSoft.SharePoint.Linq
         /// Web services proxy object to connect to SharePoint.
         /// Will be null when using the SharePoint object model instead of web services.
         /// </summary>
-        private Lists _wsProxy;
+        internal Lists _wsProxy;
 
         /// <summary>
         /// SharePoint site object to connect to SharePoint.
         /// Will be null when using web services instead of the SharePoint object model.
         /// </summary>
-        private SPSite _site;
+        internal SPSite _site;
+
+        #endregion
 
         /// <summary>
         /// Dictionary of SharePointListSource objects for entities. The key represents the entity type, the value the SharePointListSource object.
         /// </summary>
         private Dictionary<Type, object> _lists = new Dictionary<Type, object>();
+
+        /// <summary>
+        /// Logger object to report information about the query when executing.
+        /// </summary>
+        private TextWriter _log;
+
+        /// <summary>
+        /// Indicates whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
+        /// </summary>
+        private bool _checkVersion = true;
+
+        /// <summary>
+        /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
+        /// </summary>
+        private bool _enforceLookupFieldUniqueness = true;
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Create a data context object using the SharePoint web services to connect to SharePoint.
@@ -71,6 +98,10 @@ namespace BdsSoft.SharePoint.Linq
         {
             _site = site;
         }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets the web services URI used to connect to SharePoint.
@@ -98,6 +129,58 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique (on by default).
+        /// </summary>
+        /// <remarks>WARNING! Misuse of this property can cause invalid query results to be produced.</remarks>
+        public bool EnforceLookupFieldUniqueness
+        {
+            get { return _enforceLookupFieldUniqueness; }
+            set { _enforceLookupFieldUniqueness = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets a logger object to report information about the query when executing.
+        /// </summary>
+        public TextWriter Log
+        {
+            get { return _log; }
+            set { _log = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "CheckList")]
+        public bool CheckListVersion
+        {
+            get { return _checkVersion; }
+            set { _checkVersion = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the network credentials to connect to the SharePoint web services.
+        /// </summary>
+        public ICredentials Credentials
+        {
+            get
+            {
+                if (_wsProxy == null)
+                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                else
+                    return _wsProxy.Credentials;
+            }
+            set
+            {
+                if (_wsProxy == null)
+                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                else
+                    _wsProxy.Credentials = value;
+            }
+        }
+
+        #endregion
+
+        /// <summary>
         /// Retrieves a list source object for the entity as specified by <typeparamref name="T">T</typeparamref>.
         /// </summary>
         /// <typeparam name="T">Entity type to get a list source object for.</typeparam>
@@ -119,11 +202,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <typeparam name="T">Type for the result objects.</typeparam>
         /// <param name="expression">Expression representing the query.</param>
         /// <returns>Query results.</returns>
-        public IEnumerable<T> ExecuteQuery<T>(Expression expression)
+        public IEnumerator<T> ExecuteQuery<T>(Expression expression)
         {
-            CamlQuery query = CamlQuery.Parse(expression);
+            CamlQuery query = CamlQuery.Parse(expression, this);
 
-            yield break;
+            return query.Execute<T>();
         }
 
         #region Dispose pattern implementation
