@@ -20,6 +20,7 @@ namespace BdsSoft.SharePoint.Linq
     /// Debugger visualizer for SharePointDataSource.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Visualizer")]
+    [Obsolete("As of 0.2.1 this class is obsolete. Use SharePointDataList<T> and the corresponding visualizer instead.")]
     public class SharePointDataSourceVisualizer : DialogDebuggerVisualizer
     {
         /// <summary>

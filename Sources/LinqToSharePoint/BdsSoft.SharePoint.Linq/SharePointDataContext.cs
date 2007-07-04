@@ -204,7 +204,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query results.</returns>
         public IEnumerator<T> ExecuteQuery<T>(Expression expression)
         {
-            CamlQuery query = CamlQuery.Parse(expression, this);
+            CamlQuery query = CamlQuery.Parse(expression);
 
             return query.Execute<T>();
         }

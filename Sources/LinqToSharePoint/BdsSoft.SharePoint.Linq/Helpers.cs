@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.IO;
+using System.Xml;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -56,6 +58,47 @@ namespace BdsSoft.SharePoint.Linq
                 return la[0];
             else
                 throw new InvalidOperationException("Missing ListAttribute on the entity type.");
+        }
+
+        /// <summary>
+        /// Helper method to log query information before fetching results.
+        /// </summary>
+        /// <param name="output">Output to write log information to.</param>
+        /// <param name="where">Query predicate.</param>
+        /// <param name="order">Ordering clause.</param>
+        /// <param name="projection">Projection clause.</param>
+        internal static void LogTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
+        {
+            //
+            // We'll output XML representing various CAML elements. Output should be indented for natural reading.
+            //
+            XmlTextWriter xw = new XmlTextWriter(output);
+            xw.Formatting = Formatting.Indented;
+
+            //
+            // Write the query, including the predicate and the ordering element.
+            //
+            xw.WriteStartElement("Query");
+            if (where != null && where.ChildNodes.Count != 0)
+                where.WriteTo(xw);
+            if (order != null)
+                order.WriteTo(xw);
+            xw.WriteEndElement();
+
+            //
+            // If a projection clause is present, we'll print that too.
+            //
+            if (projection != null)
+            {
+                XmlDocument projectDoc = new XmlDocument();
+                projectDoc.LoadXml(projection.OuterXml);
+                projectDoc.Save(xw);
+            }
+
+            //
+            // Flush output.
+            //
+            output.Flush();
         }
     }
 }
