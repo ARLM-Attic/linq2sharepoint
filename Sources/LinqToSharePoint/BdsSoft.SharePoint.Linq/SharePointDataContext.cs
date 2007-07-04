@@ -121,33 +121,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query results.</returns>
         public IEnumerable<T> ExecuteQuery<T>(Expression expression)
         {
-            Query query = Parse(expression);
+            CamlQuery query = CamlQuery.Parse(expression);
 
             yield break;
-        }
-
-        private Query Parse(Expression expression)
-        {
-            MethodCallExpression mce = expression as MethodCallExpression;
-            ConstantExpression ce = expression as ConstantExpression;
-
-            if (mce != null)
-            {
-                Query q = Parse(mce.Arguments[0]);
-                Console.WriteLine(mce.Method.Name);
-                return q;
-            }
-            else if (ce != null)
-            {
-                Type t = ce.Value.GetType();
-                if (t.GetGenericTypeDefinition() == typeof(SharePointListSource<>))
-                {
-                    Type entityType = t.GetGenericArguments()[0];
-                    return new Query(entityType);
-                }
-            }
-
-            throw new Exception("Bang!");
         }
 
         #region Dispose pattern implementation
@@ -184,12 +160,5 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
-    }
-
-    internal class Query
-    {
-        public Query(Type entityType)
-        {
-        }
     }
 }

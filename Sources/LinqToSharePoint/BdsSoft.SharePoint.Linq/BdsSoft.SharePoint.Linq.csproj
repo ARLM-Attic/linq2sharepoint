@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="CamlMethods.cs" />
+    <Compile Include="CamlQuery.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Lists.cs">
       <SubType>Component</SubType>
