@@ -14,12 +14,29 @@ namespace Junkyard
     class Program
     {
         static void Main(string[] args)
-        {
+        {   
+            var src = new SharePointDataContext(new Uri("http://wss3demo"));
+            /*
+            var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
+            foreach (var t in res)
+                ;
+
+            var res2 = from t in src.GetList<Test>() select t;
+            foreach (var t in res2)
+                ;
+
+            var res3 = (from t in src.GetList<Test>() select t).First();
+             */
+
+            var res4 = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName }).First();
+            
+            /*
             SPSite site = new SPSite("http://wss3demo");
 
             SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);
             var res = from t in lst where t.Age >= 24 orderby t.FirstName descending select new { Name = t.FirstName + " " + t.LastName };
             SharePointDataSourceVisualizer.TestShowVisualizer(res);
+             */
 
             //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
             //SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));

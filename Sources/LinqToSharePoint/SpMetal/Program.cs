@@ -89,7 +89,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Generate code in the appropriate language.
             //
-            CodeCompileUnit compileUnit = gen.Generate(a.List);
+            CodeCompileUnit compileUnit = gen.Generate(null, a.List);
             CodeDomProvider cdp = CodeDomProvider.CreateProvider(a.Language);
             StringBuilder code = new StringBuilder();
             TextWriter tw = new StringWriter(code);

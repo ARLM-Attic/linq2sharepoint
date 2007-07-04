@@ -66,6 +66,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             doc.LoadXml(inputFileContent);
             XmlElement root = doc["SharePointDataContext"];
             string url = root.Attributes["Url"].InnerText;
+            string name = root.Attributes["Name"].InnerText;
             List<string> lists = new List<string>();
             foreach (XmlNode list in root["Lists"].ChildNodes)
                 lists.Add(list.Attributes["Name"].InnerText);
@@ -115,12 +116,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     progress += step;
                 };
 
-            return GenerateCode(lists, gen);
+            return GenerateCode(name, lists, gen);
         }
 
-        private byte[] GenerateCode(List<string> lists, EG.EntityGenerator gen)
+        private byte[] GenerateCode(string contextName, List<string> lists, EG.EntityGenerator gen)
         {
-            CodeCompileUnit compileUnit = gen.Generate(lists.ToArray());
+            CodeCompileUnit compileUnit = gen.Generate(contextName, lists.ToArray());
 
             CodeDomProvider provider = GetCodeProvider();
             StringBuilder code = new StringBuilder();

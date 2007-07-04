@@ -13,6 +13,7 @@
  * 
  * 0.2.0 - Support for entity types deriving from SharePointEntityType
  *         Support for Lookup fields and lazy loading.
+ * 0.2.1 - Event model.
  * 
  */
 
@@ -20,13 +21,14 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 namespace BdsSoft.SharePoint.Linq
 {
     /// <summary>
     /// Base class for entities used in LINQ to SharePoint.
     /// </summary>
-    public class SharePointListEntity
+    public class SharePointListEntity : INotifyPropertyChanged, INotifyPropertyChanging
     {
         /// <summary>
         /// Dictionary of fields with associated values for an entity instance.
@@ -84,8 +86,42 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="value">Value to be assigned to the field.</param>
         public void SetValue(string field, object value)
         {
+            OnPropertyChanging(field);
+
             fields[field] = value;
+
+            OnPropertyChanged(field);
         }
+
+        /// <summary>
+        /// Raised before a property value is changed.
+        /// </summary>
+        /// <param name="propertyName">Name of the changing property.</param>
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if (this.PropertyChanging != null)
+                this.PropertyChanging(this, new PropertyChangingEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Raised after a property value has been changed.
+        /// </summary>
+        /// <param name="propertyName">Name of the changed property.</param>
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Notifies clients that a property value is changing.
+        /// </summary>
+        public event PropertyChangingEventHandler PropertyChanging;
+
+        /// <summary>
+        /// Notifies clients that a property value has changed.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     /// <summary>
