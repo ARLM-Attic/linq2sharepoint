@@ -153,6 +153,18 @@ namespace BdsSoft.SharePoint.Linq
         private string _entityForDebuggerVisualizer;
 
         /// <summary>
+        /// LINQ query.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
+        private string _linqForDebuggerVisualizer;
+
+        /// <summary>
+        /// Error collection.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
+        private ParseErrorCollection _errorsForDebuggerVisualizer;
+
+        /// <summary>
         /// Constructor to support debugger visualizers. Not for direct use in end-user code.
         /// </summary>
         /// <param name="info"></param>
@@ -161,7 +173,9 @@ namespace BdsSoft.SharePoint.Linq
         private SharePointListQuery(SerializationInfo info, StreamingContext context)
         {
             _camlForDebuggerVisualizer = (string)info.GetValue("Caml", typeof(string));
+            _linqForDebuggerVisualizer = (string)info.GetValue("Linq", typeof(string));
             _entityForDebuggerVisualizer = (string)info.GetValue("Entity", typeof(string));
+            _errorsForDebuggerVisualizer = (ParseErrorCollection)info.GetValue("Errors", typeof(ParseErrorCollection));
         }
 
         /// <summary>
@@ -176,9 +190,9 @@ namespace BdsSoft.SharePoint.Linq
             CamlQuery query = null;
             try
             {
-                query = CamlQuery.Parse(_expression); //TODO: can throw exceptions
+                query = CamlQuery.Parse(_expression, true); //TODO: can throw exceptions
             }
-            catch (Exception ex)
+            catch
             {
                 info.AddValue("Caml", null);
                 info.AddValue("Entity", null); //TODO: get the entity name
@@ -195,6 +209,12 @@ namespace BdsSoft.SharePoint.Linq
 
             info.AddValue("Caml", caml.ToString());
             info.AddValue("Entity", query._entityType.Name);
+
+            if (query._errors != null)
+            {
+                info.AddValue("Errors", query._errors);
+                info.AddValue("Linq", query._errors.Expression);
+            }
         }
 
         #endregion

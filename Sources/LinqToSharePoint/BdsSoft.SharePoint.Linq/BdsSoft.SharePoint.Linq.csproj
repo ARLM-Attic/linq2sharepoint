@@ -71,7 +71,7 @@
     <Compile Include="Old\SharePointDataSourceVisualizer.cs" />
     <Compile Include="SharePointListEntity.cs" />
     <Compile Include="SharePointListQuery.cs" />
-    <Compile Include="SharePointListSource.cs" />
+    <Compile Include="SharePointList.cs" />
     <Compile Include="SharePointListQueryVisualizer.cs" />
     <Compile Include="SharePointListQueryVisualizerForm.cs">
       <SubType>Form</SubType>

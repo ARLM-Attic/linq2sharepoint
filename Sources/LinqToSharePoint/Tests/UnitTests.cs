@@ -98,7 +98,7 @@ namespace Tests
             //
             // Empty list test.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
             var res1 = (from p in src select p).AsEnumerable();
 
             Assert.IsTrue(res1.Count() == 0, "Query on empty list did return results.");
@@ -121,7 +121,7 @@ namespace Tests
             //
             // Test default query.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
             var res1 = (from p in src select p).AsEnumerable();
 
             Assert.IsTrue(res1.Count() == 1, "Query did not return results.");
@@ -144,7 +144,7 @@ namespace Tests
             //
             // Get entity by id.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
             People _p1 = src.GetEntityById(1, false);
             Assert.IsTrue(p1.Equals(_p1), "Invalid entity returned by GetEntityById method");
         }
@@ -168,7 +168,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Using ==
@@ -233,7 +233,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Gt
@@ -287,7 +287,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Test queries.
@@ -317,7 +317,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Test queries.
@@ -350,7 +350,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // StartsWith empty string.
@@ -387,7 +387,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Contains empty string.
@@ -424,7 +424,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Test queries.
@@ -470,7 +470,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Projections.
@@ -498,7 +498,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Complex projection. Should trigger recursive parsing of the projection expression to find view fields.
@@ -544,7 +544,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Take operation.
@@ -582,7 +582,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Ascending.
@@ -628,7 +628,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // And.
@@ -682,7 +682,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Optimize.
@@ -714,7 +714,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Multipe where clauses.
@@ -773,7 +773,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<ChoiceTest>(spContext);
+            var src = new SharePointList<ChoiceTest>(spContext);
 
             //
             // Queries.
@@ -829,7 +829,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<ChoiceTest2>(spContext);
+            var src = new SharePointList<ChoiceTest2>(spContext);
 
             //
             // Queries.
@@ -858,7 +858,7 @@ namespace Tests
             //
             // Parent source.
             //
-            var src = new SharePointListSource<LookupParent>(spContext);
+            var src = new SharePointList<LookupParent>(spContext);
 
             //
             // Subqueries.
@@ -885,7 +885,7 @@ namespace Tests
             //
             // Parent source.
             //
-            var src = new SharePointListSource<LookupParent>(spContext);
+            var src = new SharePointList<LookupParent>(spContext);
 
             //
             // Subqueries.
@@ -981,7 +981,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<DateTimeTest>(spContext);
+            var src = new SharePointList<DateTimeTest>(spContext);
 
             //
             // Queries.
@@ -1023,8 +1023,8 @@ namespace Tests
             //
             // Sources.
             //
-            var sp = new SharePointListSource<People>(spContext);
-            var ws = new SharePointListSource<People>(wsContext);
+            var sp = new SharePointList<People>(spContext);
+            var ws = new SharePointList<People>(wsContext);
             
             //
             // Test.
@@ -1102,7 +1102,7 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointListSource<People>(spContext);
+            var src = new SharePointList<People>(spContext);
 
             //
             // Test.

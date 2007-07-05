@@ -212,7 +212,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 CodeMemberProperty ep = new CodeMemberProperty();
                 ep.Attributes = MemberAttributes.Public | MemberAttributes.Final;
                 ep.Name = entity;
-                ep.Type = new CodeTypeReference(typeof(SharePointListSource<>), CodeTypeReferenceOptions.GlobalReference);
+                ep.Type = new CodeTypeReference(typeof(SharePointList<>), CodeTypeReferenceOptions.GlobalReference);
                 ep.Type.TypeArguments.Add(new CodeTypeReference(entity));
                 ctx.Members.Add(ep);
 

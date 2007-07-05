@@ -11,7 +11,7 @@
 /*
  * Version history:
  *
- * 0.2.1 - Introduction of SharePointListSource<T>
+ * 0.2.1 - Introduction of SharePointList<T>
  */
 
 using System;
@@ -29,7 +29,7 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
-    public class SharePointListSource<T> : IOrderedQueryable<T> where T : SharePointListEntity
+    public class SharePointList<T> : IOrderedQueryable<T> where T : SharePointListEntity
     {
         /// <summary>
         /// Data context object used to connect to SharePoint.
@@ -40,7 +40,7 @@ namespace BdsSoft.SharePoint.Linq
         /// Create a list source object for querying of a SharePoint list.
         /// </summary>
         /// <param name="context">Data context object used to connect to SharePoint.</param>
-        public SharePointListSource(SharePointDataContext context)
+        public SharePointList(SharePointDataContext context)
         {
             _context = context;
         }

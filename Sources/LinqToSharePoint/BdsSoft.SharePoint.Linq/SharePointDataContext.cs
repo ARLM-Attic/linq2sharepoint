@@ -186,14 +186,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <typeparam name="T">Entity type to get a list source object for.</typeparam>
         /// <returns>List source object for the specified entity type.</returns>
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
-        public SharePointListSource<T> GetList<T>() where T : SharePointListEntity
+        public SharePointList<T> GetList<T>() where T : SharePointListEntity
         {
             Type t = typeof(T);
 
             if (!_lists.ContainsKey(t))
-                _lists.Add(t, new SharePointListSource<T>(this));
+                _lists.Add(t, new SharePointList<T>(this));
 
-            return (SharePointListSource<T>)_lists[t];
+            return (SharePointList<T>)_lists[t];
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query results.</returns>
         public IEnumerator<T> ExecuteQuery<T>(Expression expression)
         {
-            CamlQuery query = CamlQuery.Parse(expression);
+            CamlQuery query = CamlQuery.Parse(expression, false);
 
             return query.Execute<T>();
         }

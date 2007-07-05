@@ -874,16 +874,16 @@ namespace Demo
             return false;
         }
 
-        static SharePointListSource<T> GetWsDataSource<T>() where T : SharePointListEntity
+        static SharePointList<T> GetWsDataSource<T>() where T : SharePointListEntity
         {
-            SharePointListSource<T> src = new SharePointListSource<T>(new SharePointDataContext(new Uri(URL)));
+            SharePointList<T> src = new SharePointList<T>(new SharePointDataContext(new Uri(URL)));
             src.Context.Credentials = CredentialCache.DefaultNetworkCredentials;
             return src;
         }
 
-        static SharePointListSource<T> GetSpDataSource<T>() where T : SharePointListEntity
+        static SharePointList<T> GetSpDataSource<T>() where T : SharePointListEntity
         {
-            return new SharePointListSource<T>(new SharePointDataContext(new SPSite(URL)));
+            return new SharePointList<T>(new SharePointDataContext(new SPSite(URL)));
         }
     }
 }

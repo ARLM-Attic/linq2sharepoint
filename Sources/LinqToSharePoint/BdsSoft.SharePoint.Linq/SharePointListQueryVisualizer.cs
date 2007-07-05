@@ -33,8 +33,10 @@ namespace BdsSoft.SharePoint.Linq
 
             string caml = (string)data.GetType().GetField("_camlForDebuggerVisualizer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(data);
             string entity = (string)data.GetType().GetField("_entityForDebuggerVisualizer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(data);
+            string linq = (string)data.GetType().GetField("_linqForDebuggerVisualizer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(data);
+            ParseErrorCollection errors = (ParseErrorCollection)data.GetType().GetField("_errorsForDebuggerVisualizer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(data);
 
-            using (SharePointListQueryVisualizerForm visualizer = new SharePointListQueryVisualizerForm(entity, caml))
+            using (SharePointListQueryVisualizerForm visualizer = new SharePointListQueryVisualizerForm(entity, caml, linq, errors))
             {
                 windowService.ShowDialog(visualizer);
             }

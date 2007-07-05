@@ -12,22 +12,24 @@
  * Version history:
  *
  * 0.2.1 - Introduction of CamlQuery.
+ *         Refactoring of PatchPredicate into separate methods.
+ *         Patch for negated DateRangesOverlap expressions.
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using Microsoft.SharePoint.Utilities;
-using System.IO;
-using Microsoft.SharePoint;
-using System.Data;
-using System.Globalization;
-using System.Collections;
 using System.Web.Services.Protocols;
+using Microsoft.SharePoint;
+using Microsoft.SharePoint.Utilities;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -41,7 +43,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// XmlDocument object used to build query fragments; acts a the root for all XML elements used while parsing the query.
         /// </summary>
-        private XmlDocument _doc = new XmlDocument();
+        internal XmlDocument _doc = new XmlDocument();
 
         #region Gathered query information
 
@@ -96,14 +98,45 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
+        internal ParseErrorCollection _errors;
+
         #region Factory methods
 
         /// <summary>
         /// Parses a CAML query based on an expression tree.
         /// </summary>
         /// <param name="expression">Expression tree to generate the CAML query object for.</param>
+        /// <param name="validate">Used to turn on parse validation.</param>
         /// <returns>CAML query object for the specified expression tree.</returns>
-        public static CamlQuery Parse(Expression expression)
+        public static CamlQuery Parse(Expression expression, bool validate)
+        {
+            //
+            // Create a query object and enable validation (optional).
+            //
+            CamlQuery query = new CamlQuery();
+            if (validate)
+            {
+                query._errors = new ParseErrorCollection();
+                query._errors.Expression = expression.ToString();
+            }
+
+            //
+            // Do the real parsing.
+            //
+            Parse(query, expression, 0, expression.ToString().Length - 1);
+
+            //
+            // Return constructed query object.
+            //
+            return query;
+        }
+
+        /// <summary>
+        /// Parses a CAML query based on an expression tree.
+        /// </summary>
+        /// <param name="query">Query to be completed with parsed information.</param>
+        /// <param name="expression">Expression tree to generate the CAML query object for.</param>
+        private static void Parse(CamlQuery query, Expression expression, int ppS, int ppE)
         {
             MethodCallExpression mce = expression as MethodCallExpression;
             ConstantExpression ce = expression as ConstantExpression;
@@ -116,7 +149,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Depth-first parsing of the expression tree.
                 //
-                CamlQuery q = Parse(mce.Arguments[0]);
+                Parse(query, mce.Arguments[0], 0, mce.Arguments[0].ToString().Length - 1);
 
                 //
                 // Check the extension method called during query creation.
@@ -132,7 +165,7 @@ namespace BdsSoft.SharePoint.Linq
                         //                 where predicate is of type Expression<Func<TSource, bool>>
                         // Parse the query based on the Func<TSource, bool> predicate expression tree.
                         //
-                        q.ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand);
+                        query.ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
                         break;
                     //
                     // Query expression for sorting. Multiple possibilities exist and can act cumulatively.
@@ -146,7 +179,7 @@ namespace BdsSoft.SharePoint.Linq
                         //                 where keySelector is of type Expression<Func<TSource, TKey>>
                         // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
                         //
-                        q.ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal));
+                        query.ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1, ppE);
                         break;
                     //
                     // Query expression for projection.
@@ -157,7 +190,7 @@ namespace BdsSoft.SharePoint.Linq
                         //                 where selector is of type Expression<Func<TSource, TResult>>
                         // Parse the query based on the Expression<Func<TSource, TResult>> selector.
                         //
-                        q.ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand);
+                        query.ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
                         break;
                     //
                     // Query expression for result restriction ("TOP").
@@ -167,19 +200,15 @@ namespace BdsSoft.SharePoint.Linq
                         // Original call = Queryable::Take(source, count)
                         // Parse the query based on the count value obtained by compilation and dynamic invocation of the count argument to the call.
                         //
-                        q.SetResultRestriction((int)Expression.Lambda<Func<int>>(mce.Arguments[1]).Compile().DynamicInvoke());
+                        query.SetResultRestriction((int)Expression.Lambda<Func<int>>(mce.Arguments[1]).Compile().DynamicInvoke());
                         break;
                     //
                     // Currently we don't support additional query operators in LINQ-to-SharePoint.
                     //
                     default:
-                        throw new NotSupportedException("Unsupported query construct encountered: " + mce.Method.Name + ".");
+                        ParseErrors.UnsupportedQueryOperator(query, mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE);
+                        return;
                 }
-
-                //
-                // Return accumulated query object.
-                //
-                return q;
             }
             //
             // Constant expression represents the source of the query.
@@ -187,19 +216,17 @@ namespace BdsSoft.SharePoint.Linq
             else if (ce != null)
             {
                 Type t = ce.Value.GetType();
-                if (t.GetGenericTypeDefinition() == typeof(SharePointListSource<>))
+                if (t.GetGenericTypeDefinition() == typeof(SharePointList<>))
                 {
                     //
-                    // Create a query object and store the entity type.
+                    // Store the entity type.
                     //
-                    CamlQuery q = new CamlQuery();
-                    q._context = (SharePointDataContext)t.GetProperty("Context").GetValue(ce.Value, null);
-                    q._entityType = t.GetGenericArguments()[0];
-                    return q;
+                    query._context = (SharePointDataContext)t.GetProperty("Context").GetValue(ce.Value, null);
+                    query._entityType = t.GetGenericArguments()[0];
                 }
             }
-
-            throw new InvalidOperationException("Unrecognized query statement detected.");
+            else
+                throw new InvalidOperationException("Unrecognized query statement detected.");
         }
 
         #endregion
@@ -213,19 +240,30 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="predicate">Lambda expression of the query predicate to parse.</param>
         /// <remarks>Only one filter expression can be parsed per query.</remarks>
-        private void ParsePredicate(LambdaExpression predicate)
+        private void ParsePredicate(LambdaExpression predicate, int ppS, int ppE)
         {
             //
             // We can support multiple predicates as long no projection operation was carried out.
             //
-            if (_where != null && _projection != null)
+            if (_projection != null)
+                //[PPTODO]
                 throw new InvalidOperationException("Can't add another predicate expression to the query.");
+
+            //
+            // Calculcate expression body parser positions.
+            // E.g. Where(t => ((t.Age >= 24) && t.LastName.StartsWith("Smet")))
+            //      ++++++0xxxx                                                -
+            // ppS <- ppS + 6(+) + predicate.Parameters[0].Name.Length + 4(x)
+            // ppE <- ppE - 1(-)
+            //
+            ppS += 10 + predicate.Parameters[0].Name.Length;
+            ppE -= 1;
 
             //
             // Parse the predicate recursively, starting without negation (last parameter "positive" set to true).
             //
             PropertyInfo lookup;
-            XmlElement pred = ParsePredicate(predicate.Body, predicate.Parameters[0], true, out lookup);
+            XmlElement pred = ParsePredicate(predicate.Body, predicate.Parameters[0], true, out lookup, ppS, ppE);
 
             //
             // Predicate can be null because of optimizations.
@@ -268,7 +306,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="isPositive">Indicates whether the predicate should be evaluated as a positive condition or not; serves boolean negation using De Morgan's law.</param>
         /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
         /// <returns>Output XML element representing the parsed predicate in CAML syntax.</returns>
-        private XmlElement ParsePredicate(Expression predicate, ParameterExpression predicateParameter, bool isPositive, out PropertyInfo lookup)
+        private XmlElement ParsePredicate(Expression predicate, ParameterExpression predicateParameter, bool isPositive, out PropertyInfo lookup, int ppS, int ppE)
         {
             BinaryExpression be;
             UnaryExpression ue;
@@ -286,468 +324,28 @@ namespace BdsSoft.SharePoint.Linq
             //
             if ((be = predicate as BinaryExpression) != null)
             {
-                switch (predicate.NodeType)
-                {
-                    //
-                    // AndAlso boolean expression (&&, AndAlso)
-                    // And boolean expression     (&,  And)
-                    // OrElse boolean expression  (||, OrElse)
-                    // Or boolean expression      (|,  Or)
-                    //
-                    case ExpressionType.AndAlso:
-                    case ExpressionType.And:
-                    case ExpressionType.OrElse:
-                    case ExpressionType.Or:
-                        {
-                            XmlElement c;
-
-                            if (predicate.NodeType == ExpressionType.And || predicate.NodeType == ExpressionType.AndAlso)
-                                //
-                                // If not evaluated positively, apply De Morgan's law: !(a && b) == !a || !b
-                                //
-                                c = (isPositive ? _doc.CreateElement("And") : _doc.CreateElement("Or"));
-                            else
-                                //
-                                // If not evaluated positively, apply De Morgan's law: !(a || b) == !a && !b
-                                //
-                                c = (isPositive ? _doc.CreateElement("Or") : _doc.CreateElement("And")); // De Morgan
-
-                            PropertyInfo lookupLeft, lookupRight;
-                            XmlElement left = ParsePredicate(be.Left, predicateParameter, isPositive, out lookupLeft);
-                            XmlElement right = ParsePredicate(be.Right, predicateParameter, isPositive, out lookupRight);
-
-                            //
-                            // Optimizations could occur.
-                            //
-                            if (left != null && right != null)
-                            {
-                                //
-                                // If both lookups are the same (or both null), propagate the lookup query expression to the parent.
-                                //
-                                if (lookupLeft == lookupRight)
-                                {
-                                    lookup = lookupLeft;
-                                }
-                                //
-                                // If one of the lookups is different, apply a patch and don't propagate the lookup query expression to the parent.
-                                //
-                                else
-                                {
-                                    lookup = null;
-
-                                    if (lookupLeft != null)
-                                        PatchQueryExpressionNode(lookupLeft, ref left);
-                                    if (lookupRight != null)
-                                        PatchQueryExpressionNode(lookupRight, ref right);
-                                }
-
-                                //
-                                // Continue to compose the query expression tree.
-                                //
-                                c.AppendChild(left);
-                                c.AppendChild(right);
-
-                                return c;
-                            }
-                            //
-                            // In case of optimization, cut pruned condition children.
-                            //
-                            else
-                            {
-                                //
-                                // Only left hand side remains.
-                                //
-                                if (left != null)
-                                {
-                                    //
-                                    // If a lookup is found, it can be propagated now because we end up with a single node.
-                                    //
-                                    if (lookupLeft != null)
-                                    {
-                                        lookup = lookupLeft;
-                                        PatchQueryExpressionNode(lookupLeft, ref left);
-                                    }
-
-                                    return left;
-                                }
-                                //
-                                // Only right hand side remains.
-                                //
-                                else if (right != null)
-                                {
-                                    //
-                                    // If a lookup is found, it can be propagated now because we end up with a single node.
-                                    //
-                                    if (lookupRight != null)
-                                    {
-                                        lookup = lookupRight;
-                                        PatchQueryExpressionNode(lookupRight, ref right);
-                                    }
-
-                                    return right;
-                                }
-                                //
-                                // Both sides of the expression are optimized away.
-                                //
-                                else
-                                    return null;
-                            }
-                        }
-                    //
-                    // Remaining binary operations are parsed as conditions. Examples include ==, !=, >, <, >=, <=.
-                    //
-                    default:
-                        {
-                            PropertyInfo lookup1;
-                            XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1);
-
-                            //
-                            // If a Lookup reference was detected, propagate the lookup query expression to the parent.
-                            //
-                            if (lookup1 != null)
-                                lookup = lookup1;
-
-                            return c;
-                        }
-                }
+                return ParsePredicateBinary(predicate, predicateParameter, isPositive, be, ref lookup, ppS, ppE);
             }
             //
-            // A unary expressions will occur for boolean negation.
+            // A unary expression will occur for boolean negation.
             //
             else if ((ue = predicate as UnaryExpression) != null)
             {
-                //
-                // CAML doesn't support boolean negation; therefore, we apply De Morgan's law by inverting the isPositive indicator.
-                //
-                if (predicate.NodeType == ExpressionType.Not)
-                {
-                    PropertyInfo lookup1;
-                    XmlElement c = ParsePredicate(ue.Operand, predicateParameter, !isPositive, out lookup1);
-
-                    //
-                    // Optimized away?
-                    //
-                    if (c != null)
-                    {
-                        //
-                        // If a Lookup reference was detected, propagate the lookup query expression to the parent.
-                        //
-                        if (lookup1 != null)
-                            lookup = lookup1;
-                    }
-
-                    return c;
-                }
-                else
-                    throw new NotSupportedException("Unsupported query expression detected: " + predicate.ToString() + ".");
+                return ParsePredicateUnary(predicate, predicateParameter, isPositive, ue, ref lookup, ppS, ppE);
             }
             //
             // Converts the unary boolean evaluation like "where u.Member.Value select" or "where u.Age.HasValue select".
             // 
             else if ((me = predicate as MemberExpression) != null)
             {
-                //
-                // Check for (and trim) Nullable wrapper.
-                //
-                bool? isNullableHasValue;
-                Expression res = CheckForNullableType(me, out isNullableHasValue);
-
-                //
-                // Did we find an entity reference?
-                //
-                if (IsEntityPropertyReference(res))
-                {
-                    MemberExpression mRes = res as MemberExpression;
-
-                    //
-                    // Check for lookup field to propagate lookup query expressions to parent.
-                    //
-                    if (mRes.Member.DeclaringType != _entityType)
-                    {
-                        MemberExpression outer = mRes.Expression as MemberExpression;
-                        if (!IsEntityPropertyReference(outer))
-                            throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
-
-                        lookup = (PropertyInfo)outer.Member;
-                    }
-
-                    me = mRes;// (MemberExpression)res;
-
-                    XmlElement c;
-
-                    //
-                    // Call to .HasValue? If so, convert to IsNull or IsNotNull.
-                    //
-                    if (isNullableHasValue.HasValue && isNullableHasValue.Value)
-                        c = _doc.CreateElement(isPositive ? "IsNotNull" : "IsNull");
-                    //
-                    // No .HasValue should be either .Value or a non-Nullable boolean. Convert to <Eq> with the member's value.
-                    //
-                    else
-                    {
-                        c = _doc.CreateElement("Eq");
-                        c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member)));
-                    }
-
-                    //
-                    // Append field reference.
-                    //
-                    c.AppendChild(GetFieldRef((PropertyInfo)me.Member));
-                    return c;
-                }
-                else
-                    throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+                return ParsePredicateMember(predicate, predicateParameter, isPositive, me, ref lookup, ppS, ppE);
             }
             //
             // Method calls are supported for a limited set of string operations and for LookupMulti fields.
             //
             else if ((mce = predicate as MethodCallExpression) != null)
             {
-                //
-                // Check for CamlElements methods.
-                //
-                if (mce.Method.DeclaringType == typeof(CamlMethods))
-                {
-                    //
-                    // DateRangesOverlap support.
-                    //
-                    if (mce.Method.Name == "DateRangesOverlap")
-                    {
-                        //
-                        // Get value argument.
-                        //
-                        Expression valEx = mce.Arguments[0];
-
-                        bool? isNullableHasValue;
-                        valEx = CheckForNullableType(valEx, out isNullableHasValue);
-
-                        //
-                        // Value argument shouldn't be an entity property reference.
-                        //
-                        if (IsEntityPropertyReference(valEx))
-                            throw new NotSupportedException("A call to DateRangesOverlap should not have an entity property reference as its value argument.");
-
-                        //
-                        // Get value element.
-                        //
-                        XmlElement value = GetDateValue(valEx);
-
-                        //
-                        // Field references.
-                        //
-                        NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
-                        if (fields == null)
-                            throw new InvalidOperationException("An unexpected error occurred in the predicate parser (DateRangesOverlap).");
-
-                        List<XmlElement> fieldRefs = new List<XmlElement>();
-
-                        //
-                        // Exception object for unsupported DateRangesOverlap constructs.
-                        //
-                        Exception drEx = new NotSupportedException("A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.");
-
-                        //
-                        // Find all field expressions.
-                        //
-                        foreach (Expression fieldEx in fields.Expressions)
-                        {
-                            //
-                            // Clean-up the field expression.
-                            //
-                            Expression fEx = fieldEx;
-                            while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
-                                fEx = ((UnaryExpression)fEx).Operand;
-
-                            fEx = DropToString(fEx);
-                            fEx = CheckForNullableType(fEx, out isNullableHasValue);
-
-                            if (!IsEntityPropertyReference(fEx))
-                                throw drEx;
-
-                            MemberExpression mex = fEx as MemberExpression;
-                            if (mex == null || !(mex.Member is PropertyInfo))
-                                throw drEx;
-
-                            //
-                            // Lookup properties are supported only if all property references are of the same lookup type.
-                            //
-                            if (mex.Member.DeclaringType != _entityType)
-                            {
-                                MemberExpression outer = mex.Expression as MemberExpression;
-                                if (!IsEntityPropertyReference(outer))
-                                    throw drEx;
-
-                                PropertyInfo lookup1 = (PropertyInfo)outer.Member;
-
-                                //
-                                // We've already found field references; check that all of these refer to the same entity type.
-                                //
-                                if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
-                                    throw drEx;
-                                else
-                                    lookup = lookup1;
-                            }
-
-                            //
-                            // Add field reference element.
-                            //
-                            fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
-                        }
-
-                        //
-                        // Construct and return DateRangesOverlap element.
-                        //
-                        XmlElement dro = _doc.CreateElement("DateRangesOverlap");
-                        dro.AppendChild(value);
-                        foreach (XmlElement fieldRef in fieldRefs)
-                            dro.AppendChild(fieldRef);
-                        return dro;
-                    }
-                }
-
-                //
-                // Only method calls on entity type properties are supported.
-                //
-                Expression ex = DropToString(mce.Object);
-                MemberExpression o = ex as MemberExpression;
-                if (o == null || !(o.Member is PropertyInfo))
-                    throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
-
-                //
-                // Check for lookup field to propagate lookup query expressions to parent.
-                //
-                if (o.Member.DeclaringType != _entityType)
-                {
-                    MemberExpression outer = o.Expression as MemberExpression;
-                    if (!IsEntityPropertyReference(outer))
-                        throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
-
-                    lookup = (PropertyInfo)outer.Member;
-                }
-
-                PropertyInfo property = (PropertyInfo)o.Member;
-
-                //
-                // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
-                //
-                if (mce.Method.DeclaringType == typeof(string))
-                {
-                    //
-                    // Get the value of the method call argument and ensure it's lambda parameter free.
-                    //
-                    Expression arg = mce.Arguments[0];
-                    EnsureLambdaFree(arg, predicateParameter);
-
-                    //
-                    // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
-                    //
-                    object val = Expression.Lambda(arg).Compile().DynamicInvoke();
-                    string sval = val as string;
-
-                    //
-                    // Build the condition.
-                    //
-                    XmlElement cond;
-                    switch (mce.Method.Name)
-                    {
-                        case "Contains":
-                            //
-                            // Contains "" is always true.
-                            //
-                            if (String.IsNullOrEmpty(sval))
-                                return null;
-
-                            if (!isPositive)
-                                throw new NotSupportedException("Can't negate a Contains query expression.");
-                            cond = _doc.CreateElement("Contains");
-                            break;
-                        case "StartsWith":
-                            //
-                            // StartsWith "" is always true.
-                            //
-                            if (String.IsNullOrEmpty(sval))
-                                return null;
-
-                            if (!isPositive)
-                                throw new NotSupportedException("Can't negate a StartsWith query expression.");
-                            cond = _doc.CreateElement("BeginsWith");
-                            break;
-                        case "Equals":
-                            if (val == null)
-                            {
-                                if (!isPositive)
-                                    cond = _doc.CreateElement("IsNotNull");
-                                else
-                                    cond = _doc.CreateElement("IsNull");
-
-                                cond.AppendChild(GetFieldRef(property));
-                                return cond;
-                            }
-                            else
-                            {
-                                if (!isPositive)
-                                    cond = _doc.CreateElement("Neq");
-                                else
-                                    cond = _doc.CreateElement("Eq");
-                            }
-                            break;
-                        default:
-                            throw new NotSupportedException("Unsupported string filtering query expression detected. Only the methods Contains and StartsWith are supported.");
-                    }
-                    cond.AppendChild(GetFieldRef(property));
-
-                    //
-                    // Set the value on the condition element.
-                    //
-                    if (val != null)
-                        cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
-                    else
-                        return null;
-
-                    return cond;
-                }
-                //
-                // LookupMulti fields support the Contains method call.
-                //
-                else if (mce.Method.DeclaringType.IsGenericType
-                         && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
-                         && mce.Method.Name == "Contains")
-                {
-                    if (!isPositive)
-                        throw new NotSupportedException("Can't negate a Contains query expression.");
-                    XmlElement cond = _doc.CreateElement("Contains");
-
-                    //
-                    // Get the value of the method call argument and ensure it's lambda parameter free.
-                    //
-                    Expression arg = mce.Arguments[0];
-                    EnsureLambdaFree(arg, predicateParameter);
-
-                    //
-                    // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
-                    //
-                    object val = Expression.Lambda(arg).Compile().DynamicInvoke();
-
-                    //
-                    // Contains(null) is considered to be always true.
-                    //
-                    if (val == null)
-                        return null;
-
-                    //
-                    // Check type of the Contains parameter to match the entity type.
-                    //
-                    if (mce.Method.DeclaringType.GetGenericArguments()[0] != val.GetType())
-                        throw new NotSupportedException("Contains expressions for LookupMulti fields should match the referenced entity type.");
-
-                    //
-                    // Build condition based on the referenced field and the lookup key field.
-                    //
-                    cond.AppendChild(GetFieldRef(property));
-                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
-
-                    return cond;
-                }
+                return ParsePredicateMethodCall(predicate, predicateParameter, isPositive, mce, ref lookup, ppS, ppE);
             }
             //
             // Constant values are possible if the user writes clauses like "1 == 1" in the query's where predicate.
@@ -767,6 +365,504 @@ namespace BdsSoft.SharePoint.Linq
             // Fall-through case (shouldn't occur under normal circumstances).
             //
             throw new InvalidOperationException("An unexpected error occurred in the predicate parser.");
+        }
+
+        private XmlElement ParsePredicateMember(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MemberExpression me, ref PropertyInfo lookup, int ppS, int ppE)
+        {
+            //
+            // Check for (and trim) Nullable wrapper.
+            //
+            bool? isNullableHasValue;
+            Expression res = CheckForNullableType(me, out isNullableHasValue);
+
+            //
+            // Did we find an entity reference?
+            //
+            if (IsEntityPropertyReference(res))
+            {
+                MemberExpression mRes = res as MemberExpression;
+
+                //
+                // Check for lookup field to propagate lookup query expressions to parent.
+                //
+                if (mRes.Member.DeclaringType != _entityType)
+                {
+                    MemberExpression outer = mRes.Expression as MemberExpression;
+                    if (!IsEntityPropertyReference(outer))
+                        throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+
+                    lookup = (PropertyInfo)outer.Member;
+                }
+
+                me = mRes;// (MemberExpression)res;
+
+                XmlElement c;
+
+                //
+                // Call to .HasValue? If so, convert to IsNull or IsNotNull.
+                //
+                if (isNullableHasValue.HasValue && isNullableHasValue.Value)
+                    c = _doc.CreateElement(isPositive ? "IsNotNull" : "IsNull");
+                //
+                // No .HasValue should be either .Value or a non-Nullable boolean. Convert to <Eq> with the member's value.
+                //
+                else
+                {
+                    c = _doc.CreateElement("Eq");
+                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member)));
+                }
+
+                //
+                // Append field reference.
+                //
+                c.AppendChild(GetFieldRef((PropertyInfo)me.Member));
+                return c;
+            }
+            else
+                throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+        }
+
+        private XmlElement ParsePredicateMethodCall(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MethodCallExpression mce, ref PropertyInfo lookup, int ppS, int ppE)
+        {
+            //
+            // Check for CamlElements methods.
+            //
+            if (mce.Method.DeclaringType == typeof(CamlMethods))
+            {
+                //
+                // DateRangesOverlap support.
+                //
+                if (mce.Method.Name == "DateRangesOverlap")
+                {
+                    //
+                    // Negation isn't supported.
+                    //
+                    if (!isPositive)
+                        return ParseErrors.CantNegate(this, "DateRangesOverlap", ppS, ppE);
+
+                    //
+                    // Get value argument.
+                    //
+                    Expression valEx = mce.Arguments[0];
+
+                    bool? isNullableHasValue;
+                    valEx = CheckForNullableType(valEx, out isNullableHasValue);
+
+                    //
+                    // Value argument shouldn't be an entity property reference.
+                    //
+                    if (IsEntityPropertyReference(valEx))
+                        throw new NotSupportedException("A call to DateRangesOverlap should not have an entity property reference as its value argument.");
+
+                    //
+                    // Get value element.
+                    //
+                    XmlElement value = GetDateValue(valEx);
+
+                    //
+                    // Field references.
+                    //
+                    NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
+                    if (fields == null)
+                        throw new InvalidOperationException("An unexpected error occurred in the predicate parser (DateRangesOverlap).");
+
+                    List<XmlElement> fieldRefs = new List<XmlElement>();
+
+                    //
+                    // Exception object for unsupported DateRangesOverlap constructs.
+                    //
+                    Exception drEx = new NotSupportedException("A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.");
+
+                    //
+                    // Find all field expressions.
+                    //
+                    foreach (Expression fieldEx in fields.Expressions)
+                    {
+                        //
+                        // Clean-up the field expression.
+                        //
+                        Expression fEx = fieldEx;
+                        while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
+                            fEx = ((UnaryExpression)fEx).Operand;
+
+                        fEx = DropToString(fEx);
+                        fEx = CheckForNullableType(fEx, out isNullableHasValue);
+
+                        if (!IsEntityPropertyReference(fEx))
+                            throw drEx;
+
+                        MemberExpression mex = fEx as MemberExpression;
+                        if (mex == null || !(mex.Member is PropertyInfo))
+                            throw drEx;
+
+                        //
+                        // Lookup properties are supported only if all property references are of the same lookup type.
+                        //
+                        if (mex.Member.DeclaringType != _entityType)
+                        {
+                            MemberExpression outer = mex.Expression as MemberExpression;
+                            if (!IsEntityPropertyReference(outer))
+                                throw drEx;
+
+                            PropertyInfo lookup1 = (PropertyInfo)outer.Member;
+
+                            //
+                            // We've already found field references; check that all of these refer to the same entity type.
+                            //
+                            if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
+                                throw drEx;
+                            else
+                                lookup = lookup1;
+                        }
+
+                        //
+                        // Add field reference element.
+                        //
+                        fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
+                    }
+
+                    //
+                    // Construct and return DateRangesOverlap element.
+                    //
+                    XmlElement dro = _doc.CreateElement("DateRangesOverlap");
+                    dro.AppendChild(value);
+                    foreach (XmlElement fieldRef in fieldRefs)
+                        dro.AppendChild(fieldRef);
+                    return dro;
+                }
+            }
+
+            //
+            // Only method calls on entity type properties are supported.
+            //
+            Expression ex = DropToString(mce.Object);
+            MemberExpression o = ex as MemberExpression;
+            if (o == null || !(o.Member is PropertyInfo))
+                throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+
+            //
+            // Check for lookup field to propagate lookup query expressions to parent.
+            //
+            if (o.Member.DeclaringType != _entityType)
+            {
+                MemberExpression outer = o.Expression as MemberExpression;
+                if (!IsEntityPropertyReference(outer))
+                    throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+
+                lookup = (PropertyInfo)outer.Member;
+            }
+
+            PropertyInfo property = (PropertyInfo)o.Member;
+
+            //
+            // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
+            //
+            if (mce.Method.DeclaringType == typeof(string))
+            {
+                //
+                // Get the value of the method call argument and ensure it's lambda parameter free.
+                //
+                Expression arg = mce.Arguments[0];
+                EnsureLambdaFree(arg, predicateParameter);
+
+                //
+                // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                //
+                object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+                string sval = val as string;
+
+                //
+                // Build the condition.
+                //
+                XmlElement cond;
+                switch (mce.Method.Name)
+                {
+                    case "Contains":
+                        //
+                        // Contains "" is always true.
+                        //
+                        if (String.IsNullOrEmpty(sval))
+                            return null;
+
+                        if (!isPositive)
+                            return ParseErrors.CantNegate(this, "Contains", ppS, ppE);
+                        cond = _doc.CreateElement("Contains");
+                        break;
+                    case "StartsWith":
+                        //
+                        // StartsWith "" is always true.
+                        //
+                        if (String.IsNullOrEmpty(sval))
+                            return null;
+
+                        if (!isPositive)
+                            return ParseErrors.CantNegate(this, "BeginsWith", ppS, ppE);
+                        cond = _doc.CreateElement("BeginsWith");
+                        break;
+                    case "Equals":
+                        if (val == null)
+                        {
+                            if (!isPositive)
+                                cond = _doc.CreateElement("IsNotNull");
+                            else
+                                cond = _doc.CreateElement("IsNull");
+
+                            cond.AppendChild(GetFieldRef(property));
+                            return cond;
+                        }
+                        else
+                        {
+                            if (!isPositive)
+                                cond = _doc.CreateElement("Neq");
+                            else
+                                cond = _doc.CreateElement("Eq");
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException("Unsupported string filtering query expression detected. Only the methods Contains and StartsWith are supported.");
+                }
+                cond.AppendChild(GetFieldRef(property));
+
+                //
+                // Set the value on the condition element.
+                //
+                if (val != null)
+                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
+                else
+                    return null;
+
+                return cond;
+            }
+            //
+            // LookupMulti fields support the Contains method call.
+            //
+            else if (mce.Method.DeclaringType.IsGenericType
+                     && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                     && mce.Method.Name == "Contains")
+            {
+                if (!isPositive)
+                    return ParseErrors.CantNegate(this, "Contains", ppS, ppE);
+                XmlElement cond = _doc.CreateElement("Contains");
+
+                //
+                // Get the value of the method call argument and ensure it's lambda parameter free.
+                //
+                Expression arg = mce.Arguments[0];
+                EnsureLambdaFree(arg, predicateParameter);
+
+                //
+                // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                //
+                object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+
+                //
+                // Contains(null) is considered to be always true.
+                //
+                if (val == null)
+                    return null;
+
+                //
+                // Check type of the Contains parameter to match the entity type.
+                //
+                if (mce.Method.DeclaringType.GetGenericArguments()[0] != val.GetType())
+                    throw new NotSupportedException("Contains expressions for LookupMulti fields should match the referenced entity type.");
+
+                //
+                // Build condition based on the referenced field and the lookup key field.
+                //
+                cond.AppendChild(GetFieldRef(property));
+                cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
+
+                return cond;
+            }
+            else
+                throw new NotSupportedException("Unsupported method call detected in query predicate (" + mce.Method.Name + ").");
+        }
+
+        private XmlElement ParsePredicateUnary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, UnaryExpression ue, ref PropertyInfo lookup, int ppS, int ppE)
+        {
+            //
+            // CAML doesn't support boolean negation; therefore, we apply De Morgan's law by inverting the isPositive indicator.
+            //
+            if (predicate.NodeType == ExpressionType.Not)
+            {
+                //
+                // Calculcate expression body parser positions. Trim Not(.) portion.
+                // E.g. Not(t.Age >= 24)
+                //      ++++           -
+                // ppS <- ppS + 4(+)
+                // ppE <- ppE - 1(-
+                //
+                ppS += 4;
+                ppE -= 1;
+
+                PropertyInfo lookup1;
+                XmlElement c = ParsePredicate(ue.Operand, predicateParameter, !isPositive, out lookup1, ppS, ppE);
+
+                //
+                // Optimized away?
+                //
+                if (c != null)
+                {
+                    //
+                    // If a Lookup reference was detected, propagate the lookup query expression to the parent.
+                    //
+                    if (lookup1 != null)
+                        lookup = lookup1;
+                }
+
+                return c;
+            }
+            else
+                throw new NotSupportedException("Unsupported query expression detected: " + predicate.ToString() + ".");
+        }
+
+        private XmlElement ParsePredicateBinary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, BinaryExpression be, ref PropertyInfo lookup, int ppS, int ppE)
+        {
+            //
+            // Calculcate expression body parser positions: trim outer parentheses.
+            // E.g. ((t.Age >= 24) && t.LastName.StartsWith("Smet"))
+            //      +                                              -
+            // ppS <- ppS + 1(+)
+            // ppE <- ppE - 1(-)
+            //
+            ppS += 1;
+            ppE -= 1;
+
+            switch (predicate.NodeType)
+            {
+                //
+                // AndAlso boolean expression (&&, AndAlso)
+                // And boolean expression     (&,  And)
+                // OrElse boolean expression  (||, OrElse)
+                // Or boolean expression      (|,  Or)
+                //
+                case ExpressionType.AndAlso:
+                case ExpressionType.And:
+                case ExpressionType.OrElse:
+                case ExpressionType.Or:
+                    {
+                        XmlElement c;
+
+                        if (predicate.NodeType == ExpressionType.And || predicate.NodeType == ExpressionType.AndAlso)
+                            //
+                            // If not evaluated positively, apply De Morgan's law: !(a && b) == !a || !b
+                            //
+                            c = (isPositive ? _doc.CreateElement("And") : _doc.CreateElement("Or"));
+                        else
+                            //
+                            // If not evaluated positively, apply De Morgan's law: !(a || b) == !a && !b
+                            //
+                            c = (isPositive ? _doc.CreateElement("Or") : _doc.CreateElement("And")); // De Morgan
+
+                        //
+                        // Calculcate expression body parser positions for lhs and rhs.
+                        // E.g. (t.Age >= 24) && t.LastName.StartsWith("Smet")
+                        //      S           T    D                           E
+                        // ppT <- ppS + be.Left.ToString().Length - 1
+                        // ppE <- ppE - be.Right.ToString().Length + 1
+                        //
+                        int ppT = ppS + be.Left.ToString().Length - 1;
+                        int ppD = ppE - be.Right.ToString().Length + 1;
+
+                        PropertyInfo lookupLeft, lookupRight;
+                        XmlElement left = ParsePredicate(be.Left, predicateParameter, isPositive, out lookupLeft, ppS, ppT);
+                        XmlElement right = ParsePredicate(be.Right, predicateParameter, isPositive, out lookupRight, ppD, ppE);
+
+                        //
+                        // Optimizations could occur.
+                        //
+                        if (left != null && right != null)
+                        {
+                            //
+                            // If both lookups are the same (or both null), propagate the lookup query expression to the parent.
+                            //
+                            if (lookupLeft == lookupRight)
+                            {
+                                lookup = lookupLeft;
+                            }
+                            //
+                            // If one of the lookups is different, apply a patch and don't propagate the lookup query expression to the parent.
+                            //
+                            else
+                            {
+                                lookup = null;
+
+                                if (lookupLeft != null)
+                                    PatchQueryExpressionNode(lookupLeft, ref left);
+                                if (lookupRight != null)
+                                    PatchQueryExpressionNode(lookupRight, ref right);
+                            }
+
+                            //
+                            // Continue to compose the query expression tree.
+                            //
+                            c.AppendChild(left);
+                            c.AppendChild(right);
+
+                            return c;
+                        }
+                        //
+                        // In case of optimization, cut pruned condition children.
+                        //
+                        else
+                        {
+                            //
+                            // Only left hand side remains.
+                            //
+                            if (left != null)
+                            {
+                                //
+                                // If a lookup is found, it can be propagated now because we end up with a single node.
+                                //
+                                if (lookupLeft != null)
+                                {
+                                    lookup = lookupLeft;
+                                    PatchQueryExpressionNode(lookupLeft, ref left);
+                                }
+
+                                return left;
+                            }
+                            //
+                            // Only right hand side remains.
+                            //
+                            else if (right != null)
+                            {
+                                //
+                                // If a lookup is found, it can be propagated now because we end up with a single node.
+                                //
+                                if (lookupRight != null)
+                                {
+                                    lookup = lookupRight;
+                                    PatchQueryExpressionNode(lookupRight, ref right);
+                                }
+
+                                return right;
+                            }
+                            //
+                            // Both sides of the expression are optimized away.
+                            //
+                            else
+                                return null;
+                        }
+                    }
+                //
+                // Remaining binary operations are parsed as conditions. Examples include ==, !=, >, <, >=, <=.
+                //
+                default:
+                    {
+                        PropertyInfo lookup1;
+                        XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1);
+
+                        //
+                        // If a Lookup reference was detected, propagate the lookup query expression to the parent.
+                        //
+                        if (lookup1 != null)
+                            lookup = lookup1;
+
+                        return c;
+                    }
+            }
         }
 
         /// <summary>
@@ -1418,7 +1514,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ordering">Lambda expression of the query ordering key selector to parse.</param>
         /// <param name="descending">Indicates whether or not the ordering should be descending.</param>
         /// <remarks>Multiple ordering expressions per query are supported.</remarks>
-        private void ParseOrdering(LambdaExpression ordering, bool descending)
+        private void ParseOrdering(LambdaExpression ordering, bool descending, int ppS, int ppE)
         {
             //
             // If no ordering epxression has been encountered before, construct the OrderBy CAML element.
@@ -1470,6 +1566,7 @@ namespace BdsSoft.SharePoint.Linq
                 _order.AppendChild(fieldRef);
             }
             else
+                //[PPTODO]
                 throw new NotSupportedException("Unsupported ordering expression detected: " + ordering.Body + ". Ordering expressions should only contain individual entity property expressions.");
         }
 
@@ -1482,7 +1579,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="projection">Lambda expression of the query projection to parse.</param>
         /// <remarks>Only one projection expression can be parsed per query.</remarks>
-        private void ParseProjection(LambdaExpression projection)
+        private void ParseProjection(LambdaExpression projection, int ppS, int ppE)
         {
             //
             // Equiprojections (u => u) can be ignored.
@@ -1497,6 +1594,7 @@ namespace BdsSoft.SharePoint.Linq
             if (_projection == null)
                 _projection = _doc.CreateElement("ViewFields");
             else
+                //[PPTODO]
                 throw new InvalidOperationException("Second projection expression encountered during parsing. Only one projection expression can be translated for each query. Did you use LINQ query syntax?");
 
             //
@@ -1550,7 +1648,7 @@ namespace BdsSoft.SharePoint.Linq
             _top = (_top == null ? limit : Math.Min(_top.Value, limit));
         }
 
-                #endregion
+        #endregion
 
         #endregion
 
@@ -3025,5 +3123,58 @@ namespace BdsSoft.SharePoint.Linq
         #endregion
 
         #endregion
+    }
+
+    [Serializable]
+    public class ParseError
+    {
+        public string Message { get; private set; }
+        public int StartIndex { get; private set; }
+        public int EndIndex { get; private set; }
+        public int ErrorId { get; private set; }
+
+        public ParseError(int id, string message, int startIndex, int endIndex)
+        {
+            ErrorId = id;
+            Message = message;
+            StartIndex = startIndex;
+            EndIndex = endIndex;
+        }
+    }
+
+    [Serializable]
+    public class ParseErrorCollection : List<ParseError>
+    {
+        public string Expression { get; set; }
+    }
+
+    internal static class ParseErrors
+    {
+        public static XmlElement UnsupportedQueryOperator(CamlQuery query, string queryOperator, int start, int end)
+        {
+            return KeepOrThrow(String.Format("Query operator {0} is not supported.", queryOperator), query, start, end);
+        }
+
+        public static XmlElement CantNegate(CamlQuery query, string expression, int start, int end)
+        {
+            return KeepOrThrow(String.Format("Can't negate a {0} query expression.", expression), query, start, end);
+        }
+
+        private static XmlElement KeepOrThrow(string message, CamlQuery query, int start, int end)
+        {
+            if (query._errors != null)
+            {
+                int id = query._errors.Count + 1;
+                query._errors.Add(new ParseError(id, message, start, end));
+
+                XmlElement error = query._doc.CreateElement("ParseError");
+                XmlAttribute idAttribute = query._doc.CreateAttribute("ID");
+                idAttribute.Value = id.ToString();
+                error.Attributes.Append(idAttribute);
+                return error;
+            }
+            else
+                throw new NotSupportedException(message);
+        }
     }
 }

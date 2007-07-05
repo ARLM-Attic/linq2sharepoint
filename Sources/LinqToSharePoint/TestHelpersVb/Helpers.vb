@@ -14,7 +14,7 @@ Imports Tests
 
 Public Class Helpers
     Public Shared Function StrCmp(ByVal site As SPSite) As IQueryable(Of People)
-        Dim src = New SharePointListSource(Of People)(New SharePointDataContext(site))
+        Dim src = New SharePointList(Of People)(New SharePointDataContext(site))
         src.Context.CheckListVersion = False
         Dim res = From p In src _
                   Where StrComp(p.FirstName, "Bart") = 0 _
@@ -23,7 +23,7 @@ Public Class Helpers
     End Function
 
     Public Shared Function StrCompare(ByVal site As SPSite) As IQueryable(Of People)
-        Dim src = New SharePointListSource(Of People)(New SharePointDataContext(site))
+        Dim src = New SharePointList(Of People)(New SharePointDataContext(site))
         src.Context.CheckListVersion = False
         Dim res = From p In src _
                   Where p.FirstName = "Bart" _

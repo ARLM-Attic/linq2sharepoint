@@ -19,7 +19,7 @@ Imports BdsSoft.SharePoint.Linq
 Module Program
 
     Sub Main()
-        Dim users = New SharePointListSource(Of Demo)(New SharePointDataContext(New Uri("http://localhost")))
+        Dim users = New SharePointList(Of Demo)(New SharePointDataContext(New Uri("http://localhost")))
         users.Context.Log = Console.Out
         users.Context.CheckListVersion = False
 
