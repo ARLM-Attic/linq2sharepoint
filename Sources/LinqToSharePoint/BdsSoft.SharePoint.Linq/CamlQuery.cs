@@ -14,6 +14,7 @@
  * 0.2.1 - Introduction of CamlQuery.
  *         Refactoring of PatchPredicate into separate methods.
  *         Patch for negated DateRangesOverlap expressions.
+ *         Error handling with positional tracking in the parser.
  */
 
 using System;
@@ -206,7 +207,7 @@ namespace BdsSoft.SharePoint.Linq
                     // Currently we don't support additional query operators in LINQ-to-SharePoint.
                     //
                     default:
-                        ParseErrors.UnsupportedQueryOperator(query, mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE);
+                        ParseErrors.UnsupportedQueryOperator(query, mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE); /* PARSE ERROR */
                         return;
                 }
             }
@@ -246,8 +247,7 @@ namespace BdsSoft.SharePoint.Linq
             // We can support multiple predicates as long no projection operation was carried out.
             //
             if (_projection != null)
-                //[PPTODO]
-                throw new InvalidOperationException("Can't add another predicate expression to the query.");
+                this.PredicateAfterProjection(ppS, ppE); /* PARSE ERROR */
 
             //
             // Calculcate expression body parser positions.
@@ -358,13 +358,14 @@ namespace BdsSoft.SharePoint.Linq
                 if (ce.Value is bool)
                     return GetBooleanPatch((bool)ce.Value);
                 else
-                    throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+                    return /* PARSE ERROR */ this.NonBoolConstantValueInPredicate(ppS, ppE);
             }
 
             //
             // Fall-through case (shouldn't occur under normal circumstances).
             //
-            throw new InvalidOperationException("An unexpected error occurred in the predicate parser.");
+            ParseErrors.FatalError(ppS, ppE); /* PARSE ERROR */
+            return null;
         }
 
         private XmlElement ParsePredicateMember(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MemberExpression me, ref PropertyInfo lookup, int ppS, int ppE)
@@ -389,7 +390,7 @@ namespace BdsSoft.SharePoint.Linq
                 {
                     MemberExpression outer = mRes.Expression as MemberExpression;
                     if (!IsEntityPropertyReference(outer))
-                        throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+                        return /* PARSE ERROR */ this.InvalidEntityReference(me.Member.Name, ppS, ppE);
 
                     lookup = (PropertyInfo)outer.Member;
                 }
@@ -419,7 +420,7 @@ namespace BdsSoft.SharePoint.Linq
                 return c;
             }
             else
-                throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+                return /* PARSE ERROR */ this.PredicateContainsNonEntityReference(me.Member.Name, ppS, ppE);
         }
 
         private XmlElement ParsePredicateMethodCall(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MethodCallExpression mce, ref PropertyInfo lookup, int ppS, int ppE)
@@ -438,7 +439,7 @@ namespace BdsSoft.SharePoint.Linq
                     // Negation isn't supported.
                     //
                     if (!isPositive)
-                        return ParseErrors.CantNegate(this, "DateRangesOverlap", ppS, ppE);
+                        return /* PARSE ERROR */ this.CantNegate("DateRangesOverlap", ppS, ppE);
 
                     //
                     // Get value argument.
@@ -452,7 +453,15 @@ namespace BdsSoft.SharePoint.Linq
                     // Value argument shouldn't be an entity property reference.
                     //
                     if (IsEntityPropertyReference(valEx))
-                        throw new NotSupportedException("A call to DateRangesOverlap should not have an entity property reference as its value argument.");
+                    {
+                        //
+                        // Find value argument location in parent expression.
+                        //
+                        int ppSD = ppS + "DateRangesOverlap(".Length;
+                        int ppED = ppSD + mce.Arguments[0].ToString().Length - 1;
+
+                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidValueArgument(ppSD, ppED);
+                    }
 
                     //
                     // Get value element.
@@ -463,8 +472,16 @@ namespace BdsSoft.SharePoint.Linq
                     // Field references.
                     //
                     NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
-                    if (fields == null)
-                        throw new InvalidOperationException("An unexpected error occurred in the predicate parser (DateRangesOverlap).");
+                    if (fields == null || fields.Expressions.Count == 0)
+                    {
+                        //
+                        // Find fields argument location in parent expression.
+                        //
+                        int ppSD = ppS + predicate.ToString().IndexOf(fields.ToString());
+                        int ppED = ppE - 1;
+
+                        return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD, ppED);
+                    }
 
                     List<XmlElement> fieldRefs = new List<XmlElement>();
 
@@ -536,9 +553,13 @@ namespace BdsSoft.SharePoint.Linq
             // Only method calls on entity type properties are supported.
             //
             Expression ex = DropToString(mce.Object);
+            bool? isHasValue;
             MemberExpression o = ex as MemberExpression;
+            if (o != null)
+                o = CheckForNullableType(o, out isHasValue) as MemberExpression;
+
             if (o == null || !(o.Member is PropertyInfo))
-                throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+                return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
 
             //
             // Check for lookup field to propagate lookup query expressions to parent.
@@ -547,7 +568,7 @@ namespace BdsSoft.SharePoint.Linq
             {
                 MemberExpression outer = o.Expression as MemberExpression;
                 if (!IsEntityPropertyReference(outer))
-                    throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+                    return /* PARSE ERROR */ this.InvalidEntityReference(mce.Method.Name, ppS, ppE);
 
                 lookup = (PropertyInfo)outer.Member;
             }
@@ -585,7 +606,8 @@ namespace BdsSoft.SharePoint.Linq
                             return null;
 
                         if (!isPositive)
-                            return ParseErrors.CantNegate(this, "Contains", ppS, ppE);
+                            return /* PARSE ERROR */ this.CantNegate("Contains", ppS, ppE);
+
                         cond = _doc.CreateElement("Contains");
                         break;
                     case "StartsWith":
@@ -596,7 +618,8 @@ namespace BdsSoft.SharePoint.Linq
                             return null;
 
                         if (!isPositive)
-                            return ParseErrors.CantNegate(this, "BeginsWith", ppS, ppE);
+                            return /* PARSE ERROR */ this.CantNegate("BeginsWith", ppS, ppE);
+
                         cond = _doc.CreateElement("BeginsWith");
                         break;
                     case "Equals":
@@ -619,7 +642,8 @@ namespace BdsSoft.SharePoint.Linq
                         }
                         break;
                     default:
-                        throw new NotSupportedException("Unsupported string filtering query expression detected. Only the methods Contains and StartsWith are supported.");
+                        int ppSS = ppS + mce.Object.ToString().Length + 1;
+                        return /* PARSE ERROR */ this.UnsupportedStringMethodCall(mce.Method.Name, ppSS, ppE);
                 }
                 cond.AppendChild(GetFieldRef(property));
 
@@ -641,7 +665,8 @@ namespace BdsSoft.SharePoint.Linq
                      && mce.Method.Name == "Contains")
             {
                 if (!isPositive)
-                    return ParseErrors.CantNegate(this, "Contains", ppS, ppE);
+                    return /* PARSE ERROR */ this.CantNegate("Contains", ppS, ppE);
+
                 XmlElement cond = _doc.CreateElement("Contains");
 
                 //
@@ -676,7 +701,13 @@ namespace BdsSoft.SharePoint.Linq
                 return cond;
             }
             else
-                throw new NotSupportedException("Unsupported method call detected in query predicate (" + mce.Method.Name + ").");
+            {
+                int ppSS = ppS;
+                if (mce.Object != null)
+                    ppSS += mce.Object.ToString().Length + 1;
+
+                return /* PARSE ERROR */ this.UnsupportedMethodCall(mce.Method.Name, ppSS, ppE);
+            }
         }
 
         private XmlElement ParsePredicateUnary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, UnaryExpression ue, ref PropertyInfo lookup, int ppS, int ppE)
@@ -3123,58 +3154,5 @@ namespace BdsSoft.SharePoint.Linq
         #endregion
 
         #endregion
-    }
-
-    [Serializable]
-    public class ParseError
-    {
-        public string Message { get; private set; }
-        public int StartIndex { get; private set; }
-        public int EndIndex { get; private set; }
-        public int ErrorId { get; private set; }
-
-        public ParseError(int id, string message, int startIndex, int endIndex)
-        {
-            ErrorId = id;
-            Message = message;
-            StartIndex = startIndex;
-            EndIndex = endIndex;
-        }
-    }
-
-    [Serializable]
-    public class ParseErrorCollection : List<ParseError>
-    {
-        public string Expression { get; set; }
-    }
-
-    internal static class ParseErrors
-    {
-        public static XmlElement UnsupportedQueryOperator(CamlQuery query, string queryOperator, int start, int end)
-        {
-            return KeepOrThrow(String.Format("Query operator {0} is not supported.", queryOperator), query, start, end);
-        }
-
-        public static XmlElement CantNegate(CamlQuery query, string expression, int start, int end)
-        {
-            return KeepOrThrow(String.Format("Can't negate a {0} query expression.", expression), query, start, end);
-        }
-
-        private static XmlElement KeepOrThrow(string message, CamlQuery query, int start, int end)
-        {
-            if (query._errors != null)
-            {
-                int id = query._errors.Count + 1;
-                query._errors.Add(new ParseError(id, message, start, end));
-
-                XmlElement error = query._doc.CreateElement("ParseError");
-                XmlAttribute idAttribute = query._doc.CreateAttribute("ID");
-                idAttribute.Value = id.ToString();
-                error.Attributes.Append(idAttribute);
-                return error;
-            }
-            else
-                throw new NotSupportedException(message);
-        }
     }
 }

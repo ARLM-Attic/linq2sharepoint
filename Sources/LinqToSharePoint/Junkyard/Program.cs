@@ -11,6 +11,11 @@ using System.Data.Linq.SqlClient;
 
 namespace Junkyard
 {
+    class Junk
+    {
+        public Users User;
+    }
+
     class Program
     {
         static void Main(string[] args)
@@ -42,9 +47,17 @@ namespace Junkyard
             //var temp = (from t in lst select new { Name = t.FirstName }).Where(t => t.Name.StartsWith("B"));
             //var temp = from t in lst where !(t.FirstName == "Bart" && t.Age >= 24) || t.LastName.StartsWith("De Smet") select t;
             //SharePointListQueryVisualizer.TestShowVisualizer(temp);
-            var res = (from t in lst where !CamlMethods.DateRangesOverlap(DateTime.Now, t.Modified) || (t.Age >= 24 && !t.LastName.StartsWith("Smet")) orderby t.FirstName descending select new { Name = t.FirstName + " " + t.LastName }).Skip(5);
-            foreach (var t in res)
-                ;
+            //var res = (from t in lst where !CamlMethods.DateRangesOverlap(DateTime.Now, t.Modified) || (t.Age >= 24 && !t.LastName.StartsWith("Smet")) orderby t.FirstName descending select new { Name = t.FirstName + " " + t.LastName }).Skip(5);
+            //var res = (from t in lst where CamlMethods.DateRangesOverlap(DateTime.Now) select t);
+            //var res = (from t in lst where CamlMethods.DateRangesOverlap(t.Modified.Value) select t);
+            //Uri u = new Uri("http://www.test.be");
+            //var res = (from t in lst where u.IsAbsoluteUri select t);
+            //var res = (from t in lst where u.IsBaseOf(new Uri("http://www.test2.be")) select t);
+            //Junk j = new Junk();
+            //var res = (from t in lst where j.User.IsMember select t);
+            //var res = from t in lst where t.FirstName.EndsWith("Test") select t;
+            var res = from t in lst where t.Created.Value.IsDaylightSavingTime() select t;
+            //var res = (from t in lst where t.LastName.Length == 0 select t);
             SharePointListQueryVisualizer.TestShowVisualizer(res);
 
             //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
@@ -407,6 +420,10 @@ class Users : SharePointListEntity
         get { return (string)GetValue("Title"); }
         set { SetValue("Title", value); }
     }
+
+    [Field("IsMember", FieldType.Boolean, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
+    public bool IsMember
+    { get; set; }
 
     /// <summary>
     /// Modified

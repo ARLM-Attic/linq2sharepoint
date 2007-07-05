@@ -66,12 +66,12 @@ namespace BdsSoft.SharePoint.Linq
         {
             if (_errors != null && _errors.Count > 0)
             {
-                foreach (ParseError error in _errors)
+                foreach (var error in _errors)
                 {
-                    txtLinq.Select(error.StartIndex, error.EndIndex - error.StartIndex + 1);
+                    txtLinq.Select(error.Value.StartIndex, error.Value.EndIndex - error.Value.StartIndex + 1);
                     txtLinq.SelectionColor = Color.Red;
 
-                    string tag = "<ParseError ID=\"" + error.ErrorId + "\" />";
+                    string tag = "<ParseError ID=\"" + error.Key + "\" />";
                     int iCaml = txtCaml.Text.IndexOf(tag);
                     if (iCaml >= 0)
                     {
@@ -94,23 +94,23 @@ namespace BdsSoft.SharePoint.Linq
 
         private ToolTip tip = new ToolTip();
 
-        private int? currentError = null;
+        private ParseError currentError = null;
 
         private void txtLinq_MouseMove(object sender, MouseEventArgs e)
         {
             int i = txtLinq.GetCharIndexFromPosition(e.Location);
 
-            foreach (ParseError error in _errors)
+            foreach (var error in _errors)
             {
-                if (error.StartIndex <= i && error.EndIndex >= i)
+                if (error.Value.StartIndex <= i && error.Value.EndIndex >= i)
                 {
-                    tip.SetToolTip(txtLinq, error.Message);
+                    tip.SetToolTip(txtLinq, error.Value.Message);
 
-                    if (currentError == null || currentError != error.ErrorId)
+                    if (currentError == null || currentError != error.Value)
                     {
                         ClearSelections();
-                        
-                        txtLinq.Select(error.StartIndex, error.EndIndex - error.StartIndex + 1);
+
+                        txtLinq.Select(error.Value.StartIndex, error.Value.EndIndex - error.Value.StartIndex + 1);
                         txtLinq.SelectionFont = new Font(txtLinq.SelectionFont, FontStyle.Underline);
 
                         txtLinq.Select(0, 0);
@@ -118,7 +118,7 @@ namespace BdsSoft.SharePoint.Linq
 
                         txtLinq.Cursor = Cursors.Hand;
 
-                        string tag = "<ParseError ID=\"" + error.ErrorId + "\" />";
+                        string tag = "<ParseError ID=\"" + error.Key + "\" />";
                         int iCaml = txtCaml.Text.IndexOf(tag);
                         if (iCaml >= 0)
                         {
@@ -126,7 +126,7 @@ namespace BdsSoft.SharePoint.Linq
                             txtCaml.SelectionFont = new Font(txtCaml.SelectionFont, FontStyle.Underline);
                         }
 
-                        currentError = error.ErrorId;
+                        currentError = error.Value;
                     }
 
                     return;
