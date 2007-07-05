@@ -104,7 +104,7 @@ namespace BdsSoft.SharePoint.Linq
             {
                 if (error.Value.StartIndex <= i && error.Value.EndIndex >= i)
                 {
-                    tip.SetToolTip(txtLinq, error.Value.Message);
+                    tip.SetToolTip(txtLinq, String.Format("{0}: {1}", error.Value.ErrorCode, error.Value.Message));
 
                     if (currentError == null || currentError != error.Value)
                     {
@@ -133,11 +133,6 @@ namespace BdsSoft.SharePoint.Linq
                 }
             }
 
-            currentError = null;
-            tip.RemoveAll();
-
-            txtLinq.Cursor = Cursors.Default;
-
             ClearSelections();
         }
 
@@ -150,6 +145,11 @@ namespace BdsSoft.SharePoint.Linq
 
             txtLinq.Select(0, 0);
             txtCaml.Select(0, 0);
+
+            currentError = null;
+            tip.RemoveAll();
+
+            txtLinq.Cursor = Cursors.Default;
         }
 
         private void txtLinq_MouseClick(object sender, MouseEventArgs e)
@@ -159,7 +159,7 @@ namespace BdsSoft.SharePoint.Linq
             if (txtLinq.Cursor == Cursors.Hand && currentError != null)
             {
                 // TODO: Show additional info about the error.
-                MessageBox.Show("Not implemented yet.");
+                MessageBox.Show(currentError.ErrorCode + ": " + currentError.Message);
             }
         }
     }

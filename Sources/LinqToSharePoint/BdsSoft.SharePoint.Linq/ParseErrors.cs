@@ -31,62 +31,62 @@ namespace BdsSoft.SharePoint.Linq
     {
         public static XmlElement UnsupportedQueryOperator(this CamlQuery query, string queryOperator, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.UnsupportedQueryOperator, queryOperator), query, start, end);
-        }
-
-        public static XmlElement CantNegate(this CamlQuery query, string expression, int start, int end)
-        {
-            return KeepOrThrow(String.Format(Errors.CantNegate, expression), query, start, end);
+            return KeepOrThrow(1, String.Format(Errors.UnsupportedQueryOperator, queryOperator), query, start, end);
         }
 
         public static XmlElement NonBoolConstantValueInPredicate(this CamlQuery query, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.NonBoolConstantValueInPredicate), query, start, end);
+            return KeepOrThrow(2, String.Format(Errors.NonBoolConstantValueInPredicate), query, start, end);
         }
 
         public static XmlElement PredicateAfterProjection(this CamlQuery query, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.PredicateAfterProjection), query, start, end);
+            return KeepOrThrow(3, String.Format(Errors.PredicateAfterProjection), query, start, end);
         }
 
         public static XmlElement DateRangesOverlapInvalidValueArgument(this CamlQuery query, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.DateRangesOverlapInvalidValueArgument), query, start, end);
+            return KeepOrThrow(4, String.Format(Errors.DateRangesOverlapInvalidValueArgument), query, start, end);
         }
 
         public static XmlElement DateRangesOverlapMissingFieldReferences(this CamlQuery query, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.DateRangesOverlapMissingFieldReferences), query, start, end);
+            return KeepOrThrow(5, String.Format(Errors.DateRangesOverlapMissingFieldReferences), query, start, end);
         }
 
         public static XmlElement PredicateContainsNonEntityReference(this CamlQuery query, string member, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.PredicateContainsNonEntityReference, member), query, start, end);
+            return KeepOrThrow(6, String.Format(Errors.PredicateContainsNonEntityReference, member), query, start, end);
         }
 
         public static XmlElement PredicateContainsNonEntityMethodCall(this CamlQuery query, string method, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.PredicateContainsNonEntityMethodCall, method), query, start, end);
+            return KeepOrThrow(7, String.Format(Errors.PredicateContainsNonEntityMethodCall, method), query, start, end);
         }
 
         public static XmlElement InvalidEntityReference(this CamlQuery query, string member, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.InvalidEntityReference, member), query, start, end);
+            return KeepOrThrow(8, String.Format(Errors.InvalidEntityReference, member), query, start, end);
         }
 
         public static XmlElement UnsupportedStringMethodCall(this CamlQuery query, string method, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.UnsupportedStringMethodCall, method), query, start, end);
+            return KeepOrThrow(9, String.Format(Errors.UnsupportedStringMethodCall, method), query, start, end);
         }
 
         public static XmlElement UnsupportedMethodCall(this CamlQuery query, string method, int start, int end)
         {
-            return KeepOrThrow(String.Format(Errors.UnsupportedMethodCall, method), query, start, end);
+            return KeepOrThrow(10, String.Format(Errors.UnsupportedMethodCall, method), query, start, end);
+        }
+
+        public static XmlElement CantNegate(this CamlQuery query, string expression, int start, int end)
+        {
+            return KeepOrThrow(11, String.Format(Errors.CantNegate, expression), query, start, end);
         }
 
         public static XmlElement GeneralError(this CamlQuery query, string message, int start, int end)
         {
-            return KeepOrThrow(message, query, start, end);
+            return KeepOrThrow(9999, message, query, start, end);
         }
 
         public static void FatalError(int start, int end)
@@ -94,11 +94,11 @@ namespace BdsSoft.SharePoint.Linq
             throw new InvalidOperationException(Errors.FatalError);
         }
 
-        private static XmlElement KeepOrThrow(string message, CamlQuery query, int start, int end)
+        private static XmlElement KeepOrThrow(int errorCode, string message, CamlQuery query, int start, int end)
         {
             if (query._errors != null)
             {
-                int id = query._errors.Add(new ParseError(message, start, end));
+                int id = query._errors.Add(new ParseError(errorCode, message, start, end));
 
                 XmlElement error = query._doc.CreateElement("ParseError");
                 XmlAttribute idAttribute = query._doc.CreateAttribute("ID");
@@ -117,6 +117,19 @@ namespace BdsSoft.SharePoint.Linq
     [Serializable]
     public class ParseError
     {
+        private int _errorCode;
+
+        /// <summary>
+        /// Error code.
+        /// </summary>
+        public string ErrorCode
+        {
+            get
+            {
+                return String.Format("SP{0}", _errorCode.ToString().PadLeft(4, '0'));
+            }
+        }
+
         /// <summary>
         /// Error message.
         /// </summary>
@@ -135,11 +148,13 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Creates a new parse error.
         /// </summary>
+        /// <param name="errorCode">Error code.</param>
         /// <param name="message">Error message.</param>
         /// <param name="startIndex">Start position of the faulting expression in the original LINQ expression textual representation.</param>
         /// <param name="endIndex">End position of the faulting expression in the original LINQ expression textual representation.</param>
-        public ParseError(string message, int startIndex, int endIndex)
+        public ParseError(int errorCode, string message, int startIndex, int endIndex)
         {
+            _errorCode = errorCode;
             Message = message;
             StartIndex = startIndex;
             EndIndex = endIndex;

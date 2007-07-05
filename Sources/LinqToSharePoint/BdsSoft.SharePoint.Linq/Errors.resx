@@ -119,38 +119,50 @@
   </resheader>
   <data name="CantNegate" xml:space="preserve">
     <value>Can't negate a {0} query expression.</value>
+    <comment>SP0011</comment>
   </data>
   <data name="DateRangesOverlapInvalidValueArgument" xml:space="preserve">
     <value>A call to DateRangesOverlap should not have an entity property reference as its value argument.</value>
+    <comment>SP0004</comment>
   </data>
   <data name="DateRangesOverlapMissingFieldReferences" xml:space="preserve">
     <value>A call to DateRangesOverlap should have one or more field references in its fields argument.</value>
+    <comment>SP0005</comment>
   </data>
   <data name="FatalError" xml:space="preserve">
     <value>An unexpected error occurred in the predicate parser.</value>
+    <comment>SP9999</comment>
   </data>
   <data name="InvalidEntityReference" xml:space="preserve">
     <value>Query predicate contains an entity reference that doesn't belong to a SharePoint list context: {0}.</value>
+    <comment>SP0008</comment>
   </data>
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>
+    <comment>SP0002</comment>
   </data>
   <data name="PredicateAfterProjection" xml:space="preserve">
     <value>Can't add another predicate expression to the query.</value>
+    <comment>SP0003</comment>
   </data>
   <data name="PredicateContainsNonEntityMethodCall" xml:space="preserve">
     <value>Query predicate contains a method call on a non-entity property: {0}.</value>
+    <comment>SP0007</comment>
   </data>
   <data name="PredicateContainsNonEntityReference" xml:space="preserve">
     <value>Query predicate contains a non-entity property reference: {0}.</value>
+    <comment>SP0006</comment>
   </data>
   <data name="UnsupportedMethodCall" xml:space="preserve">
     <value>Unsupported method call detected in query predicate: {0}.</value>
+    <comment>SP0010</comment>
   </data>
   <data name="UnsupportedQueryOperator" xml:space="preserve">
     <value>Query operator {0} is not supported.</value>
+    <comment>SP0001</comment>
   </data>
   <data name="UnsupportedStringMethodCall" xml:space="preserve">
     <value>Unsupported string filtering query expression detected: {0}. Only the methods Contains and StartsWith are supported.</value>
+    <comment>SP0009</comment>
   </data>
 </root>
