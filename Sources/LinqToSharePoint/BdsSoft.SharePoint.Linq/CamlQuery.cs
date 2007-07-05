@@ -2288,7 +2288,10 @@ namespace BdsSoft.SharePoint.Linq
                         PropertyInfo lookupField = _entityType.GetProperty(field);
                         FieldAttribute lookup = Helpers.GetFieldAttribute(lookupField);
                         if (lookup.FieldType != FieldType.Lookup)
-                            throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+                        {
+                            RuntimeErrors.LookupFieldPatchError();
+                            return; //Won't occur
+                        }
 
                         //
                         // Get information about the Lookup list.
@@ -3019,7 +3022,8 @@ namespace BdsSoft.SharePoint.Linq
                         }
                         break;
                     default:
-                        throw new InvalidOperationException("Unrecognized mapping type encountered: " + field.FieldType + ".");
+                        RuntimeErrors.UnrecognizedMappingType(field.FieldType.ToString());
+                        return;
                 }
             }
             //
@@ -3117,7 +3121,10 @@ namespace BdsSoft.SharePoint.Linq
             if (otherVals.Count == 1)
                 other = otherVals.ToArray()[0];
             else if (otherVals.Count > 1)
-                throw new InvalidOperationException("More than one unknown choice value encountered for field " + property.Name + ". Only one fill-in value is supported. Is the entity mapping for the list outdated?");
+            {
+                RuntimeErrors.TooManyUnknownChoiceValues(property.Name);
+                return null; //Won't occur
+            }
 
             //
             // If an other value is found, process it as a fill-in choice for the MultiChoice field.
@@ -3137,10 +3144,16 @@ namespace BdsSoft.SharePoint.Linq
                     if (pOther != null)
                         pOther.SetValue(target, other, null);
                     else
-                        throw new InvalidOperationException("Invalid OtherChoice field mapping for MultiChoice field " + property.Name + ".");
+                    {
+                        RuntimeErrors.InvalidOtherChoiceFieldMapping(property.Name);
+                        return null; //Won't occur
+                    }
                 }
                 else
-                    throw new InvalidOperationException("An unknown fill-in choice value was encountered for field " + property.Name + " but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?");
+                {
+                    RuntimeErrors.MissingOtherChoiceFieldMapping(property.Name);
+                    return null; //Won't occur
+                }
             }
             return val;
         }

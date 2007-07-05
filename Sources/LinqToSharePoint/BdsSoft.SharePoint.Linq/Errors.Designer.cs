@@ -151,6 +151,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid OtherChoice field mapping for MultiChoice field {0}..
+        /// </summary>
+        internal static string InvalidOtherChoiceFieldMapping {
+            get {
+                return ResourceManager.GetString("InvalidOtherChoiceFieldMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to List version mismatch between entity type and list definition on the server..
         /// </summary>
         internal static string ListVersionMismatch {
@@ -160,11 +169,29 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An unexpected error has occurred in the Lookup field patcher..
+        /// </summary>
+        internal static string LookupFieldPatchError {
+            get {
+                return ResourceManager.GetString("LookupFieldPatchError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Missing field mapping attribute for entity property {0}..
         /// </summary>
         internal static string MissingFieldMappingAttribute {
             get {
                 return ResourceManager.GetString("MissingFieldMappingAttribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An unknown fill-in choice value was encountered for field {0} but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?.
+        /// </summary>
+        internal static string MissingOtherChoiceFieldMapping {
+            get {
+                return ResourceManager.GetString("MissingOtherChoiceFieldMapping", resourceCulture);
             }
         }
         
@@ -214,11 +241,29 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to More than one unknown choice value encountered for field {0}. Only one fill-in value is supported. Is the entity mapping for the list outdated?.
+        /// </summary>
+        internal static string TooManyUnknownChoiceValues {
+            get {
+                return ResourceManager.GetString("TooManyUnknownChoiceValues", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unrecognized enumeration flags value..
         /// </summary>
         internal static string UnrecognizedEnumValue {
             get {
                 return ResourceManager.GetString("UnrecognizedEnumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized mapping type encountered: {0}..
+        /// </summary>
+        internal static string UnrecognizedMappingType {
+            get {
+                return ResourceManager.GetString("UnrecognizedMappingType", resourceCulture);
             }
         }
         

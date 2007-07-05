@@ -182,6 +182,31 @@ namespace BdsSoft.SharePoint.Linq
         {
             throw new NotSupportedException(String.Format(Errors.InvalidLookupField, property));
         }
+
+        public static void LookupFieldPatchError()
+        {
+            throw new InvalidOperationException(Errors.LookupFieldPatchError);
+        }
+
+        public static void UnrecognizedMappingType(string fieldType)
+        {
+            throw new InvalidOperationException(String.Format(Errors.UnrecognizedMappingType, fieldType));
+        }
+
+        public static void TooManyUnknownChoiceValues(string property)
+        {
+            throw new InvalidOperationException(String.Format(Errors.TooManyUnknownChoiceValues, property));
+        }
+
+        public static void InvalidOtherChoiceFieldMapping(string property)
+        {
+            throw new InvalidOperationException(String.Format(Errors.InvalidOtherChoiceFieldMapping, property));
+        }
+
+        public static void MissingOtherChoiceFieldMapping(string property)
+        {
+            throw new InvalidOperationException(String.Format(Errors.MissingOtherChoiceFieldMapping, property));
+        }
     }
 
     /// <summary>
