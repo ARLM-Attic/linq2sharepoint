@@ -124,6 +124,11 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(99, String.Format(Errors.UnsupportedQueryExpression), query, start, end);
         }
 
+        public static XmlElement MissingFieldMappingAttribute(this CamlQuery query, string property)
+        {
+            return KeepOrThrow(101, String.Format(Errors.MissingFieldMappingAttribute, property), query, 0, 0);
+        }
+
         public static XmlElement GeneralError(this CamlQuery query, string message, int start, int end)
         {
             return KeepOrThrow(9999, message, query, start, end);
@@ -148,6 +153,34 @@ namespace BdsSoft.SharePoint.Linq
             }
             else
                 throw new NotSupportedException(message);
+        }
+    }
+
+    internal static class RuntimeErrors
+    {
+        public static void MissingFieldMappingAttribute(string property)
+        {
+            throw new InvalidOperationException(String.Format(Errors.MissingFieldMappingAttribute, property));
+        }
+
+        public static void ListVersionMismatch()
+        {
+            throw new InvalidOperationException(String.Format(Errors.ListVersionMismatch));
+        }
+
+        public static void ConnectionExceptionSp(string url, Exception innerException)
+        {
+            throw new SharePointConnectionException(String.Format(Errors.ConnectionExceptionSp, url), innerException);
+        }
+
+        public static void ConnectionExceptionWs(string url, Exception innerException)
+        {
+            throw new SharePointConnectionException(String.Format(Errors.ConnectionExceptionWs, url), innerException);
+        }
+
+        public static void InvalidLookupField(string property)
+        {
+            throw new NotSupportedException(String.Format(Errors.InvalidLookupField, property));
         }
     }
 

@@ -1624,7 +1624,10 @@ namespace BdsSoft.SharePoint.Linq
             if (_projection == null)
                 _projection = _doc.CreateElement("ViewFields");
             else
+            {
                 this.SecondProjectionExpression(ppS, ppE); /* PARSE ERROR */
+                return;
+            }
 
             //
             // Compile the projection for execution during query result fetching.
@@ -1917,7 +1920,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             FieldAttribute fld = Helpers.GetFieldAttribute(property);
             if (fld == null)
-                throw new InvalidOperationException("Missing field mapping attribute for entity property " + property.Name + ".");
+                return /* PARSE ERROR */ this.MissingFieldMappingAttribute(property.Name);
 
             XmlElement fieldRef = _doc.CreateElement("FieldRef");
             XmlAttribute fieldName = _doc.CreateAttribute("Name");
@@ -2227,7 +2230,7 @@ namespace BdsSoft.SharePoint.Linq
             // Find the list attribute, which is required to perform a list version match check.
             //
             if (GetListAttribute().Version != version)
-                throw new InvalidOperationException("List version mismatch between entity type and list definition on the server.");
+                RuntimeErrors.ListVersionMismatch(); /* RUNTIME ERROR */
         }
 
         /// <summary>
@@ -2640,7 +2643,8 @@ namespace BdsSoft.SharePoint.Linq
             }
             catch (Exception ex)
             {
-                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint site at " + _context._site.Url + ".", ex);
+                RuntimeErrors.ConnectionExceptionSp(_context._site.Url, ex);
+                yield break; //Won't occur
             }
 
             //
@@ -2695,7 +2699,8 @@ namespace BdsSoft.SharePoint.Linq
             }
             catch (SoapException ex)
             {
-                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint web service at " + _context._wsProxy.Url + ".", ex);
+                RuntimeErrors.ConnectionExceptionWs(_context._wsProxy.Url, ex);
+                yield break; //Won't occur
             }
 
             //
@@ -2739,9 +2744,9 @@ namespace BdsSoft.SharePoint.Linq
                 // List general info.
                 //
                 if (_context._site != null)
-                    _context.Log.WriteLine("Query for " + list + " over object model...");
+                    _context.Log.WriteLine("Query for " + list + " through object model...");
                 else
-                    _context.Log.WriteLine("Query for " + list + " over web services...");
+                    _context.Log.WriteLine("Query for " + list + " through web services...");
 
                 //
                 // Do the remainder of the logging (CAML).
@@ -2761,10 +2766,9 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="item">Item retrieved via the SharePoint object model.</param>
         /// <param name="row">Item retrieved via the SharePoint list web service.</param>
-        /// <!--<param name="validItem">Indicates whether or not the retrieved item should be returned in the result set.</param>-->
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
-        private T GetItem<T>(SPListItem item, DataRow row)//, out bool validItem)
+        private T GetItem<T>(SPListItem item, DataRow row)
         {
             //validItem = true;
 
@@ -2784,11 +2788,7 @@ namespace BdsSoft.SharePoint.Linq
             if (item != null)
             {
                 foreach (PropertyInfo p in props)
-                {
-                    AssignResultProperty<T>(item, null, p, result);//, out validItem);
-                    //if (!validItem)
-                    //    return default(T);
-                }
+                    AssignResultProperty<T>(item, null, p, result);
             }
             //
             // Data comes from the SharePoint list web service.
@@ -2796,11 +2796,7 @@ namespace BdsSoft.SharePoint.Linq
             else
             {
                 foreach (PropertyInfo p in props)
-                {
-                    AssignResultProperty<T>(null, row, p, result);//, out validItem);
-                    //if (!validItem)
-                    //    return default(T);
-                }
+                    AssignResultProperty<T>(null, row, p, result);
             }
 
             //
@@ -2819,7 +2815,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
         /// <param name="property">Property to set on the entity object.</param>
         /// <param name="target">Entity object to set the property for.</param>
-        private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)//, out bool validItem)
+        private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)
         {
             //
             // Convert to entity to set property values via SetValue method if an entity type is used.
@@ -2831,7 +2827,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             FieldAttribute field = Helpers.GetFieldAttribute(property);
             if (field == null)
-                throw new InvalidOperationException("Missing field mapping attribute for entity property " + property.Name + ".");
+                RuntimeErrors.MissingFieldMappingAttribute(property.Name); /* RUNTIME ERROR */
 
             //
             // Get the value of the property either using the SharePoint list object or using the current DataRow.
@@ -2981,7 +2977,7 @@ namespace BdsSoft.SharePoint.Linq
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
                         //
                         if (entity == null)
-                            throw new NotSupportedException("Lookup fields are only supported on entity types deriving from SharePointListEntity. Did you use SpMetal to generate the entity class?");
+                            RuntimeErrors.InvalidLookupField(property.Name);
                         else
                         {
                             //
@@ -3011,7 +3007,7 @@ namespace BdsSoft.SharePoint.Linq
                         // We'll only support lazy loading on entity types that implement SharePointListEntity.
                         //
                         if (entity == null)
-                            throw new NotSupportedException("Lookup fields are only supported on entity types deriving from SharePointListEntity. Did you use SpMetal to generate the entity class?");
+                            RuntimeErrors.InvalidLookupField(property.Name);
                         else
                         {
                             //

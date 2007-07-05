@@ -121,6 +121,14 @@
     <value>Can't negate a {0} query expression.</value>
     <comment>SP0011</comment>
   </data>
+  <data name="ConnectionExceptionSp" xml:space="preserve">
+    <value>Error occurred when connecting to the SharePoint site at {0}.</value>
+    <comment>SP0103</comment>
+  </data>
+  <data name="ConnectionExceptionWs" xml:space="preserve">
+    <value>Error occurred when connecting to the SharePoint web service at {0}.</value>
+    <comment>SP0104</comment>
+  </data>
   <data name="DateRangesOverlapInvalidValueArgument" xml:space="preserve">
     <value>A call to DateRangesOverlap should not have an entity property reference as its value argument.</value>
     <comment>SP0004</comment>
@@ -137,6 +145,10 @@
     <value>Query predicate contains an entity reference that doesn't belong to a SharePoint list context: {0}.</value>
     <comment>SP0008</comment>
   </data>
+  <data name="InvalidLookupField" xml:space="preserve">
+    <value>Invalid lookup field type for property {0}. Lookup fields should have a type derived from SharePointListEntity.</value>
+    <comment>SP0105</comment>
+  </data>
   <data name="InvalidLookupMultiContainsCall" xml:space="preserve">
     <value>Contains expressions for LookupMulti fields should match the referenced entity type.</value>
     <comment>SP0017</comment>
@@ -144,6 +156,14 @@
   <data name="InvalidNullValuedCondition" xml:space="preserve">
     <value>Null value encountered in query condition. Only equality and non-equality null checks are supported.</value>
     <comment>SP0014</comment>
+  </data>
+  <data name="ListVersionMismatch" xml:space="preserve">
+    <value>List version mismatch between entity type and list definition on the server.</value>
+    <comment>SP0102</comment>
+  </data>
+  <data name="MissingFieldMappingAttribute" xml:space="preserve">
+    <value>Missing field mapping attribute for entity property {0}.</value>
+    <comment>SP0101</comment>
   </data>
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>

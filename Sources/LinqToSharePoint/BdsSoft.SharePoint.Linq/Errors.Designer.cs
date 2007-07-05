@@ -70,6 +70,24 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error occurred when connecting to the SharePoint site at {0}..
+        /// </summary>
+        internal static string ConnectionExceptionSp {
+            get {
+                return ResourceManager.GetString("ConnectionExceptionSp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred when connecting to the SharePoint web service at {0}..
+        /// </summary>
+        internal static string ConnectionExceptionWs {
+            get {
+                return ResourceManager.GetString("ConnectionExceptionWs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A call to DateRangesOverlap should not have an entity property reference as its value argument..
         /// </summary>
         internal static string DateRangesOverlapInvalidValueArgument {
@@ -106,6 +124,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid lookup field type for property {0}. Lookup fields should have a type derived from SharePointListEntity..
+        /// </summary>
+        internal static string InvalidLookupField {
+            get {
+                return ResourceManager.GetString("InvalidLookupField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Contains expressions for LookupMulti fields should match the referenced entity type..
         /// </summary>
         internal static string InvalidLookupMultiContainsCall {
@@ -120,6 +147,24 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string InvalidNullValuedCondition {
             get {
                 return ResourceManager.GetString("InvalidNullValuedCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List version mismatch between entity type and list definition on the server..
+        /// </summary>
+        internal static string ListVersionMismatch {
+            get {
+                return ResourceManager.GetString("ListVersionMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Missing field mapping attribute for entity property {0}..
+        /// </summary>
+        internal static string MissingFieldMappingAttribute {
+            get {
+                return ResourceManager.GetString("MissingFieldMappingAttribute", resourceCulture);
             }
         }
         
