@@ -106,6 +106,24 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Contains expressions for LookupMulti fields should match the referenced entity type..
+        /// </summary>
+        internal static string InvalidLookupMultiContainsCall {
+            get {
+                return ResourceManager.GetString("InvalidLookupMultiContainsCall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Null value encountered in query condition. Only equality and non-equality null checks are supported..
+        /// </summary>
+        internal static string InvalidNullValuedCondition {
+            get {
+                return ResourceManager.GetString("InvalidNullValuedCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Non-boolean constant values are not supported in query predicates..
         /// </summary>
         internal static string NonBoolConstantValueInPredicate {
@@ -142,11 +160,56 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Second projection expression encountered during parsing. Queries can only contain one projection expression..
+        /// </summary>
+        internal static string SecondProjectionExpression {
+            get {
+                return ResourceManager.GetString("SecondProjectionExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized enumeration flags value..
+        /// </summary>
+        internal static string UnrecognizedEnumValue {
+            get {
+                return ResourceManager.GetString("UnrecognizedEnumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported binary expression detected in query predicate: {0}..
+        /// </summary>
+        internal static string UnsupportedBinary {
+            get {
+                return ResourceManager.GetString("UnsupportedBinary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unsupported method call detected in query predicate: {0}..
         /// </summary>
         internal static string UnsupportedMethodCall {
             get {
                 return ResourceManager.GetString("UnsupportedMethodCall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported ordering expression detected. Ordering expressions should only contain individual entity property expressions..
+        /// </summary>
+        internal static string UnsupportedOrdering {
+            get {
+                return ResourceManager.GetString("UnsupportedOrdering", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported query expression detected..
+        /// </summary>
+        internal static string UnsupportedQueryExpression {
+            get {
+                return ResourceManager.GetString("UnsupportedQueryExpression", resourceCulture);
             }
         }
         
@@ -165,6 +228,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string UnsupportedStringMethodCall {
             get {
                 return ResourceManager.GetString("UnsupportedStringMethodCall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported unary expression detected in query predicate: {0}..
+        /// </summary>
+        internal static string UnsupportedUnary {
+            get {
+                return ResourceManager.GetString("UnsupportedUnary", resourceCulture);
             }
         }
     }

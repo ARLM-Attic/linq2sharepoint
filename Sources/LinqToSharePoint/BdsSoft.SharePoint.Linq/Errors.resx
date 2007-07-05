@@ -137,6 +137,14 @@
     <value>Query predicate contains an entity reference that doesn't belong to a SharePoint list context: {0}.</value>
     <comment>SP0008</comment>
   </data>
+  <data name="InvalidLookupMultiContainsCall" xml:space="preserve">
+    <value>Contains expressions for LookupMulti fields should match the referenced entity type.</value>
+    <comment>SP0017</comment>
+  </data>
+  <data name="InvalidNullValuedCondition" xml:space="preserve">
+    <value>Null value encountered in query condition. Only equality and non-equality null checks are supported.</value>
+    <comment>SP0014</comment>
+  </data>
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>
     <comment>SP0002</comment>
@@ -153,9 +161,29 @@
     <value>Query predicate contains a non-entity property reference: {0}.</value>
     <comment>SP0006</comment>
   </data>
+  <data name="SecondProjectionExpression" xml:space="preserve">
+    <value>Second projection expression encountered during parsing. Queries can only contain one projection expression.</value>
+    <comment>SP0018</comment>
+  </data>
+  <data name="UnrecognizedEnumValue" xml:space="preserve">
+    <value>Unrecognized enumeration flags value.</value>
+    <comment>SP0015</comment>
+  </data>
+  <data name="UnsupportedBinary" xml:space="preserve">
+    <value>Unsupported binary expression detected in query predicate: {0}.</value>
+    <comment>SP0013</comment>
+  </data>
   <data name="UnsupportedMethodCall" xml:space="preserve">
     <value>Unsupported method call detected in query predicate: {0}.</value>
     <comment>SP0010</comment>
+  </data>
+  <data name="UnsupportedOrdering" xml:space="preserve">
+    <value>Unsupported ordering expression detected. Ordering expressions should only contain individual entity property expressions.</value>
+    <comment>SP0016</comment>
+  </data>
+  <data name="UnsupportedQueryExpression" xml:space="preserve">
+    <value>Unsupported query expression detected.</value>
+    <comment>SP0099</comment>
   </data>
   <data name="UnsupportedQueryOperator" xml:space="preserve">
     <value>Query operator {0} is not supported.</value>
@@ -164,5 +192,9 @@
   <data name="UnsupportedStringMethodCall" xml:space="preserve">
     <value>Unsupported string filtering query expression detected: {0}. Only the methods Contains and StartsWith are supported.</value>
     <comment>SP0009</comment>
+  </data>
+  <data name="UnsupportedUnary" xml:space="preserve">
+    <value>Unsupported unary expression detected in query predicate: {0}.</value>
+    <comment>SP0012</comment>
   </data>
 </root>

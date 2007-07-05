@@ -56,7 +56,8 @@ namespace Junkyard
             //Junk j = new Junk();
             //var res = (from t in lst where j.User.IsMember select t);
             //var res = from t in lst where t.FirstName.EndsWith("Test") select t;
-            var res = from t in lst where t.Created.Value.IsDaylightSavingTime() select t;
+            //var res = from t in lst where t.Created.Value.IsDaylightSavingTime() select t;
+            var res = from t in lst orderby 1 select t;
             //var res = (from t in lst where t.LastName.Length == 0 select t);
             SharePointListQueryVisualizer.TestShowVisualizer(res);
 

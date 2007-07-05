@@ -227,7 +227,7 @@ namespace BdsSoft.SharePoint.Linq
                 }
             }
             else
-                throw new InvalidOperationException("Unrecognized query statement detected.");
+                ParseErrors.UnsupportedQueryExpression(query, ppS, ppE); /* PARSE ERROR */
         }
 
         #endregion
@@ -690,7 +690,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Check type of the Contains parameter to match the entity type.
                 //
                 if (mce.Method.DeclaringType.GetGenericArguments()[0] != val.GetType())
-                    throw new NotSupportedException("Contains expressions for LookupMulti fields should match the referenced entity type.");
+                    return /* PARSE ERROR */ this.InvalidLookupMultiContainsCall(ppS, ppE);
 
                 //
                 // Build condition based on the referenced field and the lookup key field.
@@ -745,7 +745,7 @@ namespace BdsSoft.SharePoint.Linq
                 return c;
             }
             else
-                throw new NotSupportedException("Unsupported query expression detected: " + predicate.ToString() + ".");
+                return /* PARSE ERROR */ this.UnsupportedUnary(predicate.NodeType.ToString(), ppS, ppE);
         }
 
         private XmlElement ParsePredicateBinary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, BinaryExpression be, ref PropertyInfo lookup, int ppS, int ppE)
@@ -883,7 +883,7 @@ namespace BdsSoft.SharePoint.Linq
                 default:
                     {
                         PropertyInfo lookup1;
-                        XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1);
+                        XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1, ppS, ppE);
 
                         //
                         // If a Lookup reference was detected, propagate the lookup query expression to the parent.
@@ -1003,7 +1003,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="isPositive">Indicates whether the condition should be evaluated in a positive context or not; used for inversion of conditions using De Morgan's law.</param>
         /// <param name="predicateParameter">Parameter of the predicate lambda expression. Used to detect references to the entity type itself.</param>
         /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
-        private XmlElement GetCondition(BinaryExpression condition, bool isPositive, ParameterExpression predicateParameter, out PropertyInfo lookup)
+        private XmlElement GetCondition(BinaryExpression condition, bool isPositive, ParameterExpression predicateParameter, out PropertyInfo lookup, int ppS, int ppE)
         {
             //
             // Normally, we don't face a lookup field so stick with the default of no lookup.
@@ -1059,10 +1059,10 @@ namespace BdsSoft.SharePoint.Linq
                     if (o is bool)
                         return GetBooleanPatch((bool)o);
                     else
-                        throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+                        return /* PARSE ERROR */ this.NonBoolConstantValueInPredicate(ppS, ppE);
                 }
                 else
-                    throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+                    return /* PARSE ERROR */ this.UnsupportedQueryExpression(ppS, ppE);
             }
 
             //
@@ -1078,7 +1078,7 @@ namespace BdsSoft.SharePoint.Linq
             {
                 MemberExpression outer = lhs.Expression as MemberExpression;
                 if (!IsEntityPropertyReference(outer))
-                    throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+                    return /* PARSE ERROR */ this.InvalidEntityReference(lhs.Member.Name, ppS, ppE);
 
                 lookup = (PropertyInfo)outer.Member;
             }
@@ -1208,7 +1208,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Currently no support for other binary operations (if any).
                 //
                 default:
-                    throw new NotSupportedException("Unsupported binary operation encountered in query: " + condition + ".");
+                    return /* PARSE ERROR */ this.UnsupportedBinary(condition.NodeType.ToString(), ppS, ppE);
             }
 
             //
@@ -1237,7 +1237,7 @@ namespace BdsSoft.SharePoint.Linq
                 else if (condition.NodeType == ExpressionType.NotEqual)
                     c = _doc.CreateElement(isPositive ? "IsNotNull" : "IsNull");
                 else
-                    throw new InvalidOperationException("Null value encountered in query condition. Only equality and non-equality null checks can be translated.");
+                    return /* PARSE ERROR */ this.InvalidNullValuedCondition(ppS, ppE);
             }
             //
             // Type-specific processing required in translating the query to CAML.
@@ -1251,7 +1251,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Enums represent Choice or MultiChoice fields.
                 //
-                if (enumCheck != null && enumCheck.IsSubclassOf(typeof(Enum))) //FIX v0.1.2
+                if (enumCheck != null && enumCheck.IsSubclassOf(typeof(Enum)))
                 {
                     //
                     // Enums might be compiled to numeric values; reconstruct the enum back if needed.
@@ -1293,7 +1293,7 @@ namespace BdsSoft.SharePoint.Linq
                         // If no flags values have been set, we're faced with an invalid value.
                         //
                         if (values.Count == 0)
-                            throw new InvalidOperationException("Unrecognized enumeration flags value: " + value + ".");
+                            return /* PARSE ERROR */ this.UnrecognizedEnumValue(ppS, ppE);
                         else
                         {
                             //
@@ -1597,8 +1597,7 @@ namespace BdsSoft.SharePoint.Linq
                 _order.AppendChild(fieldRef);
             }
             else
-                //[PPTODO]
-                throw new NotSupportedException("Unsupported ordering expression detected: " + ordering.Body + ". Ordering expressions should only contain individual entity property expressions.");
+                this.UnsupportedOrdering(ppS, ppE); /* PARSE ERROR */
         }
 
         #endregion
@@ -1625,8 +1624,7 @@ namespace BdsSoft.SharePoint.Linq
             if (_projection == null)
                 _projection = _doc.CreateElement("ViewFields");
             else
-                //[PPTODO]
-                throw new InvalidOperationException("Second projection expression encountered during parsing. Only one projection expression can be translated for each query. Did you use LINQ query syntax?");
+                this.SecondProjectionExpression(ppS, ppE); /* PARSE ERROR */
 
             //
             // Compile the projection for execution during query result fetching.

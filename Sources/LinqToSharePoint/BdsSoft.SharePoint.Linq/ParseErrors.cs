@@ -84,6 +84,46 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(11, String.Format(Errors.CantNegate, expression), query, start, end);
         }
 
+        public static XmlElement UnsupportedUnary(this CamlQuery query, string type, int start, int end)
+        {
+            return KeepOrThrow(12, String.Format(Errors.UnsupportedUnary, type), query, start, end);
+        }
+
+        public static XmlElement UnsupportedBinary(this CamlQuery query, string type, int start, int end)
+        {
+            return KeepOrThrow(13, String.Format(Errors.UnsupportedBinary, type), query, start, end);
+        }
+
+        public static XmlElement InvalidNullValuedCondition(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(14, String.Format(Errors.InvalidNullValuedCondition), query, start, end);
+        }
+
+        public static XmlElement UnrecognizedEnumValue(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(15, String.Format(Errors.UnrecognizedEnumValue), query, start, end);
+        }
+
+        public static XmlElement UnsupportedOrdering(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(16, String.Format(Errors.UnsupportedOrdering), query, start, end);
+        }
+
+        public static XmlElement InvalidLookupMultiContainsCall(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(17, String.Format(Errors.InvalidLookupMultiContainsCall), query, start, end);
+        }
+
+        public static XmlElement SecondProjectionExpression(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(18, String.Format(Errors.SecondProjectionExpression), query, start, end);
+        }
+
+        public static XmlElement UnsupportedQueryExpression(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(99, String.Format(Errors.UnsupportedQueryExpression), query, start, end);
+        }
+
         public static XmlElement GeneralError(this CamlQuery query, string message, int start, int end)
         {
             return KeepOrThrow(9999, message, query, start, end);
