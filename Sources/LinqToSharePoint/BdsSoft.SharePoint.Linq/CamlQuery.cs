@@ -14,7 +14,7 @@
  * 0.2.1 - Introduction of CamlQuery.
  *         Refactoring of PatchPredicate into separate methods.
  *         Patch for negated DateRangesOverlap expressions.
- *         Error handling with positional tracking in the parser.
+ *         Error handling with position tracking in the parser.
  */
 
 using System;
@@ -274,7 +274,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Patches required for lookup fields?
                 //
                 if (lookup != null)
-                    PatchQueryExpressionNode(lookup, ref pred);
+                    PatchQueryExpressionNode(lookup, ref pred, ppS, ppE);
 
                 //
                 // If this is the first predicate, create a new <Where> element.
@@ -410,7 +410,7 @@ namespace BdsSoft.SharePoint.Linq
                 else
                 {
                     c = _doc.CreateElement("Eq");
-                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member)));
+                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member), ppS, ppE));
                 }
 
                 //
@@ -457,10 +457,10 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Find value argument location in parent expression.
                         //
-                        int ppSD = ppS + "DateRangesOverlap(".Length;
-                        int ppED = ppSD + mce.Arguments[0].ToString().Length - 1;
+                        int ppSD1 = ppS + "DateRangesOverlap(".Length;
+                        int ppED1 = ppSD1 + mce.Arguments[0].ToString().Length - 1;
 
-                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidValueArgument(ppSD, ppED);
+                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidValueArgument(ppSD1, ppED1);
                     }
 
                     //
@@ -477,18 +477,16 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Find fields argument location in parent expression.
                         //
-                        int ppSD = ppS + predicate.ToString().IndexOf(fields.ToString());
-                        int ppED = ppE - 1;
+                        int ppSD2 = ppS + predicate.ToString().IndexOf(fields.ToString());
+                        int ppED2 = ppE - 1;
 
-                        return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD, ppED);
+                        return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD2, ppED2);
                     }
 
                     List<XmlElement> fieldRefs = new List<XmlElement>();
 
-                    //
-                    // Exception object for unsupported DateRangesOverlap constructs.
-                    //
-                    Exception drEx = new NotSupportedException("A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.");
+                    int ppSD = ppS + "DateRangesOverlap(".Length + mce.Arguments[0].ToString().Length + ", new [] {".Length;
+                    int ppED = ppE - 2;
 
                     //
                     // Find all field expressions.
@@ -506,11 +504,11 @@ namespace BdsSoft.SharePoint.Linq
                         fEx = CheckForNullableType(fEx, out isNullableHasValue);
 
                         if (!IsEntityPropertyReference(fEx))
-                            throw drEx;
+                            return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
 
                         MemberExpression mex = fEx as MemberExpression;
                         if (mex == null || !(mex.Member is PropertyInfo))
-                            throw drEx;
+                            return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
 
                         //
                         // Lookup properties are supported only if all property references are of the same lookup type.
@@ -519,7 +517,7 @@ namespace BdsSoft.SharePoint.Linq
                         {
                             MemberExpression outer = mex.Expression as MemberExpression;
                             if (!IsEntityPropertyReference(outer))
-                                throw drEx;
+                                return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
 
                             PropertyInfo lookup1 = (PropertyInfo)outer.Member;
 
@@ -527,7 +525,7 @@ namespace BdsSoft.SharePoint.Linq
                             // We've already found field references; check that all of these refer to the same entity type.
                             //
                             if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
-                                throw drEx;
+                                return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
                             else
                                 lookup = lookup1;
                         }
@@ -536,6 +534,8 @@ namespace BdsSoft.SharePoint.Linq
                         // Add field reference element.
                         //
                         fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
+
+                        ppSD += fieldEx.ToString().Length + ", ".Length;
                     }
 
                     //
@@ -578,13 +578,16 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
             //
-            if (mce.Method.DeclaringType == typeof(string))
+            if (mce.Method.DeclaringType == typeof(string) && mce.Object != null && mce.Arguments.Count > 0)
             {
+                int ppSS = ppS + mce.Object.ToString().Length + ".".Length + mce.Method.Name.Length + "(".Length;
+                int ppES = ppSS + mce.Arguments[0].ToString().Length - 1;
+
                 //
                 // Get the value of the method call argument and ensure it's lambda parameter free.
                 //
                 Expression arg = mce.Arguments[0];
-                EnsureLambdaFree(arg, predicateParameter);
+                EnsureLambdaFree(arg, predicateParameter, ppSS, ppES);
 
                 //
                 // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
@@ -642,7 +645,7 @@ namespace BdsSoft.SharePoint.Linq
                         }
                         break;
                     default:
-                        int ppSS = ppS + mce.Object.ToString().Length + 1;
+                        ppSS = ppS + mce.Object.ToString().Length + 1;
                         return /* PARSE ERROR */ this.UnsupportedStringMethodCall(mce.Method.Name, ppSS, ppE);
                 }
                 cond.AppendChild(GetFieldRef(property));
@@ -651,7 +654,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Set the value on the condition element.
                 //
                 if (val != null)
-                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
+                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), ppS, ppE));
                 else
                     return null;
 
@@ -662,6 +665,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             else if (mce.Method.DeclaringType.IsGenericType
                      && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                     && mce.Object != null
+                     && mce.Arguments.Count > 0
                      && mce.Method.Name == "Contains")
             {
                 if (!isPositive)
@@ -669,11 +674,14 @@ namespace BdsSoft.SharePoint.Linq
 
                 XmlElement cond = _doc.CreateElement("Contains");
 
+                int ppSL = ppS + mce.Object.ToString().Length + ".".Length + mce.Method.Name.Length + "(".Length;
+                int ppEL = ppSL + mce.Arguments[0].ToString().Length - 1;
+
                 //
                 // Get the value of the method call argument and ensure it's lambda parameter free.
                 //
                 Expression arg = mce.Arguments[0];
-                EnsureLambdaFree(arg, predicateParameter);
+                EnsureLambdaFree(arg, predicateParameter, ppSL, ppEL);
 
                 //
                 // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
@@ -696,7 +704,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Build condition based on the referenced field and the lookup key field.
                 //
                 cond.AppendChild(GetFieldRef(property));
-                cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property)));
+                cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), ppS, ppE));
 
                 return cond;
             }
@@ -820,9 +828,9 @@ namespace BdsSoft.SharePoint.Linq
                                 lookup = null;
 
                                 if (lookupLeft != null)
-                                    PatchQueryExpressionNode(lookupLeft, ref left);
+                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppE);
                                 if (lookupRight != null)
-                                    PatchQueryExpressionNode(lookupRight, ref right);
+                                    PatchQueryExpressionNode(lookupRight, ref right, ppS, ppE);
                             }
 
                             //
@@ -849,7 +857,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupLeft != null)
                                 {
                                     lookup = lookupLeft;
-                                    PatchQueryExpressionNode(lookupLeft, ref left);
+                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppE);
                                 }
 
                                 return left;
@@ -865,7 +873,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupRight != null)
                                 {
                                     lookup = lookupRight;
-                                    PatchQueryExpressionNode(lookupRight, ref right);
+                                    PatchQueryExpressionNode(lookupRight, ref right, ppS, ppE);
                                 }
 
                                 return right;
@@ -912,7 +920,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="lookup">Lookup entity property to make a patch for.</param>
         /// <param name="node">Node of the query expression to be patched.</param>
-        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node)
+        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node, int ppS, int ppE)
         {
             //
             // Make sure the child entity field referenced in the lookup is unique.
@@ -921,14 +929,14 @@ namespace BdsSoft.SharePoint.Linq
             {
                 FieldAttribute fap = Helpers.GetFieldAttribute(lookup);
                 if (fap == null || fap.LookupField == null)
-                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+                    ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
 
                 FieldAttribute fac = Helpers.GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupField));
                 if (fac == null)
-                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+                    ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
 
                 if (!fac.PrimaryKey && !fac.IsUnique)
-                    throw new NotSupportedException("Lookup field subqueries are only supported for lookup fields that are unique.");
+                    this.NonUniqueLookupField(lookup.Name, ppS, ppE); /* PARSE ERROR */
             }
 
             //
@@ -1087,7 +1095,7 @@ namespace BdsSoft.SharePoint.Linq
             // Ensure that the value side (rhs) of the condition is lambda parameter free.
             //
             Expression rhs = (correctOrder ? right : left);
-            EnsureLambdaFree(rhs, predicateParameter);
+            EnsureLambdaFree(rhs, predicateParameter, ppS, ppE); //TODO: ppS and ppE should be refined
 
             //
             // Find DateTime values, possibly special ones including Today and Now.
@@ -1270,7 +1278,7 @@ namespace BdsSoft.SharePoint.Linq
                     if (fa == null || fa.Length == 0)
                     {
                         c = _doc.CreateElement(camlQueryElement);
-                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty)));
+                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), ppS, ppE));
                     }
                     //
                     // MultiChoice type case.
@@ -1287,7 +1295,7 @@ namespace BdsSoft.SharePoint.Linq
 
                         foreach (uint o in Enum.GetValues(enumType))
                             if ((enumValue & o) == o)
-                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f));
+                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f, ppS, ppE));
 
                         //
                         // If no flags values have been set, we're faced with an invalid value.
@@ -1328,7 +1336,7 @@ namespace BdsSoft.SharePoint.Linq
                 else
                 {
                     c = _doc.CreateElement(camlQueryElement);
-                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty)));
+                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), ppS, ppE));
                 }
             }
 
@@ -1446,7 +1454,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="value">Field value to get a Value element for.</param>
         /// <param name="field">Field to get a Value element for.</param>
         /// <returns>CAML Value element representing the given value for the given field.</returns>
-        private XmlElement GetValue(object value, FieldAttribute field)
+        private XmlElement GetValue(object value, FieldAttribute field, int ppS, int ppE)
         {
             //
             // Create Value element and set the Type attribute.
@@ -1487,21 +1495,21 @@ namespace BdsSoft.SharePoint.Linq
             else if (value is SharePointListEntity)
             {
                 if (field.LookupField == null)
-                    throw new InvalidOperationException("The Lookup field " + field.Field + " doesn't have an associated LookupField attribute property set.");
+                    return /* PARSE ERROR */ this.MissingLookupFieldSetting(field.Field, ppS, ppE);
 
                 //
                 // Find the property used in the Lookup display.
                 //
                 PropertyInfo lookupField = value.GetType().GetProperty(field.LookupField);
                 if (lookupField == null)
-                    throw new InvalidOperationException("The Lookup field " + field.Field + " links to a non-existing LookupField " + field.LookupField + ".");
+                    return /* PARSE ERROR */ this.NonExistingLookupField(field.Field, field.LookupField, ppS, ppE);
 
                 //
                 // Get value of the Lookup field property.
                 //
                 object o = lookupField.GetValue(value, null);
                 if (o == null)
-                    throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupField + ". Did you mean a null-check on the Lookup field instead?");
+                    return /* PARSE ERROR */ this.NullValuedLookupField(field.Field, field.LookupField, ppS, ppE);
 
                 valueElement.InnerText = o.ToString();
             }
@@ -1736,8 +1744,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="e">Expression to validate.</param>
         /// <param name="parameter">Forbidden lambda parameter to look for.</param>
         /// <exception cref="NotSupportedException">Occurs when the specified lambda parameter is found in the expression.</exception>
-        private void EnsureLambdaFree(Expression e, ParameterExpression parameter)
+        private void EnsureLambdaFree(Expression e, ParameterExpression parameter, int ppS, int ppE)
         {
+            //
+            // TODO: ppS and ppE should be narrowed in recursive calls.
+            //
+
             #region Local variables
 
             //
@@ -1770,7 +1782,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             if ((me = e as MemberExpression) != null)
             {
-                EnsureLambdaFree(me.Expression, parameter);
+                EnsureLambdaFree(me.Expression, parameter, ppS, ppE);
             }
             //
             // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
@@ -1781,65 +1793,65 @@ namespace BdsSoft.SharePoint.Linq
                 // Check that the parameter matches the projection lambda expression's parameter.
                 //
                 if (pe == parameter)
-                    throw new NotSupportedException("Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.");
+                    this.MultipleEntityReferencesInCondition(ppS, ppE); /* PARSE ERROR */
             }
             //
             // b.Method(b.Left, b.Right)
             //
             else if ((be = e as BinaryExpression) != null)
             {
-                EnsureLambdaFree(be.Left, parameter);
-                EnsureLambdaFree(be.Right, parameter);
+                EnsureLambdaFree(be.Left, parameter, ppS, ppE);
+                EnsureLambdaFree(be.Right, parameter, ppS, ppE);
             }
             //
             // u.Method(u.Operand)
             //
             else if ((ue = e as UnaryExpression) != null)
             {
-                EnsureLambdaFree(ue.Operand, parameter);
+                EnsureLambdaFree(ue.Operand, parameter, ppS, ppE);
             }
             //
             // (c.Test ? c.IfTrue : c.IfFalse)
             //
             else if ((ce = e as ConditionalExpression) != null)
             {
-                EnsureLambdaFree(ce.IfFalse, parameter);
-                EnsureLambdaFree(ce.IfTrue, parameter);
-                EnsureLambdaFree(ce.Test, parameter);
+                EnsureLambdaFree(ce.IfFalse, parameter, ppS, ppE);
+                EnsureLambdaFree(ce.IfTrue, parameter, ppS, ppE);
+                EnsureLambdaFree(ce.Test, parameter, ppS, ppE);
             }
             //
             // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
             //
             else if ((ie = e as InvocationExpression) != null)
             {
-                EnsureLambdaFree(ie.Expression, parameter);
+                EnsureLambdaFree(ie.Expression, parameter, ppS, ppE);
                 foreach (Expression ex in ie.Arguments)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             //
             // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
             //
             else if ((le = e as LambdaExpression) != null)
             {
-                EnsureLambdaFree(le.Body, parameter);
+                EnsureLambdaFree(le.Body, parameter, ppS, ppE);
                 foreach (Expression ex in le.Parameters)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             //
             // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
             //
             else if ((lie = e as ListInitExpression) != null)
             {
-                EnsureLambdaFree(lie.NewExpression, parameter);
+                EnsureLambdaFree(lie.NewExpression, parameter, ppS, ppE);
                 foreach (Expression ex in lie.Expressions)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             //
             // Member initialization expression requires recursive processing of MemberBinding objects.
             //
             else if ((mie = e as MemberInitExpression) != null)
             {
-                EnsureLambdaFree(mie.NewExpression, parameter);
+                EnsureLambdaFree(mie.NewExpression, parameter, ppS, ppE);
 
                 //
                 // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
@@ -1860,10 +1872,10 @@ namespace BdsSoft.SharePoint.Linq
                     MemberMemberBinding mmb = (MemberMemberBinding)b;
 
                     if (ma != null)
-                        EnsureLambdaFree(ma.Expression, parameter);
+                        EnsureLambdaFree(ma.Expression, parameter, ppS, ppE);
                     else if (mlb != null)
                         foreach (Expression ex in mlb.Expressions)
-                            EnsureLambdaFree(ex, parameter);
+                            EnsureLambdaFree(ex, parameter, ppS, ppE);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //
@@ -1878,9 +1890,9 @@ namespace BdsSoft.SharePoint.Linq
             else if ((mce = e as MethodCallExpression) != null)
             {
                 if (mce.Object != null)
-                    EnsureLambdaFree(mce.Object, parameter);
+                    EnsureLambdaFree(mce.Object, parameter, ppS, ppE);
                 foreach (Expression ex in mce.Arguments)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             //
             // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
@@ -1888,7 +1900,7 @@ namespace BdsSoft.SharePoint.Linq
             else if ((ne = e as NewExpression) != null)
             {
                 foreach (Expression ex in ne.Arguments)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             //
             // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
@@ -1896,11 +1908,11 @@ namespace BdsSoft.SharePoint.Linq
             else if ((nae = e as NewArrayExpression) != null)
             {
                 foreach (Expression ex in nae.Expressions)
-                    EnsureLambdaFree(ex, parameter);
+                    EnsureLambdaFree(ex, parameter, ppS, ppE);
             }
             else if ((tbe = e as TypeBinaryExpression) != null)
             {
-                EnsureLambdaFree(tbe.Expression, parameter);
+                EnsureLambdaFree(tbe.Expression, parameter, ppS, ppE);
             }
         }
 
@@ -2400,7 +2412,7 @@ namespace BdsSoft.SharePoint.Linq
                         XmlElement patch = null;
                         foreach (object o in fks)
                         {
-                            XmlElement val = GetValue(o, lookup);
+                            XmlElement val = GetValue(o, lookup, 0, 0);
                             patch = CreatePatch("Eq", lookupField, val, patch);
                         }
 

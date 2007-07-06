@@ -57,8 +57,10 @@ namespace Junkyard
             //var res = (from t in lst where j.User.IsMember select t);
             //var res = from t in lst where t.FirstName.EndsWith("Test") select t;
             //var res = from t in lst where t.Created.Value.IsDaylightSavingTime() select t;
-            var res = from t in lst where !(t.FirstName.Contains("Bart") && t.Age >= 24) || t.LastName.EndsWith("De Smet") && CamlMethods.DateRangesOverlap(t.Modified.Value) orderby 1 select t;
+            //var res = from t in lst where !(t.FirstName.Contains("Bart") && t.Age >= 24) || t.LastName.EndsWith("De Smet") && CamlMethods.DateRangesOverlap(t.Modified.Value) orderby 1 select t;
             //var res = (from t in lst where t.LastName.Length == 0 select t);
+            //var res = from t in lst where CamlMethods.DateRangesOverlap(DateTime.Now, t.Modified, t.Created) orderby 1 select t;
+            var res = from t in lst where t.FirstName.Contains(t.LastName) select t;
             SharePointListQueryVisualizer.TestShowVisualizer(res);
 
             //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));

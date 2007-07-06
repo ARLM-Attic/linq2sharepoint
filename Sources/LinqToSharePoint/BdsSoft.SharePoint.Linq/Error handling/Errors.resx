@@ -129,6 +129,10 @@
     <value>Error occurred when connecting to the SharePoint web service at {0}.</value>
     <comment>SP0104</comment>
   </data>
+  <data name="DateRangesOverlapInvalidFieldReferences" xml:space="preserve">
+    <value>A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.</value>
+    <comment>SP0019</comment>
+  </data>
   <data name="DateRangesOverlapInvalidValueArgument" xml:space="preserve">
     <value>A call to DateRangesOverlap should not have an entity property reference as its value argument.</value>
     <comment>SP0004</comment>
@@ -176,13 +180,33 @@
     <value>Missing field mapping attribute for entity property {0}.</value>
     <comment>SP0101</comment>
   </data>
+  <data name="MissingLookupFieldSetting" xml:space="preserve">
+    <value>The Lookup field {0} doesn't have an associated LookupField attribute property set.</value>
+    <comment>SP0021</comment>
+  </data>
   <data name="MissingOtherChoiceFieldMapping" xml:space="preserve">
     <value>An unknown fill-in choice value was encountered for field {0} but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?</value>
     <comment>SP0110</comment>
   </data>
+  <data name="MultipleEntityReferencesInCondition" xml:space="preserve">
+    <value>Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.</value>
+    <comment>SP0024</comment>
+  </data>
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>
     <comment>SP0002</comment>
+  </data>
+  <data name="NonExistingLookupField" xml:space="preserve">
+    <value>The Lookup field {0} links to a non-existing LookupField: {1}.</value>
+    <comment>SP0022</comment>
+  </data>
+  <data name="NonUniqueLookupField" xml:space="preserve">
+    <value>Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule.</value>
+    <comment>SP0020</comment>
+  </data>
+  <data name="NullValuedLookupField" xml:space="preserve">
+    <value>The Lookup field {0} has a null-valued LookupField: {1}. Did you mean a null-check on the Lookup field instead?</value>
+    <comment>SP0023</comment>
   </data>
   <data name="PredicateAfterProjection" xml:space="preserve">
     <value>Can't add another predicate expression to the query.</value>

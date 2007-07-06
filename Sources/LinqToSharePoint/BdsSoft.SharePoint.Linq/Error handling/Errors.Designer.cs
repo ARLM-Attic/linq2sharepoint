@@ -88,6 +88,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type..
+        /// </summary>
+        internal static string DateRangesOverlapInvalidFieldReferences {
+            get {
+                return ResourceManager.GetString("DateRangesOverlapInvalidFieldReferences", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A call to DateRangesOverlap should not have an entity property reference as its value argument..
         /// </summary>
         internal static string DateRangesOverlapInvalidValueArgument {
@@ -196,6 +205,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The Lookup field {0} doesn&apos;t have an associated LookupField attribute property set..
+        /// </summary>
+        internal static string MissingLookupFieldSetting {
+            get {
+                return ResourceManager.GetString("MissingLookupFieldSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An unknown fill-in choice value was encountered for field {0} but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?.
         /// </summary>
         internal static string MissingOtherChoiceFieldMapping {
@@ -205,11 +223,47 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition..
+        /// </summary>
+        internal static string MultipleEntityReferencesInCondition {
+            get {
+                return ResourceManager.GetString("MultipleEntityReferencesInCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Non-boolean constant values are not supported in query predicates..
         /// </summary>
         internal static string NonBoolConstantValueInPredicate {
             get {
                 return ResourceManager.GetString("NonBoolConstantValueInPredicate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Lookup field {0} links to a non-existing LookupField: {1}..
+        /// </summary>
+        internal static string NonExistingLookupField {
+            get {
+                return ResourceManager.GetString("NonExistingLookupField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule..
+        /// </summary>
+        internal static string NonUniqueLookupField {
+            get {
+                return ResourceManager.GetString("NonUniqueLookupField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Lookup field {0} has a null-valued LookupField: {1}. Did you mean a null-check on the Lookup field instead?.
+        /// </summary>
+        internal static string NullValuedLookupField {
+            get {
+                return ResourceManager.GetString("NullValuedLookupField", resourceCulture);
             }
         }
         

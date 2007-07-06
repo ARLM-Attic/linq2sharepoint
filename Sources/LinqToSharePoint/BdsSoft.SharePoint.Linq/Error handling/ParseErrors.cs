@@ -114,6 +114,36 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(query, 18, String.Format(Errors.SecondProjectionExpression), start, end);
         }
 
+        public static XmlElement DateRangesOverlapInvalidFieldReferences(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(query, 19, String.Format(Errors.DateRangesOverlapInvalidFieldReferences), start, end);
+        }
+
+        public static XmlElement NonUniqueLookupField(this CamlQuery query, string property, int start, int end)
+        {
+            return KeepOrThrow(query, 20, String.Format(Errors.NonUniqueLookupField, property), start, end);
+        }
+
+        public static XmlElement MissingLookupFieldSetting(this CamlQuery query, string field, int start, int end)
+        {
+            return KeepOrThrow(query, 21, String.Format(Errors.MissingLookupFieldSetting, field), start, end);
+        }
+
+        public static XmlElement NonExistingLookupField(this CamlQuery query, string field, string lookup, int start, int end)
+        {
+            return KeepOrThrow(query, 22, String.Format(Errors.NonExistingLookupField, field, lookup), start, end);
+        }
+
+        public static XmlElement NullValuedLookupField(this CamlQuery query, string field, string lookup, int start, int end)
+        {
+            return KeepOrThrow(query, 23, String.Format(Errors.NullValuedLookupField, field, lookup), start, end);
+        }
+
+        public static XmlElement MultipleEntityReferencesInCondition(this CamlQuery query, int start, int end)
+        {
+            return KeepOrThrow(query, 24, String.Format(Errors.MultipleEntityReferencesInCondition), start, end);
+        }
+
         public static XmlElement UnsupportedQueryExpression(this CamlQuery query, int start, int end)
         {
             return KeepOrThrow(query, 99, String.Format(Errors.UnsupportedQueryExpression), start, end);
@@ -127,6 +157,11 @@ namespace BdsSoft.SharePoint.Linq
         public static XmlElement GeneralError(this CamlQuery query, string message, int start, int end)
         {
             return KeepOrThrow(query, 9999, message, start, end);
+        }
+
+        public static void LookupFieldPatchError()
+        {
+            throw new InvalidOperationException(Errors.LookupFieldPatchError);
         }
 
         public static void FatalError(int start, int end)
