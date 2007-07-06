@@ -592,7 +592,25 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
                 //
-                object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+                object val = null;
+
+                //
+                // When debugging, this might fail.
+                //
+                if (_errors != null)
+                {
+                    try
+                    {
+                        val = Expression.Lambda(arg).Compile().DynamicInvoke();
+                    }
+                    catch (InvalidOperationException) { } //TODO: in this case, val will be null and no ParseError tag will be injected in the CAML
+                }
+                //
+                // Otherwise, it shouldn't fail since EnsureLambdaFree takes care of pathological situations.
+                //
+                else
+                    val = Expression.Lambda(arg).Compile().DynamicInvoke();
+
                 string sval = val as string;
 
                 //
