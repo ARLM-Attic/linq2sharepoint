@@ -1597,7 +1597,7 @@ namespace BdsSoft.SharePoint.Linq
                 _order.AppendChild(fieldRef);
             }
             else
-                this.UnsupportedOrdering(ppS, ppE); /* PARSE ERROR */
+                _order.AppendChild(this.UnsupportedOrdering(ppS, ppE)); /* PARSE ERROR */
         }
 
         #endregion

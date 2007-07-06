@@ -141,6 +141,9 @@
     <value>An unexpected error occurred in the predicate parser.</value>
     <comment>SP9999</comment>
   </data>
+  <data name="HelpLink" xml:space="preserve">
+    <value>http://www.codeplex.com/LINQtoSharePoint/Wiki/View.aspx?title=ErrorCode#{0}</value>
+  </data>
   <data name="InvalidEntityReference" xml:space="preserve">
     <value>Query predicate contains an entity reference that doesn't belong to a SharePoint list context: {0}.</value>
     <comment>SP0008</comment>

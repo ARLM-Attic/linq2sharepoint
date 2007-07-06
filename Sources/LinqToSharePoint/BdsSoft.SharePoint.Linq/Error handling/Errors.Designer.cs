@@ -39,7 +39,7 @@ namespace BdsSoft.SharePoint.Linq {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BdsSoft.SharePoint.Linq.Errors", typeof(Errors).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BdsSoft.SharePoint.Linq.Error_handling.Errors", typeof(Errors).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -111,6 +111,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string FatalError {
             get {
                 return ResourceManager.GetString("FatalError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to http://www.codeplex.com/LINQtoSharePoint/Wiki/View.aspx?title=ErrorCode#{0}.
+        /// </summary>
+        internal static string HelpLink {
+            get {
+                return ResourceManager.GetString("HelpLink", resourceCulture);
             }
         }
         

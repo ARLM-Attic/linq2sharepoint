@@ -83,7 +83,6 @@
             this.txtLinq.Name = "txtLinq";
             this.txtLinq.ReadOnly = true;
             this.txtLinq.ShortcutsEnabled = false;
-            this.txtLinq.MouseClick += new System.Windows.Forms.MouseEventHandler(this.txtLinq_MouseClick);
             // 
             // txtCaml
             // 

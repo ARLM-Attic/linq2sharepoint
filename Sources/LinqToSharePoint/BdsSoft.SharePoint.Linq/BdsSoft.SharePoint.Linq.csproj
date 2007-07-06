@@ -59,17 +59,19 @@
     <Compile Include="Attributes.cs" />
     <Compile Include="CamlMethods.cs" />
     <Compile Include="CamlQuery.cs" />
-    <Compile Include="Errors.Designer.cs">
+    <Compile Include="Error handling\Errors.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Errors.resx</DependentUpon>
     </Compile>
+    <Compile Include="Error handling\ParseError.cs" />
+    <Compile Include="Error handling\RuntimeErrors.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Lists.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ParseErrors.cs" />
+    <Compile Include="Error handling\ParseErrors.cs" />
     <Compile Include="SharePointConnectionException.cs" />
     <Compile Include="SharePointDataContext.cs" />
     <Compile Include="Old\SharePointDataSource.cs" />
@@ -78,11 +80,11 @@
     <Compile Include="SharePointListEntity.cs" />
     <Compile Include="SharePointListQuery.cs" />
     <Compile Include="SharePointList.cs" />
-    <Compile Include="SharePointListQueryVisualizer.cs" />
-    <Compile Include="SharePointListQueryVisualizerForm.cs">
+    <Compile Include="Debugger visualizer\SharePointListQueryVisualizer.cs" />
+    <Compile Include="Debugger visualizer\SharePointListQueryVisualizerForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SharePointListQueryVisualizerForm.Designer.cs">
+    <Compile Include="Debugger visualizer\SharePointListQueryVisualizerForm.Designer.cs">
       <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Url.cs" />
@@ -99,16 +101,17 @@
     <None Include="key.snk.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Errors.resx">
+    <EmbeddedResource Include="Error handling\Errors.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Errors.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>BdsSoft.SharePoint.Linq</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="Old\Visualizer.resx">
       <SubType>Designer</SubType>
       <DependentUpon>Visualizer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SharePointListQueryVisualizerForm.resx">
+    <EmbeddedResource Include="Debugger visualizer\SharePointListQueryVisualizerForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
     </EmbeddedResource>
