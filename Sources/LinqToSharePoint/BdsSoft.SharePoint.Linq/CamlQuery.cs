@@ -2158,6 +2158,15 @@ namespace BdsSoft.SharePoint.Linq
         public IEnumerator<T> Execute<T>()
         {
             //
+            // Get list information.
+            //
+            ListAttribute la = Helpers.GetListAttribute(_entityType);
+            if (_context._site != null)
+                _list = _context._site.RootWeb.GetList(la.Path);
+            else
+                _wsList = la.List;
+
+            //
             // Version check required for the list?
             //
             if (_context.CheckListVersion)
@@ -2214,17 +2223,10 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Perform query via the SharePoint Object Model or via SharePoint web services.
             //
-            ListAttribute la = Helpers.GetListAttribute(_entityType);
             if (_context._site != null)
-            {
-                _list = _context._site.RootWeb.GetList(la.Path);
                 return GetEnumeratorSp<T>();
-            }
             else
-            {
-                _wsList = la.List;
                 return GetEnumeratorWs<T>();
-            }
         }
 
         /// <summary>
