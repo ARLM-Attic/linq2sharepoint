@@ -87,6 +87,7 @@ namespace BdsSoft.SharePoint.Linq
             _wsUri = wsUri;
             _wsProxy = new Lists();
             _wsProxy.Url = wsUri.AbsoluteUri.TrimEnd('/') + "/_vti_bin/lists.asmx";
+            _wsProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
         }
 
         /// <summary>
