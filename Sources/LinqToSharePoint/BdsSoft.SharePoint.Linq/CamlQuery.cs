@@ -204,6 +204,28 @@ namespace BdsSoft.SharePoint.Linq
                         query.SetResultRestriction((int)Expression.Lambda<Func<int>>(mce.Arguments[1]).Compile().DynamicInvoke());
                         break;
                     //
+                    // First and FirstOrDefault are based on the Take(1) operation (row number restriction).
+                    //
+                    case "First":
+                    case "FirstOrDefault":
+                        //
+                        // Original call = Queryable::First(source)
+                        //                 Queryable::FirstOrDefault(source)
+                        // Set row restriction (first = 1 row only).
+                        //
+                        query.SetResultRestriction(1);
+                        break;
+                    ////
+                    //// Single and SingleOrDefault.
+                    ////
+                    //case "Single":
+                    //case "SingleOrDefault":
+                    //    //
+                    //    // Original call = Queryable::Single(source)
+                    //    //                 Queryable::SingleOrDefault(source)
+                    //    //
+                    //    break;
+                    //
                     // Currently we don't support additional query operators in LINQ-to-SharePoint.
                     //
                     default:

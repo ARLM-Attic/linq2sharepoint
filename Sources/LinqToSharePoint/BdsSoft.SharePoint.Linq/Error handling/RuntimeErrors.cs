@@ -75,5 +75,20 @@ namespace BdsSoft.SharePoint.Linq
         {
             throw new InvalidOperationException(String.Format(Errors.MissingOtherChoiceFieldMapping, property));
         }
+
+        public static void UnsupportedQueryOperator(string queryOperator)
+        {
+            throw new InvalidOperationException(String.Format(Errors.UnsupportedQueryOperator, queryOperator));
+        }
+
+        public static void EmptySequence()
+        {
+            throw new InvalidOperationException(String.Format(Errors.EmptySequence));
+        }
+
+        public static void FatalError()
+        {
+            throw new InvalidOperationException(Errors.FatalError);
+        }
     }
 }

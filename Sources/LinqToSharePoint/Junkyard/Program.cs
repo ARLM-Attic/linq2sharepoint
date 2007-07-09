@@ -20,12 +20,17 @@ namespace Junkyard
     {
         static void Main(string[] args)
         {
-            
-            var src = new SharePointDataContext(new Uri("http://wss3demo"));
 
-            var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
-            foreach (var t in res)
-                ;
+            //int i = new int[] { 1, 2 }.Single();
+
+            var src = new SharePointDataContext(new Uri("http://wss3demo"));
+            src.CheckListVersion = false;
+
+            //var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
+            var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).First();
+
+            //foreach (var t in res)
+            //    ;
 
             string s = "";
 

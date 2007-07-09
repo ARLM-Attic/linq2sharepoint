@@ -115,6 +115,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Query did not return any results..
+        /// </summary>
+        internal static string EmptySequence {
+            get {
+                return ResourceManager.GetString("EmptySequence", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An unexpected error occurred in the predicate parser..
         /// </summary>
         internal static string FatalError {

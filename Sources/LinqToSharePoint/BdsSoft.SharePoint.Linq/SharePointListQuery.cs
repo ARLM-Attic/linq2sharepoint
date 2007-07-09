@@ -117,11 +117,26 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Singleton query result object.</returns>
         public TResult Execute<TResult>(Expression expression)
         {
-            IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
-            if (res.MoveNext())
-                return res.Current;
-            else
-                throw new InvalidOperationException("Query did not return any results.");
+            MethodCallExpression mc = expression as MethodCallExpression;
+            if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
+            {
+                if (mc.Method.Name == "First" || mc.Method.Name == "FirstOrDefault")
+                {
+                    IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
+                    if (res.MoveNext())
+                        return res.Current;
+                    else if (mc.Method.Name.EndsWith("OrDefault"))
+                        return default(TResult);
+                    else
+                        RuntimeErrors.EmptySequence();
+                }
+                else
+                    RuntimeErrors.UnsupportedQueryOperator(mc.Method.Name);
+            }
+
+            RuntimeErrors.FatalError();
+
+            return default(TResult); //Won't occur
         }
 
         #region Not implemented

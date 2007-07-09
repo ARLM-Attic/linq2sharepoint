@@ -141,6 +141,10 @@
     <value>A call to DateRangesOverlap should have one or more field references in its fields argument.</value>
     <comment>SP0005</comment>
   </data>
+  <data name="EmptySequence" xml:space="preserve">
+    <value>Query did not return any results.</value>
+    <comment>SP0111</comment>
+  </data>
   <data name="FatalError" xml:space="preserve">
     <value>An unexpected error occurred in the predicate parser.</value>
     <comment>SP9999</comment>
