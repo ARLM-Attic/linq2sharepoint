@@ -128,6 +128,56 @@ namespace Tests
         }
 
         [TestMethod]
+        public void First()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p2 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // Test default query.
+            //
+            var src = new SharePointList<People>(spContext);
+            var res1 = (from p in src orderby p.FirstName select p).First();
+
+            Assert.IsTrue(res1 != null && res1.FirstName == "Bart", "Wrong result; source contains an item.");
+        }
+
+        [TestMethod]
+        public void FirstOrDefault()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBio = "Microsoft Corporation founder" };
+            People p2 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+            Test.Add(lst, p2);
+
+            //
+            // Test default query.
+            //
+            var src = new SharePointList<People>(spContext);
+            var res1 = (from p in src where p.Age == 25 select p).FirstOrDefault();
+
+            Assert.IsTrue(res1 == null, "Query should return null.");
+        }
+
+        [TestMethod]
         public void GetEntityById()
         {
             //
