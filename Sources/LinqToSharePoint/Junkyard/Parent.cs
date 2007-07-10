@@ -22,7 +22,7 @@ namespace Junkyard
         /// <summary>
         /// Bar
         /// </summary>
-        [Field("Bar", FieldType.Lookup, Id = "14963ed3-9d3c-48e3-903d-e3faf6a3d291", LookupField = "Title")]
+        [Field("Bar", FieldType.Lookup, Id = "14963ed3-9d3c-48e3-903d-e3faf6a3d291", LookupDisplayField = "Title")]
         public Bar Bar
         {
             get { return (Bar)GetValue("Bar"); }
@@ -32,7 +32,7 @@ namespace Junkyard
         /// <summary>
         /// Foo
         /// </summary>
-        [Field("Foo", FieldType.Lookup, Id = "242a42ca-8066-4e74-b5b6-9f79c611bd47", LookupField = "Title")]
+        [Field("Foo", FieldType.Lookup, Id = "242a42ca-8066-4e74-b5b6-9f79c611bd47", LookupDisplayField = "Title")]
         public Foo Foo
         {
             get { return (Foo)GetValue("Foo"); }

@@ -73,15 +73,15 @@ namespace BdsSoft.SharePoint.Linq
             set { primaryKey = value; }
         }
 
-        private string lookupField;
+        private string lookupDisplayField;
 
         /// <summary>
-        /// Name of the field shown in a Lookup field. Used for queries that filter on a Lookup field.
+        /// Name of the field shown in a Lookup field.
         /// </summary>
-        public string LookupField
+        public string LookupDisplayField
         {
-            get { return lookupField; }
-            set { lookupField = value; }
+            get { return lookupDisplayField; }
+            set { lookupDisplayField = value; }
         }
 
         private bool readOnly;

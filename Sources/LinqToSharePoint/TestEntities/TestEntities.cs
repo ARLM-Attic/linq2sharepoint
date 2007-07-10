@@ -141,7 +141,7 @@ namespace Tests
             set { base.SetValue("Title", value); }
         }
 
-        [Field("Child", FieldType.Lookup, LookupField = "Title")]
+        [Field("Child", FieldType.Lookup, LookupDisplayField = "Title")]
         public LookupChild Child
         {
             get { return (LookupChild)base.GetValue("Child"); }

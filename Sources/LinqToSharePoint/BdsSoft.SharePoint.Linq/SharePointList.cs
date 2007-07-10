@@ -161,31 +161,12 @@ namespace BdsSoft.SharePoint.Linq
             if (fromCache && cache.ContainsKey(id))
                 return cache[id];
 
-            FieldAttribute pkField = null;
-            PropertyInfo pkProp = null;
-
             //
-            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
+            // Find primary key field and property.
             //
-            foreach (PropertyInfo property in typeof(T).GetProperties())
-            {
-                FieldAttribute field = Helpers.GetFieldAttribute(property);
-                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
-                {
-                    if (pkField != null)
-                        throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
-
-                    pkField = field;
-                    pkProp = property;
-                    break;
-                }
-            }
-
-            //
-            // Primary key field should be present in order to make the query.
-            //
-            if (pkField == null || pkProp == null)
-                throw new InvalidOperationException("No primary key field found on entity type.");
+            FieldAttribute pkField;
+            PropertyInfo pkProp;
+            Helpers.FindPrimaryKey(typeof(T), out pkField, out pkProp, true);
 
             //
             // Build a manual query representing this.Where(e => e.ID = id) with ID property being variable, based on pkProp.

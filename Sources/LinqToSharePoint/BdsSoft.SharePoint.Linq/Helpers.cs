@@ -100,5 +100,34 @@ namespace BdsSoft.SharePoint.Linq
             //
             output.Flush();
         }
+
+        internal static void FindPrimaryKey(Type t, out FieldAttribute pkField, out PropertyInfo pkProp, bool required)
+        {
+            pkField = null;
+            pkProp = null;
+
+            //
+            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
+            //
+            foreach (PropertyInfo property in t.GetProperties())
+            {
+                FieldAttribute field = Helpers.GetFieldAttribute(property);
+                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
+                {
+                    if (pkField != null)
+                        throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
+
+                    pkField = field;
+                    pkProp = property;
+                    break;
+                }
+            }
+
+            //
+            // Primary key field should be present in order to make the query.
+            //
+            if (required && (pkField == null || pkProp == null))
+                throw new InvalidOperationException("No primary key field found on entity type.");
+        }
     }
 }

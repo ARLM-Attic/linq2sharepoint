@@ -200,7 +200,7 @@ namespace Demo
         /// <summary>
         /// Profile
         /// </summary>
-        [Field("Profile", FieldType.Lookup, Id = "74f7ac1b-5f0f-4a4a-82dc-50ed6cf89f4c", LookupField = "LinkTitleNoMenu")]
+        [Field("Profile", FieldType.Lookup, Id = "74f7ac1b-5f0f-4a4a-82dc-50ed6cf89f4c", LookupDisplayField = "LinkTitleNoMenu")]
         public Users Profile
         {
             get { return (Users)GetValue("Profile"); }

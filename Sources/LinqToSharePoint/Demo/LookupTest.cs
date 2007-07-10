@@ -35,7 +35,7 @@ namespace Demo
         /// <summary>
         /// Profile
         /// </summary>
-        [Field("Profile", FieldType.Lookup, LookupField = "Title")]
+        [Field("Profile", FieldType.Lookup, LookupDisplayField = "Title")]
         public Users2 Profile
         {
             get { return (Users2)GetValue("Profile"); }

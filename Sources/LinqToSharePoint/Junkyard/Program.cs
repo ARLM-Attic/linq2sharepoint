@@ -42,10 +42,12 @@ namespace Junkyard
             //var res = from t in src.GetList<Test>() where "Bart".ToString().Contains("B".ToString()) select t;
             //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
-            var res = from t in src.GetList<Products>() where t.Category.CategoryName == "Beverages" select t;
+            var cat = (from c in src.GetList<Categories>() where c.CategoryName == "Beverages" select c).First();
+
+            //var res = from t in src.GetList<Products>() where t.Category.CategoryName == "Beverages" select t;
+            var res = from t in src.GetList<Products>() where t.Category == cat select t;
             foreach (var t in res)
-            {
-            }
+                ;
 
             string s = "";
 
@@ -341,7 +343,7 @@ class Test : SharePointListEntity
     /// <summary>
     /// User
     /// </summary>
-    [Field("User", FieldType.Lookup, Id = "0965897f-74c2-4242-b70f-20713f768045", LookupField = "Title")]
+    [Field("User", FieldType.Lookup, Id = "0965897f-74c2-4242-b70f-20713f768045", LookupDisplayField = "Title")]
     public Users User
     {
         get { return (Users)GetValue("User"); }
@@ -351,7 +353,7 @@ class Test : SharePointListEntity
     /// <summary>
     /// UsersMulti
     /// </summary>
-    [Field("UsersMulti", FieldType.LookupMulti, Id = "4b86be8a-f422-4e77-a2ec-0819d397c77a", LookupField = "Title")]
+    [Field("UsersMulti", FieldType.LookupMulti, Id = "4b86be8a-f422-4e77-a2ec-0819d397c77a", LookupDisplayField = "Title")]
     public IList<Users> UsersMulti
     {
         get { return (IList<Users>)GetValue("UsersMulti"); }
@@ -360,7 +362,7 @@ class Test : SharePointListEntity
     /// <summary>
     /// Spouse
     /// </summary>
-    [Field("Spouse", FieldType.Lookup, Id = "00b7eecc-8a07-49a9-bb9f-8041f315103b", LookupField = "Title")]
+    [Field("Spouse", FieldType.Lookup, Id = "00b7eecc-8a07-49a9-bb9f-8041f315103b", LookupDisplayField = "Title")]
     public Test Spouse
     {
         get { return (Test)GetValue("Spouse"); }

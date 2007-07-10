@@ -433,7 +433,8 @@ namespace BdsSoft.SharePoint.Linq
                 else
                 {
                     c = _doc.CreateElement("Eq");
-                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member), ppS, ppE));
+                    bool isLookup;
+                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member), out isLookup, ppS, ppE));
                 }
 
                 //
@@ -708,7 +709,10 @@ namespace BdsSoft.SharePoint.Linq
                 // Set the value on the condition element.
                 //
                 if (val != null)
-                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), ppS, ppE));
+                {
+                    bool isLookup;
+                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), out isLookup, ppS, ppE));
+                }
                 else
                     return null;
 
@@ -735,10 +739,11 @@ namespace BdsSoft.SharePoint.Linq
                 // Get the value of the method call argument and ensure it's lambda parameter free.
                 //
                 Expression arg = mce.Arguments[0];
-                EnsureLambdaFree(arg, predicateParameter, ppSL, ppEL);
+                if (!EnsureLambdaFree(arg, predicateParameter, ppSL, ppEL))
+                    return null;
 
                 //
-                // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                // Find the value of the method call argument using lambda expression compilation and dynamic invocation.
                 //
                 object val = Expression.Lambda(arg).Compile().DynamicInvoke();
 
@@ -757,8 +762,17 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Build condition based on the referenced field and the lookup key field.
                 //
-                cond.AppendChild(GetFieldRef(property));
-                cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), ppS, ppE));
+                bool isLookup; //should always be true
+                XmlElement value = GetValue(val, Helpers.GetFieldAttribute(property), out isLookup, ppS, ppE);
+                XmlElement fieldRef = GetFieldRef(property);
+                if (isLookup)
+                {
+                    XmlAttribute lookupAttribute = _doc.CreateAttribute("LookupId");
+                    lookupAttribute.Value = "TRUE";
+                    fieldRef.Attributes.Append(lookupAttribute);
+                }
+                cond.AppendChild(fieldRef);
+                cond.AppendChild(value);
 
                 return cond;
             }
@@ -1350,7 +1364,8 @@ namespace BdsSoft.SharePoint.Linq
                     if (fa == null || fa.Length == 0)
                     {
                         c = _doc.CreateElement(camlQueryElement);
-                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), ppS, ppE));
+                        bool isLookup; //can be ignored
+                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup, ppS, ppE));
                     }
                     //
                     // MultiChoice type case.
@@ -1365,9 +1380,10 @@ namespace BdsSoft.SharePoint.Linq
                         Type enumType = value.GetType();
                         FieldAttribute f = Helpers.GetFieldAttribute(entityProperty);
 
+                        bool isLookup; //can be ignored
                         foreach (uint o in Enum.GetValues(enumType))
                             if ((enumValue & o) == o)
-                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f, ppS, ppE));
+                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f, out isLookup, ppS, ppE));
 
                         //
                         // If no flags values have been set, we're faced with an invalid value.
@@ -1408,7 +1424,22 @@ namespace BdsSoft.SharePoint.Linq
                 else
                 {
                     c = _doc.CreateElement(camlQueryElement);
-                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), ppS, ppE));
+                    bool isLookup;
+                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup, ppS, ppE));
+
+                    //
+                    // Lookup fields should use the LookupId attribute.
+                    //
+                    XmlElement fieldRef = GetFieldRef(entityProperty);
+                    if (isLookup)
+                    {
+                        XmlAttribute lookupAttribute = _doc.CreateAttribute("LookupId");
+                        lookupAttribute.Value = "TRUE";
+                        fieldRef.Attributes.Append(lookupAttribute);
+                    }
+                    c.AppendChild(fieldRef);
+
+                    return c;
                 }
             }
 
@@ -1526,7 +1557,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="value">Field value to get a Value element for.</param>
         /// <param name="field">Field to get a Value element for.</param>
         /// <returns>CAML Value element representing the given value for the given field.</returns>
-        private XmlElement GetValue(object value, FieldAttribute field, int ppS, int ppE)
+        private XmlElement GetValue(object value, FieldAttribute field, out bool lookup, int ppS, int ppE)
         {
             //
             // Create Value element and set the Type attribute.
@@ -1535,6 +1566,11 @@ namespace BdsSoft.SharePoint.Linq
             XmlAttribute type = _doc.CreateAttribute("Type");
             type.Value = field.FieldType.ToString();
             valueElement.Attributes.Append(type);
+
+            //
+            // Default no lookup.
+            //
+            lookup = false;
 
             //
             // Null-check
@@ -1566,24 +1602,39 @@ namespace BdsSoft.SharePoint.Linq
             //
             else if (value is SharePointListEntity)
             {
-                if (field.LookupField == null)
-                    return /* PARSE ERROR */ this.MissingLookupFieldSetting(field.Field, ppS, ppE);
+                lookup = true;
 
                 //
-                // Find the property used in the Lookup display.
+                // Find primary key field and property.
                 //
-                PropertyInfo lookupField = value.GetType().GetProperty(field.LookupField);
-                if (lookupField == null)
-                    return /* PARSE ERROR */ this.NonExistingLookupField(field.Field, field.LookupField, ppS, ppE);
+                FieldAttribute pkField;
+                PropertyInfo pkProp;
+                Helpers.FindPrimaryKey(value.GetType(), out pkField, out pkProp, true);
 
                 //
-                // Get value of the Lookup field property.
+                // Get the value and assign it to the Value element.
                 //
-                object o = lookupField.GetValue(value, null);
-                if (o == null)
-                    return /* PARSE ERROR */ this.NullValuedLookupField(field.Field, field.LookupField, ppS, ppE);
+                object val = pkProp.GetValue(value, null);
+                valueElement.InnerText = val.ToString();
 
-                valueElement.InnerText = o.ToString();
+                //if (field.LookupField == null)
+                //    return /* PARSE ERROR */ this.MissingLookupFieldSetting(field.Field, ppS, ppE);
+
+                ////
+                //// Find the property used in the Lookup display.
+                ////
+                //PropertyInfo lookupField = value.GetType().GetProperty(field.LookupField);
+                //if (lookupField == null)
+                //    return /* PARSE ERROR */ this.NonExistingLookupField(field.Field, field.LookupField, ppS, ppE);
+
+                ////
+                //// Get value of the Lookup field property.
+                ////
+                //object o = lookupField.GetValue(value, null);
+                //if (o == null)
+                //    return /* PARSE ERROR */ this.NullValuedLookupField(field.Field, field.LookupField, ppS, ppE);
+
+                //valueElement.InnerText = o.ToString();
             }
             //
             // Other types will be converted to a string.

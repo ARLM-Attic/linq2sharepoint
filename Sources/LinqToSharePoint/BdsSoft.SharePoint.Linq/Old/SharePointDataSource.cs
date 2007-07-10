@@ -1078,10 +1078,10 @@ namespace BdsSoft.SharePoint.Linq
             if (_enforceLookupFieldUniqueness)
             {
                 FieldAttribute fap = GetFieldAttribute(lookup);
-                if (fap == null || fap.LookupField == null)
+                if (fap == null || fap.LookupDisplayField == null)
                     throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
 
-                FieldAttribute fac = GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupField));
+                FieldAttribute fac = GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupDisplayField));
                 if (fac == null)
                     throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
 
@@ -1644,22 +1644,22 @@ namespace BdsSoft.SharePoint.Linq
             //
             else if (value is SharePointListEntity)
             {
-                if (field.LookupField == null)
+                if (field.LookupDisplayField == null)
                     throw new InvalidOperationException("The Lookup field " + field.Field + " doesn't have an associated LookupField attribute property set.");
 
                 //
                 // Find the property used in the Lookup display.
                 //
-                PropertyInfo lookupField = value.GetType().GetProperty(field.LookupField);
+                PropertyInfo lookupField = value.GetType().GetProperty(field.LookupDisplayField);
                 if (lookupField == null)
-                    throw new InvalidOperationException("The Lookup field " + field.Field + " links to a non-existing LookupField " + field.LookupField + ".");
+                    throw new InvalidOperationException("The Lookup field " + field.Field + " links to a non-existing LookupField " + field.LookupDisplayField + ".");
 
                 //
                 // Get value of the Lookup field property.
                 //
                 object o = lookupField.GetValue(value, null);
                 if (o == null)
-                    throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupField + ". Did you mean a null-check on the Lookup field instead?");
+                    throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupDisplayField + ". Did you mean a null-check on the Lookup field instead?");
 
                 valueElement.InnerText = o.ToString();
             }
@@ -2585,7 +2585,7 @@ namespace BdsSoft.SharePoint.Linq
 
                         XmlElement viewLookupField = _doc.CreateElement("FieldRef");
                         XmlAttribute lookupFieldName = _doc.CreateAttribute("Name");
-                        lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupField);
+                        lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupDisplayField);
                         viewLookupField.Attributes.Append(lookupFieldName);
                         viewFields.AppendChild(viewLookupField);
 
@@ -2623,7 +2623,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             foreach (SPListItem item in _site.RootWeb.Lists[innerList].GetItems(query))
                             {
-                                fks.Add(item[lookup.LookupField]);
+                                fks.Add(item[lookup.LookupDisplayField]);
                             }
                         }
                         //
@@ -2664,7 +2664,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             foreach (DataRow row in tbl.Rows)
                             {
-                                fks.Add(row["ows_" + lookup.LookupField]);
+                                fks.Add(row["ows_" + lookup.LookupDisplayField]);
                             }
                         }
 

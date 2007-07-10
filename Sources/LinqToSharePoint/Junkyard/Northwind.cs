@@ -503,7 +503,7 @@ namespace Junkyard
         /// <summary>
         /// Category
         /// </summary>
-        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Category", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "081784b3-2bba-4456-a25c-2fc1f6c4d492", LookupField = "CategoryName")]
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Category", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "081784b3-2bba-4456-a25c-2fc1f6c4d492", LookupDisplayField = "CategoryName")]
         public Categories Category
         {
             get
@@ -519,7 +519,7 @@ namespace Junkyard
         /// <summary>
         /// Supplier
         /// </summary>
-        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Supplier", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "e6fd6cbc-e50e-486c-89c5-8fb65e5099a1", LookupField = "CompanyName")]
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Supplier", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "e6fd6cbc-e50e-486c-89c5-8fb65e5099a1", LookupDisplayField = "CompanyName")]
         public Suppliers Supplier
         {
             get

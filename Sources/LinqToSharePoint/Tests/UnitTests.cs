@@ -924,6 +924,33 @@ namespace Tests
         }
 
         [TestMethod]
+        public void LookupSubquery2()
+        {
+            //
+            // Get lists with sample data.
+            //
+            SPList child, parent;
+            GetLookupLists(out child, out parent);
+
+            //
+            // Sources.
+            //
+            var parents = new SharePointList<LookupParent>(spContext);
+            var children = new SharePointList<LookupChild>(spContext);
+
+            //
+            // Get child item.
+            //
+            var c1 = (from c in children where c.Number == 1 select c).First();
+            
+            //
+            // Get parent items.
+            //
+            var res = (from p in parents where p.Child == c1 select p).AsEnumerable();
+            Assert.IsTrue(res.Count() == 2 && res.First().Title == "Parent 11" && res.Last().Title == "Parent 12", "LookupSubquery2 test failed.");
+        }
+
+        [TestMethod]
         public void LookupLazyLoad()
         {
             //
