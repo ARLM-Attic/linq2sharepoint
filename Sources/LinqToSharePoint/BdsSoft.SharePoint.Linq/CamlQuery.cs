@@ -2448,6 +2448,15 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="node">Query predicate node to be patched.</param>
         private void Patch(XmlNode node)
         {
+            List<Patch> patches = new List<Patch>();
+            GetPatches(node, ref patches);
+
+            foreach (Patch p in patches)
+                p.Parent.ReplaceChild(p.NewChild, p.OldChild);
+        }
+
+        private void GetPatches(XmlNode node, ref List<Patch> patches)
+        {
             //
             // Any work to do?
             //
@@ -2604,12 +2613,14 @@ namespace BdsSoft.SharePoint.Linq
                         // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
                         //
                         if (patch != null) //FIX
-                            e.ParentNode.ReplaceChild(patch, e);
+                            patches.Add(new Patch() { Parent = e.ParentNode, NewChild = patch, OldChild = e });
+                            //e.ParentNode.ReplaceChild(patch, e);
                         else
-                            e.ParentNode.ReplaceChild(GetBooleanPatch(false), e);
+                            patches.Add(new Patch() { Parent = e.ParentNode, NewChild = GetBooleanPatch(false), OldChild = e });
+                            //e.ParentNode.ReplaceChild(GetBooleanPatch(false), e);
                     }
                     else
-                        Patch(e);
+                        GetPatches(e, ref patches);
                 }
             }
         }
@@ -3367,5 +3378,12 @@ namespace BdsSoft.SharePoint.Linq
         #endregion
 
         #endregion
+    }
+
+    internal class Patch
+    {
+        public XmlNode Parent;
+        public XmlNode OldChild;
+        public XmlNode NewChild;
     }
 }

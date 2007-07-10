@@ -42,10 +42,17 @@ namespace Junkyard
             //var res = from t in src.GetList<Test>() where "Bart".ToString().Contains("B".ToString()) select t;
             //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
-            var cat = (from c in src.GetList<Categories>() where c.CategoryName == "Beverages" select c).First();
+            //var cat = (from c in src.GetList<Categories>() where c.CategoryName == "Beverages" select c).First();
 
             //var res = from t in src.GetList<Products>() where t.Category.CategoryName == "Beverages" select t;
-            var res = from t in src.GetList<Products>() where t.Category == cat select t;
+            //var res = from t in src.GetList<Products>() where t.Category == cat select t;
+
+            var res = from p in src.GetList<Products>()
+                      where p.Category.CategoryName.StartsWith("Con")
+                            && (p.Supplier.Country == "USA" && p.Supplier.Region == "LA"
+                                || p.Supplier.Country == "Canada" && p.Supplier.Region == "Québec")
+                      select p;
+
             foreach (var t in res)
                 ;
 
@@ -204,7 +211,8 @@ namespace Junkyard
         /// Content Type
         /// </summary>
         [Field("ContentType", FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true)]
-        public string ContentType {
+        public string ContentType
+        {
             get { return (string)GetValue("ContentType"); }
             set { SetValue("ContentType", value); }
         }
@@ -274,210 +282,210 @@ namespace Junkyard
 
     enum Status : uint { [Choice("Not Started")] NotStarted, [Choice("In Progress")] InProgress, Completed, Deferred, [Choice("Waiting on someone else")] WaitingOnSomeoneElse }
 
-/// <summary>
-/// Some description
-/// </summary>
-[List("Test", Id = "f49dd431-7a05-4532-8ef5-af507badc427", Version = 14, Path = "/Lists/Test")]
-class Test : SharePointListEntity
-{
     /// <summary>
-    /// Title
+    /// Some description
     /// </summary>
-    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
-    public string Title
+    [List("Test", Id = "f49dd431-7a05-4532-8ef5-af507badc427", Version = 14, Path = "/Lists/Test")]
+    class Test : SharePointListEntity
     {
-        get { return (string)GetValue("Title"); }
-        set { SetValue("Title", value); }
+        /// <summary>
+        /// Title
+        /// </summary>
+        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
+        public string Title
+        {
+            get { return (string)GetValue("Title"); }
+            set { SetValue("Title", value); }
+        }
+
+        /// <summary>
+        /// First name
+        /// </summary>
+        [Field("First name", FieldType.Text, Id = "5e871834-d5ee-412b-87ac-bee1e6562800")]
+        public string FirstName
+        {
+            get { return (string)GetValue("FirstName"); }
+            set { SetValue("FirstName", value); }
+        }
+
+        /// <summary>
+        /// Last name
+        /// </summary>
+        [Field("Last name", FieldType.Text, Id = "1c110c26-7cf2-461b-97a7-ed8c0b709d17")]
+        public string LastName
+        {
+            get { return (string)GetValue("LastName"); }
+            set { SetValue("LastName", value); }
+        }
+
+        /// <summary>
+        /// IsMember
+        /// </summary>
+        [Field("IsMember", FieldType.Boolean, Id = "cac1f3a4-716d-449e-a9f0-ab409ef30c85")]
+        public bool IsMember
+        {
+            get { return (bool)GetValue("IsMember"); }
+            set { SetValue("IsMember", value); }
+        }
+
+        /// <summary>
+        /// Age
+        /// </summary>
+        [Field("Age", FieldType.Number, Id = "fded6112-64ea-4c9d-88de-f049803a28c9")]
+        public double Age
+        {
+            get { return (double)GetValue("Age"); }
+            set { SetValue("Age", value); }
+        }
+
+        /// <summary>
+        /// ShortBio
+        /// </summary>
+        [Field("ShortBio", FieldType.Note, Id = "d50d894d-64df-4bab-a94e-6ec8046e3969")]
+        public string ShortBio
+        {
+            get { return (string)GetValue("ShortBio"); }
+            set { SetValue("ShortBio", value); }
+        }
+
+        /// <summary>
+        /// User
+        /// </summary>
+        [Field("User", FieldType.Lookup, Id = "0965897f-74c2-4242-b70f-20713f768045", LookupDisplayField = "Title")]
+        public Users User
+        {
+            get { return (Users)GetValue("User"); }
+            set { SetValue("User", value); }
+        }
+
+        /// <summary>
+        /// UsersMulti
+        /// </summary>
+        [Field("UsersMulti", FieldType.LookupMulti, Id = "4b86be8a-f422-4e77-a2ec-0819d397c77a", LookupDisplayField = "Title")]
+        public IList<Users> UsersMulti
+        {
+            get { return (IList<Users>)GetValue("UsersMulti"); }
+        }
+
+        /// <summary>
+        /// Spouse
+        /// </summary>
+        [Field("Spouse", FieldType.Lookup, Id = "00b7eecc-8a07-49a9-bb9f-8041f315103b", LookupDisplayField = "Title")]
+        public Test Spouse
+        {
+            get { return (Test)GetValue("Spouse"); }
+            set { SetValue("Spouse", value); }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [Field("ID", FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [Field("ContentType", FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true)]
+        public string ContentType
+        {
+            get { return (string)GetValue("ContentType"); }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [Field("Modified", FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true)]
+        public System.DateTime? Modified
+        {
+            get { return (System.DateTime?)GetValue("Modified"); }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [Field("Created", FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true)]
+        public System.DateTime? Created
+        {
+            get { return (System.DateTime?)GetValue("Created"); }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [Field("_UIVersionString", FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true)]
+        public string Version
+        {
+            get { return (string)GetValue("Version"); }
+        }
     }
 
     /// <summary>
-    /// First name
+    /// Users
     /// </summary>
-    [Field("First name", FieldType.Text, Id = "5e871834-d5ee-412b-87ac-bee1e6562800")]
-    public string FirstName
+    [List("Users", Id = "2b719ff2-8390-4386-9089-39570ddfa7ae", Version = 0, Path = "/Lists/Users")]
+    class Users : SharePointListEntity
     {
-        get { return (string)GetValue("FirstName"); }
-        set { SetValue("FirstName", value); }
-    }
+        /// <summary>
+        /// ID
+        /// </summary>
+        [Field("ID", FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true)]
+        public int ID
+        {
+            get { return (int)GetValue("ID"); }
+        }
 
-    /// <summary>
-    /// Last name
-    /// </summary>
-    [Field("Last name", FieldType.Text, Id = "1c110c26-7cf2-461b-97a7-ed8c0b709d17")]
-    public string LastName
-    {
-        get { return (string)GetValue("LastName"); }
-        set { SetValue("LastName", value); }
-    }
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [Field("ContentType", FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true)]
+        public string ContentType
+        {
+            get { return (string)GetValue("ContentType"); }
+        }
 
-    /// <summary>
-    /// IsMember
-    /// </summary>
-    [Field("IsMember", FieldType.Boolean, Id = "cac1f3a4-716d-449e-a9f0-ab409ef30c85")]
-    public bool IsMember
-    {
-        get { return (bool)GetValue("IsMember"); }
-        set { SetValue("IsMember", value); }
-    }
+        /// <summary>
+        /// Title
+        /// </summary>
+        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
+        public string Title
+        {
+            get { return (string)GetValue("Title"); }
+            set { SetValue("Title", value); }
+        }
 
-    /// <summary>
-    /// Age
-    /// </summary>
-    [Field("Age", FieldType.Number, Id = "fded6112-64ea-4c9d-88de-f049803a28c9")]
-    public double Age
-    {
-        get { return (double)GetValue("Age"); }
-        set { SetValue("Age", value); }
-    }
+        [Field("IsMember", FieldType.Boolean, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
+        public bool IsMember
+        { get; set; }
 
-    /// <summary>
-    /// ShortBio
-    /// </summary>
-    [Field("ShortBio", FieldType.Note, Id = "d50d894d-64df-4bab-a94e-6ec8046e3969")]
-    public string ShortBio
-    {
-        get { return (string)GetValue("ShortBio"); }
-        set { SetValue("ShortBio", value); }
-    }
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [Field("Modified", FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true)]
+        public System.DateTime? Modified
+        {
+            get { return (System.DateTime?)GetValue("Modified"); }
+        }
 
-    /// <summary>
-    /// User
-    /// </summary>
-    [Field("User", FieldType.Lookup, Id = "0965897f-74c2-4242-b70f-20713f768045", LookupDisplayField = "Title")]
-    public Users User
-    {
-        get { return (Users)GetValue("User"); }
-        set { SetValue("User", value); }
-    }
+        /// <summary>
+        /// Created
+        /// </summary>
+        [Field("Created", FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true)]
+        public System.DateTime? Created
+        {
+            get { return (System.DateTime?)GetValue("Created"); }
+        }
 
-    /// <summary>
-    /// UsersMulti
-    /// </summary>
-    [Field("UsersMulti", FieldType.LookupMulti, Id = "4b86be8a-f422-4e77-a2ec-0819d397c77a", LookupDisplayField = "Title")]
-    public IList<Users> UsersMulti
-    {
-        get { return (IList<Users>)GetValue("UsersMulti"); }
+        /// <summary>
+        /// Version
+        /// </summary>
+        [Field("_UIVersionString", FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true)]
+        public string Version
+        {
+            get { return (string)GetValue("Version"); }
+        }
     }
-
-    /// <summary>
-    /// Spouse
-    /// </summary>
-    [Field("Spouse", FieldType.Lookup, Id = "00b7eecc-8a07-49a9-bb9f-8041f315103b", LookupDisplayField = "Title")]
-    public Test Spouse
-    {
-        get { return (Test)GetValue("Spouse"); }
-        set { SetValue("Spouse", value); }
-    }
-
-    /// <summary>
-    /// ID
-    /// </summary>
-    [Field("ID", FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true)]
-    public int ID
-    {
-        get { return (int)GetValue("ID"); }
-    }
-
-    /// <summary>
-    /// Content Type
-    /// </summary>
-    [Field("ContentType", FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true)]
-    public string ContentType
-    {
-        get { return (string)GetValue("ContentType"); }
-    }
-
-    /// <summary>
-    /// Modified
-    /// </summary>
-    [Field("Modified", FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true)]
-    public System.DateTime? Modified
-    {
-        get { return (System.DateTime?)GetValue("Modified"); }
-    }
-
-    /// <summary>
-    /// Created
-    /// </summary>
-    [Field("Created", FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true)]
-    public System.DateTime? Created
-    {
-        get { return (System.DateTime?)GetValue("Created"); }
-    }
-
-    /// <summary>
-    /// Version
-    /// </summary>
-    [Field("_UIVersionString", FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true)]
-    public string Version
-    {
-        get { return (string)GetValue("Version"); }
-    }
-}
-
-/// <summary>
-/// Users
-/// </summary>
-[List("Users", Id = "2b719ff2-8390-4386-9089-39570ddfa7ae", Version = 0, Path = "/Lists/Users")]
-class Users : SharePointListEntity
-{
-    /// <summary>
-    /// ID
-    /// </summary>
-    [Field("ID", FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true)]
-    public int ID
-    {
-        get { return (int)GetValue("ID"); }
-    }
-
-    /// <summary>
-    /// Content Type
-    /// </summary>
-    [Field("ContentType", FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true)]
-    public string ContentType
-    {
-        get { return (string)GetValue("ContentType"); }
-    }
-
-    /// <summary>
-    /// Title
-    /// </summary>
-    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
-    public string Title
-    {
-        get { return (string)GetValue("Title"); }
-        set { SetValue("Title", value); }
-    }
-
-    [Field("IsMember", FieldType.Boolean, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
-    public bool IsMember
-    { get; set; }
-
-    /// <summary>
-    /// Modified
-    /// </summary>
-    [Field("Modified", FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true)]
-    public System.DateTime? Modified
-    {
-        get { return (System.DateTime?)GetValue("Modified"); }
-    }
-
-    /// <summary>
-    /// Created
-    /// </summary>
-    [Field("Created", FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true)]
-    public System.DateTime? Created
-    {
-        get { return (System.DateTime?)GetValue("Created"); }
-    }
-
-    /// <summary>
-    /// Version
-    /// </summary>
-    [Field("_UIVersionString", FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true)]
-    public string Version
-    {
-        get { return (string)GetValue("Version"); }
-    }
-}
 }
