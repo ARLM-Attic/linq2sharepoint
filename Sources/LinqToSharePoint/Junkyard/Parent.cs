@@ -112,7 +112,7 @@ namespace Junkyard
         /// <summary>
         /// Title
         /// </summary>
-        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", IsUnique = true)]
+        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
         public string Title
         {
             get { return (string)GetValue("Title"); }
@@ -174,7 +174,7 @@ namespace Junkyard
         /// <summary>
         /// Title
         /// </summary>
-        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", IsUnique = true)]
+        [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
         public string Title
         {
             get { return (string)GetValue("Title"); }

@@ -159,7 +159,7 @@ namespace Tests
             set { base.SetValue("ID", value); }
         }
 
-        [Field("Title", FieldType.Text, IsUnique = true)]
+        [Field("Title", FieldType.Text)]
         public string Title
         {
             get { return (string)base.GetValue("Title"); }

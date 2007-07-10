@@ -39,8 +39,14 @@ namespace Junkyard
             //var res = from t in src.GetList<Test>() where t.FirstName.ToString() == "Bart".ToString() select t;
             //var res = from t in src.GetList<Test>() where t.FirstName.ToString() == t.LastName.ToString() select t;
             //var res = from t in src.GetList<Test>() where t.FirstName.ToString().Contains("B".ToString()) select t;
-            var res = from t in src.GetList<Test>() where "Bart".ToString().Contains("B".ToString()) select t;
-            SharePointListQueryVisualizer.TestShowVisualizer(res);
+            //var res = from t in src.GetList<Test>() where "Bart".ToString().Contains("B".ToString()) select t;
+            //SharePointListQueryVisualizer.TestShowVisualizer(res);
+
+            var res = from t in src.GetList<Products>() where t.Category.CategoryName == "Beverages" select t;
+            foreach (var t in res)
+            {
+            }
+
             string s = "";
 
             /*
@@ -434,7 +440,7 @@ class Users : SharePointListEntity
     /// <summary>
     /// Title
     /// </summary>
-    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", IsUnique = true)]
+    [Field("Title", FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247")]
     public string Title
     {
         get { return (string)GetValue("Title"); }

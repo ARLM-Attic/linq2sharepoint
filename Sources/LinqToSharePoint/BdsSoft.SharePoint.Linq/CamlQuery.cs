@@ -15,6 +15,7 @@
  *         Refactoring of PatchPredicate into separate methods.
  *         Patch for negated DateRangesOverlap expressions.
  *         Error handling with position tracking in the parser.
+ *         Improvement to Lookup field subqueries; now using a foreign key concept.
  */
 
 using System;
@@ -975,22 +976,27 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="node">Node of the query expression to be patched.</param>
         private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node, int ppS, int ppE)
         {
-            //
-            // Make sure the child entity field referenced in the lookup is unique.
-            //
-            if (_context.EnforceLookupFieldUniqueness)
-            {
-                FieldAttribute fap = Helpers.GetFieldAttribute(lookup);
-                if (fap == null || fap.LookupField == null)
-                    ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
+            /*
+             * 0.2.1 - Found a way to query based on the Lookup ID
+             */
 
-                FieldAttribute fac = Helpers.GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupField));
-                if (fac == null)
-                    ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
+            ////
+            //// Make sure the child entity field referenced in the lookup is unique.
+            ////
+            //if (_context.EnforceLookupFieldUniqueness)
+            //{
+            //    FieldAttribute fap = Helpers.GetFieldAttribute(lookup);
+            //    if (fap == null || fap.LookupField == null)
+            //        ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
 
-                if (!fac.PrimaryKey && !fac.IsUnique)
-                    this.NonUniqueLookupField(lookup.Name, ppS, ppE); /* PARSE ERROR */
-            }
+            //    FieldAttribute fac = Helpers.GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupField));
+            //    if (fac == null)
+            //        ParseErrors.LookupFieldPatchError(); /* PARSE ERROR */
+
+            //    if (!fac.PrimaryKey && !fac.IsUnique)
+            //        this.NonUniqueLookupField(lookup.Name, ppS, ppE); /* PARSE ERROR */
+            //}
+            
 
             //
             // Apply the patch.
@@ -2432,19 +2438,28 @@ namespace BdsSoft.SharePoint.Linq
 
                         //
                         // Only retrieve the lookup column value (display column).
+                        // 0.2.1 - only the ID is required
                         //
                         XmlElement viewFields = _doc.CreateElement("ViewFields");
 
+                        /*
                         XmlElement viewLookupField = _doc.CreateElement("FieldRef");
                         XmlAttribute lookupFieldName = _doc.CreateAttribute("Name");
                         lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupField);
                         viewLookupField.Attributes.Append(lookupFieldName);
                         viewFields.AppendChild(viewLookupField);
+                         */
+                        XmlElement viewId = _doc.CreateElement("FieldRef");
+                        XmlAttribute idFieldName = _doc.CreateAttribute("Name");
+                        idFieldName.Value = "ID";
+                        viewId.Attributes.Append(idFieldName);
+                        viewFields.AppendChild(viewId);
 
                         //
                         // Prepare list of subquery results.
                         //
-                        ArrayList fks = new ArrayList();
+                        //ArrayList fks = new ArrayList();
+                        List<int> ids = new List<int>();
 
                         //
                         // Use SharePoint object model.
@@ -2475,7 +2490,8 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             foreach (SPListItem item in _context._site.RootWeb.Lists[innerList].GetItems(query))
                             {
-                                fks.Add(item[lookup.LookupField]);
+                                //fks.Add(item[lookup.LookupField]);
+                                ids.Add((int)item["ID"]);
                             }
                         }
                         //
@@ -2516,7 +2532,8 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             foreach (DataRow row in tbl.Rows)
                             {
-                                fks.Add(row["ows_" + lookup.LookupField]);
+                                //fks.Add(row["ows_" + lookup.LookupField]);
+                                ids.Add(int.Parse((string)row["ows_ID"]));
                             }
                         }
 
@@ -2524,10 +2541,12 @@ namespace BdsSoft.SharePoint.Linq
                         // Create patch.
                         //
                         XmlElement patch = null;
-                        foreach (object o in fks)
+                        //foreach (object o in fks)
+                        foreach (int id in ids)
                         {
-                            XmlElement val = GetValue(o, lookup, 0, 0);
-                            patch = CreatePatch("Eq", lookupField, val, patch);
+                            //XmlElement val = GetValue(o, lookup, 0, 0);
+                            //patch = CreatePatch(lookupField, val, patch);
+                            patch = CreatePatch(lookupField, id, patch);
                         }
 
                         //
@@ -2657,7 +2676,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Helper method to create a Lookup field patch by building a tree of Or CAML elements.
         /// </summary>
-        /// <param name="condition">Condition node textual representation, e.g. Eq.</param>
         /// <param name="field">Entity property to construct the Lookup patch for.</param>
         /// <param name="value">Value for the Lookup condition.</param>
         /// <param name="parent">Current tree of the Lookup patch to add the new condition node to. Should be null to start creating a condition tree.</param>
@@ -2682,14 +2700,25 @@ namespace BdsSoft.SharePoint.Linq
         /// </Or>
         /// ]]>
         /// </example>
-        private XmlElement CreatePatch(string condition, PropertyInfo field, XmlElement value, XmlElement parent)
+        private XmlElement CreatePatch(PropertyInfo field, int value, XmlElement parent)
         {
             //
             // Create condition element with the child tree and the FieldRef element.
             //
-            XmlElement cond = _doc.CreateElement(condition);
-            cond.AppendChild(value);
-            cond.AppendChild(GetFieldRef(field));
+            XmlElement cond = _doc.CreateElement("Eq");
+
+            XmlElement val = _doc.CreateElement("Value");
+            XmlAttribute typeLookup = _doc.CreateAttribute("Type");
+            typeLookup.Value = "Lookup";
+            val.Attributes.Append(typeLookup);
+            val.InnerText = value.ToString();
+            cond.AppendChild(val);
+
+            XmlElement fieldRef = GetFieldRef(field);
+            XmlAttribute isLookup = _doc.CreateAttribute("LookupId");
+            isLookup.Value = "TRUE";
+            fieldRef.Attributes.Append(isLookup);
+            cond.AppendChild(fieldRef);
 
             //
             // If no parent is present yet, we'll just return the condition element.

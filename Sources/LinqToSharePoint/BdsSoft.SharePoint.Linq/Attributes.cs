@@ -122,6 +122,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Indicates that the field is unique across all list entries. Used for Lookup field references that require uniqueness enforcement.
         /// </summary>
+        [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
         public bool IsUnique
         {
             get { return isUnique; }

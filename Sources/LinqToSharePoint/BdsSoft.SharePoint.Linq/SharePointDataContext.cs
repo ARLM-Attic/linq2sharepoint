@@ -72,6 +72,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
         /// </summary>
+        /// <remarks>Obsolete as of 0.2.1</remarks>
         private bool _enforceLookupFieldUniqueness = true;
 
         #endregion
@@ -133,6 +134,7 @@ namespace BdsSoft.SharePoint.Linq
         /// Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique (on by default).
         /// </summary>
         /// <remarks>WARNING! Misuse of this property can cause invalid query results to be produced.</remarks>
+        [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
         public bool EnforceLookupFieldUniqueness
         {
             get { return _enforceLookupFieldUniqueness; }
