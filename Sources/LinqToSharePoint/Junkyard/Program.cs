@@ -20,18 +20,27 @@ namespace Junkyard
     {
         static void Main(string[] args)
         {
-
-            //int i = new int[] { 1, 2 }.Single();
-
             var src = new SharePointDataContext(new Uri("http://wss3demo"));
             src.CheckListVersion = false;
 
             //var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
-            var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).First();
+            //var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).First();
+            //var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).Select(t => t).Select(t => t.Age).Select(t => 2 * t);
+
+            //var p1 = (from t in src.GetList<Test>() where t.FirstName == "Jo" select t).AsEnumerable().Single();
+            //var p2 = (from t in src.GetList<Test>() where t.FirstName == "Jo" select t).AsEnumerable().Single();
+            //bool r = object.ReferenceEquals(p1, p2);
 
             //foreach (var t in res)
-            //    ;
+            //{
+            //}
 
+            //var res = from t in src.GetList<Test>() orderby t.FirstName.ToString() select t;
+            //var res = from t in src.GetList<Test>() where t.FirstName.ToString() == "Bart".ToString() select t;
+            //var res = from t in src.GetList<Test>() where t.FirstName.ToString() == t.LastName.ToString() select t;
+            //var res = from t in src.GetList<Test>() where t.FirstName.ToString().Contains("B".ToString()) select t;
+            var res = from t in src.GetList<Test>() where "Bart".ToString().Contains("B".ToString()) select t;
+            SharePointListQueryVisualizer.TestShowVisualizer(res);
             string s = "";
 
             /*

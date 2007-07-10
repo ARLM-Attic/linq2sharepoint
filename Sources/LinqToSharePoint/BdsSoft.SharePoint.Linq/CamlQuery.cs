@@ -180,7 +180,7 @@ namespace BdsSoft.SharePoint.Linq
                         //                 where keySelector is of type Expression<Func<TSource, TKey>>
                         // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
                         //
-                        query.ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1, ppE);
+                        query.ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1 + mce.Method.Name.Length + 1, ppE - 1);
                         break;
                     //
                     // Query expression for projection.
@@ -522,7 +522,7 @@ namespace BdsSoft.SharePoint.Linq
                         while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
                             fEx = ((UnaryExpression)fEx).Operand;
 
-                        fEx = DropToString(fEx);
+                        //fEx = DropToString(fEx, ref ppSD, ref ppED);
                         fEx = CheckForNullableType(fEx, out isNullableHasValue);
 
                         if (!IsEntityPropertyReference(fEx))
@@ -572,9 +572,22 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
+            // Check whether the method call is an instance method call.
+            // All code above this barrier processes static method calls.
+            //
+            if (mce.Object == null)
+                return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
+
+            //
+            // Get object position.
+            //
+            int ppSO = ppS;
+            int ppEO = ppSO + mce.Object.ToString().Length - 1;
+
+            //
             // Only method calls on entity type properties are supported.
             //
-            Expression ex = DropToString(mce.Object);
+            Expression ex = DropToString(mce.Object, ref ppSO, ref ppEO);
             bool? isHasValue;
             MemberExpression o = ex as MemberExpression;
             if (o != null)
@@ -868,9 +881,9 @@ namespace BdsSoft.SharePoint.Linq
                                 lookup = null;
 
                                 if (lookupLeft != null)
-                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppE);
+                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppT);
                                 if (lookupRight != null)
-                                    PatchQueryExpressionNode(lookupRight, ref right, ppS, ppE);
+                                    PatchQueryExpressionNode(lookupRight, ref right, ppD, ppE);
                             }
 
                             //
@@ -897,7 +910,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupLeft != null)
                                 {
                                     lookup = lookupLeft;
-                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppE);
+                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppT);
                                 }
 
                                 return left;
@@ -913,7 +926,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupRight != null)
                                 {
                                     lookup = lookupRight;
-                                    PatchQueryExpressionNode(lookupRight, ref right, ppS, ppE);
+                                    PatchQueryExpressionNode(lookupRight, ref right, ppD, ppE);
                                 }
 
                                 return right;
@@ -1061,6 +1074,9 @@ namespace BdsSoft.SharePoint.Linq
             Expression left = condition.Left;
             Expression right = condition.Right;
 
+            int ppT = ppS + left.ToString().Length - 1;
+            int ppD = ppE - right.ToString().Length + 1;
+
             //
             // Detect use of Microsoft.VisualBasic.CompilerServices.Operators.CompareString or Microsoft.VisualBasic.Strings.StrComp.
             //
@@ -1070,12 +1086,22 @@ namespace BdsSoft.SharePoint.Linq
             // Trim Convert nodes on the both operandi before examining the nodes further on and remove excessive ToString method calls at the end.
             //
             while (left.NodeType == ExpressionType.Convert || left.NodeType == ExpressionType.ConvertChecked)
+            {
                 left = ((UnaryExpression)left).Operand;
-            left = DropToString(left);
+                
+                ppS += (left.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
+                ppT -= 1;
+            }
+            left = DropToString(left, ref ppS, ref ppT);
 
-            while (right is UnaryExpression && right.NodeType == ExpressionType.Convert || right.NodeType == ExpressionType.ConvertChecked)
+            while (right.NodeType == ExpressionType.Convert || right.NodeType == ExpressionType.ConvertChecked)
+            {
                 right = ((UnaryExpression)right).Operand;
-            right = DropToString(right);
+
+                ppD += (right.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
+                ppE -= 1;
+            }
+            right = DropToString(right, ref ppD, ref ppE);
 
             //
             // Detect and trim Nullable wrappers on both arguments. Keep track of .HasValue calls.
@@ -1135,7 +1161,7 @@ namespace BdsSoft.SharePoint.Linq
             // Ensure that the value side (rhs) of the condition is lambda parameter free.
             //
             Expression rhs = (correctOrder ? right : left);
-            EnsureLambdaFree(rhs, predicateParameter, ppS, ppE); //TODO: ppS and ppE should be refined
+            bool lambdaFree = EnsureLambdaFree(rhs, predicateParameter, (correctOrder ? ppD : ppS), (correctOrder ? ppE : ppT));
 
             //
             // Find DateTime values, possibly special ones including Today and Now.
@@ -1147,7 +1173,7 @@ namespace BdsSoft.SharePoint.Linq
             object value = null;
             XmlElement c;
 
-            if (dateValue == null)
+            if (dateValue == null && lambdaFree)
             {
                 //
                 // Get the rhs value by dynamic execution.
@@ -1596,15 +1622,18 @@ namespace BdsSoft.SharePoint.Linq
         private void ParseOrdering(LambdaExpression ordering, bool descending, int ppS, int ppE)
         {
             //
-            // If no ordering epxression has been encountered before, construct the OrderBy CAML element.
+            // If no ordering expression has been encountered before, construct the OrderBy CAML element.
             //
             if (_order == null)
                 _order = _doc.CreateElement("OrderBy");
 
+            int ppS2 = ppS + ordering.Parameters[0].Name.Length + " => ".Length;
+            int ppE2 = ppE;
+
             //
             // Trim ToString() calls for ordering expressions on textual fields. Allows more flexibility.
             //
-            Expression orderExpression = DropToString(ordering.Body);
+            Expression orderExpression = DropToString(ordering.Body, ref ppS2, ref ppE2);
 
             //
             // Convert the ordering expression as a MemberExpression.
@@ -1758,7 +1787,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="e">Expression to drop excessive tail ToString calls for.</param>
         /// <returns>Expression without tail ToString calls on string instances.</returns>
-        private static Expression DropToString(Expression e)
+        private static Expression DropToString(Expression e, ref int ppS, ref int ppE)
         {
             while (true)
             {
@@ -1771,7 +1800,10 @@ namespace BdsSoft.SharePoint.Linq
                 // Only parameterless ToString() calls on strings should be trimmed off.
                 //
                 if (mc != null && mc.Object != null && mc.Object.Type == typeof(string) && mc.Method.Name == "ToString" && mc.Method.GetParameters().Length == 0)
+                {
                     e = mc.Object;
+                    ppE -= ".ToString()".Length;
+                }
                 else
                     break;
             }
@@ -1784,8 +1816,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="e">Expression to validate.</param>
         /// <param name="parameter">Forbidden lambda parameter to look for.</param>
         /// <exception cref="NotSupportedException">Occurs when the specified lambda parameter is found in the expression.</exception>
-        private void EnsureLambdaFree(Expression e, ParameterExpression parameter, int ppS, int ppE)
+        private bool EnsureLambdaFree(Expression e, ParameterExpression parameter, int ppS, int ppE)
         {
+            //
+            // Some recursive calls can cause a check on a null-valued expression node.
+            //
+            if (e == null)
+                return true;
+
             //
             // TODO: ppS and ppE should be narrowed in recursive calls.
             //
@@ -1822,7 +1860,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             if ((me = e as MemberExpression) != null)
             {
-                EnsureLambdaFree(me.Expression, parameter, ppS, ppE);
+                return EnsureLambdaFree(me.Expression, parameter, ppS, ppE);
             }
             //
             // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
@@ -1833,65 +1871,73 @@ namespace BdsSoft.SharePoint.Linq
                 // Check that the parameter matches the projection lambda expression's parameter.
                 //
                 if (pe == parameter)
+                {
                     this.MultipleEntityReferencesInCondition(ppS, ppE); /* PARSE ERROR */
+                    return false;
+                }
+                else
+                    return true;
             }
             //
             // b.Method(b.Left, b.Right)
             //
             else if ((be = e as BinaryExpression) != null)
             {
-                EnsureLambdaFree(be.Left, parameter, ppS, ppE);
-                EnsureLambdaFree(be.Right, parameter, ppS, ppE);
+                return EnsureLambdaFree(be.Left, parameter, ppS, ppE)
+                    && EnsureLambdaFree(be.Right, parameter, ppS, ppE);
             }
             //
             // u.Method(u.Operand)
             //
             else if ((ue = e as UnaryExpression) != null)
             {
-                EnsureLambdaFree(ue.Operand, parameter, ppS, ppE);
+                return EnsureLambdaFree(ue.Operand, parameter, ppS, ppE);
             }
             //
             // (c.Test ? c.IfTrue : c.IfFalse)
             //
             else if ((ce = e as ConditionalExpression) != null)
             {
-                EnsureLambdaFree(ce.IfFalse, parameter, ppS, ppE);
-                EnsureLambdaFree(ce.IfTrue, parameter, ppS, ppE);
-                EnsureLambdaFree(ce.Test, parameter, ppS, ppE);
+                return EnsureLambdaFree(ce.IfFalse, parameter, ppS, ppE)
+                    && EnsureLambdaFree(ce.IfTrue, parameter, ppS, ppE)
+                    && EnsureLambdaFree(ce.Test, parameter, ppS, ppE);
             }
             //
             // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
             //
             else if ((ie = e as InvocationExpression) != null)
             {
-                EnsureLambdaFree(ie.Expression, parameter, ppS, ppE);
+                bool res = EnsureLambdaFree(ie.Expression, parameter, ppS, ppE);
                 foreach (Expression ex in ie.Arguments)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
             //
             // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
             //
             else if ((le = e as LambdaExpression) != null)
             {
-                EnsureLambdaFree(le.Body, parameter, ppS, ppE);
+                bool res = EnsureLambdaFree(le.Body, parameter, ppS, ppE);
                 foreach (Expression ex in le.Parameters)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
             //
             // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
             //
             else if ((lie = e as ListInitExpression) != null)
             {
-                EnsureLambdaFree(lie.NewExpression, parameter, ppS, ppE);
+                bool res = EnsureLambdaFree(lie.NewExpression, parameter, ppS, ppE);
                 foreach (Expression ex in lie.Expressions)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
             //
             // Member initialization expression requires recursive processing of MemberBinding objects.
             //
             else if ((mie = e as MemberInitExpression) != null)
             {
-                EnsureLambdaFree(mie.NewExpression, parameter, ppS, ppE);
+                bool res = EnsureLambdaFree(mie.NewExpression, parameter, ppS, ppE);
 
                 //
                 // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
@@ -1912,10 +1958,10 @@ namespace BdsSoft.SharePoint.Linq
                     MemberMemberBinding mmb = (MemberMemberBinding)b;
 
                     if (ma != null)
-                        EnsureLambdaFree(ma.Expression, parameter, ppS, ppE);
+                        res = res && EnsureLambdaFree(ma.Expression, parameter, ppS, ppE);
                     else if (mlb != null)
                         foreach (Expression ex in mlb.Expressions)
-                            EnsureLambdaFree(ex, parameter, ppS, ppE);
+                            res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //
@@ -1923,6 +1969,7 @@ namespace BdsSoft.SharePoint.Linq
                         foreach (MemberBinding mb in mmb.Bindings)
                             memberBindings.Enqueue(mb);
                 }
+                return res;
             }
             //
             // mc.Object->mc.Method(mc.Arguments[0], ..., mc.Arguments[mc.Arguments.Count - 1])
@@ -1930,29 +1977,54 @@ namespace BdsSoft.SharePoint.Linq
             else if ((mce = e as MethodCallExpression) != null)
             {
                 if (mce.Object != null)
-                    EnsureLambdaFree(mce.Object, parameter, ppS, ppE);
+                    return EnsureLambdaFree(mce.Object, parameter, ppS, ppE);
+
+                bool res = true;
                 foreach (Expression ex in mce.Arguments)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
             //
             // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
             //
             else if ((ne = e as NewExpression) != null)
             {
+                bool res = true;
                 foreach (Expression ex in ne.Arguments)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
             //
             // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
             //
             else if ((nae = e as NewArrayExpression) != null)
             {
+                bool res = true;
                 foreach (Expression ex in nae.Expressions)
-                    EnsureLambdaFree(ex, parameter, ppS, ppE);
+                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                return res;
             }
+            //
+            // tb.Expression is tb.Type
+            //
             else if ((tbe = e as TypeBinaryExpression) != null)
             {
-                EnsureLambdaFree(tbe.Expression, parameter, ppS, ppE);
+                return EnsureLambdaFree(tbe.Expression, parameter, ppS, ppE);
+            }
+            //
+            // Constants are lambda-free by definition.
+            //
+            else if (e is ConstantExpression)
+            {
+                return true;
+            }
+            //
+            // Unknown construct (CHECK).
+            //
+            else
+            {
+                ParseErrors.FatalError(ppS, ppE); /* PARSE ERROR */
+                return false;
             }
         }
 
