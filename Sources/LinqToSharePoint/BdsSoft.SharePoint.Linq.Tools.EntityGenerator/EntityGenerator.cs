@@ -127,12 +127,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Generate entities.
             //
-            List<string> entities = new List<string>();
             foreach (string list in listNames)
-            {
-                CodeTypeDeclaration type = GenerateEntityForList(list);
-                entities.Add(type.Name);
-            }
+                GenerateEntityForList(list);
 
             //
             // Add generated types to namespace.
@@ -145,6 +141,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             if (!string.IsNullOrEmpty(contextName))
             {
+                List<string> entities = new List<CodeTypeDeclaration>(this.entities.Values).ConvertAll<string>(t => t.Name);
                 CodeTypeDeclaration ctx = GenerateSharePointDataContext(contextName, entities.ToArray());
                 ns.Types.Add(ctx);
             }
