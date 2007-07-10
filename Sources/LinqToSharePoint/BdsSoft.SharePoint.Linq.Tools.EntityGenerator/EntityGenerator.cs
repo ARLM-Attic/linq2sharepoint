@@ -371,7 +371,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                                         bclTypeRef = new CodeTypeReference(entities[field.LookupList].Name);
                                     else
                                         bclTypeRef = new CodeTypeReference(GenerateEntityForList(field.LookupList).Name);
-                                    fieldAttributeArgs.Add(new CodeAttributeArgument("LookupField", new CodePrimitiveExpression(field.LookupField)));
+                                    fieldAttributeArgs.Add(new CodeAttributeArgument("LookupDisplayField", new CodePrimitiveExpression(field.LookupField)));
 
                                     //
                                     // LookupMulti fields are mapped on IList<T> properties.
