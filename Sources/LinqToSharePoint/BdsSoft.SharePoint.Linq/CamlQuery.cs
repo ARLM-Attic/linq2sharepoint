@@ -3271,7 +3271,15 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType);
                             ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _context, fkey);
-                            entity.SetValue(property.Name, thunk);
+
+                            //
+                            // Store the thunk if deferred loading is turned on.
+                            // Otherwise, load the entity through the thunk and store the result.
+                            //
+                            if (_context.DeferredLoadingEnabled)
+                                entity.SetValue(property.Name, thunk);
+                            else
+                                entity.SetValue(property.Name, thunk.Load());
                         }
                         break;
                     //
@@ -3301,7 +3309,15 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType.GetGenericArguments()[0]);
                             ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _context, fkeys);
-                            entity.SetValue(property.Name, thunk);
+
+                            //
+                            // Store the thunk if deferred loading is turned on.
+                            // Otherwise, load the entity through the thunk and store the result.
+                            //
+                            if (_context.DeferredLoadingEnabled)
+                                entity.SetValue(property.Name, thunk);
+                            else
+                                entity.SetValue(property.Name, thunk.Load());
                         }
                         break;
                     default:

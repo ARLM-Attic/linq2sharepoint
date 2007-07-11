@@ -62,10 +62,14 @@ namespace Junkyard
             //var res = from t in src.GetList<Test>() group t by t.Age into g select g;
             //var res = from t in src.GetList<Test>() group t by t.Age into g select new { Age = g.Key, Items = g.GetEnumerator() };
             //var res = from t in src.GetList<Test>() group t by t.Age into g where g.Key >= 25 select new { Age = g.Key, Items = g.GetEnumerator() };
-            var res1 = (from t in src.GetList<Test>() select t).First();
-            var res2 = (from t in src.GetList<Test>() select t).First();
-            bool b = object.ReferenceEquals(res1, res2);
+            //var res1 = (from t in src.GetList<Test>() select t).First();
+            //var res2 = (from t in src.GetList<Test>() select t).First();
+            //bool b = object.ReferenceEquals(res1, res2);
             //SharePointListQueryVisualizer.TestShowVisualizer(res);
+
+            foreach (var t in src.GetList<Test>())
+            {
+            }
 
             string s = "";
 

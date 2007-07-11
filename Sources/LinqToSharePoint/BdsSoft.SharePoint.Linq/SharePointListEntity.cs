@@ -65,7 +65,7 @@ namespace BdsSoft.SharePoint.Linq
                 ILazyLoadingThunk ll = o as ILazyLoadingThunk;
                 if (ll != null)
                 {
-                    object entity = ll.LoadEntity();
+                    object entity = ll.Load();
                     fields[field] = entity;
                     return entity;
                 }
@@ -130,10 +130,10 @@ namespace BdsSoft.SharePoint.Linq
     internal interface ILazyLoadingThunk
     {
         /// <summary>
-        /// Loads the entity from the thunk.
+        /// Loads the entity or set of entitites from the thunk.
         /// </summary>
         /// <returns></returns>
-        object LoadEntity();
+        object Load();
     }
 
     /// <summary>
@@ -183,10 +183,10 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Loads the entity from the thunk represented by the thunk's entity id.
+        /// Loads the entity or set of entities from the thunk represented by the thunk's entity id(s).
         /// </summary>
         /// <returns></returns>
-        public object LoadEntity()
+        public object Load()
         {
             if (id != null)
                 return source.GetEntityById<R>(id.Value);
@@ -240,10 +240,10 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Loads the entity from the thunk represented by the thunk's entity id.
+        /// Loads the entity or set of entities from the thunk represented by the thunk's entity id(s).
         /// </summary>
         /// <returns></returns>
-        public object LoadEntity()
+        public object Load()
         {
             if (id != null)
                 return context.GetList<R>().GetEntityById(id.Value);

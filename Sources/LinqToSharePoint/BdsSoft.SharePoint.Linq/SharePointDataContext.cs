@@ -76,6 +76,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Obsolete as of 0.2.1</remarks>
         private bool _enforceLookupFieldUniqueness = true;
 
+        /// <summary>
+        /// Used to enable/disable deferred loading of entities in Lookup(Multi) field references.
+        /// </summary>
+        private bool _deferredLoadingEnabled = true;
+
         #endregion
 
         #region Constructors
@@ -140,6 +145,15 @@ namespace BdsSoft.SharePoint.Linq
         {
             get { return _enforceLookupFieldUniqueness; }
             set { _enforceLookupFieldUniqueness = value; }
+        }
+
+        /// <summary>
+        /// Indicates whether or not deferred loading of entities is enabled for Lookup and LookupMulti fields.
+        /// </summary>
+        public bool DeferredLoadingEnabled
+        {
+            get { return _deferredLoadingEnabled; }
+            set { _deferredLoadingEnabled = value; }
         }
 
         /// <summary>
