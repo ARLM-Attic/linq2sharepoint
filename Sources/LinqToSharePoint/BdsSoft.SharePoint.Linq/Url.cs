@@ -8,12 +8,16 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -23,23 +27,63 @@ namespace BdsSoft.SharePoint.Linq
     [Serializable]
     public class Url : Uri
     {
-        internal Url(string s)
-            : base(s.Split(',')[0])
+        #region Constructors
+
+        /// <summary>
+        /// Internal constructor for a Url field.
+        /// </summary>
+        /// <param name="url">Url.</param>
+        /// <param name="friendlyName">Friendly name for the Url.</param>
+        internal Url(string url, string friendlyName)
+            : base(url)
         {
-            string[] ss = s.Split(',');
-            name = ss[1];
+            FriendlyName = friendlyName;
         }
 
-        private string name;
+        #endregion
+
+        #region Factory methods
+
+        /// <summary>
+        /// Parses a SharePoint Url field.
+        /// </summary>
+        /// <param name="s">SharePoint Url field value.</param>
+        /// <returns>Url object representing the specified field value.</returns>
+        public static Url Parse(string s)
+        {
+            if (s == null)
+                throw new ArgumentNullException("s");
+
+            //
+            // Split the specified URL string. The first part contains the URI, the second part the friendly name.
+            //
+            string[] ss = s.Split(',');
+            if (ss.Length != 2)
+                throw new ArgumentException(Errors.InvalidUrlParseArgument, "s");
+
+            //
+            // Create Url object and return.
+            //
+            Url url = new Url(ss[0], ss[1]);
+            return url;
+        }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets or sets the friendly name for the URL.
         /// </summary>
         public string FriendlyName
         {
-            get { return name; }
-            set { name = value; }
+            get;
+            set;
         }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Returns the hash code for the URL.
@@ -47,7 +91,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return ((Uri)this).GetHashCode() ^ name.GetHashCode();
+            return ((Uri)this).GetHashCode() ^ FriendlyName.GetHashCode();
         }
 
         /// <summary>
@@ -57,18 +101,34 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>True if both objects represent the same URL; false otherwise.</returns>
         public override bool Equals(object obj)
         {
+            //
+            // Instances compared to null aren't equal.
+            //
             if (obj == null)
                 return false;
 
+            //
+            // Same reference?
+            //
             if (object.ReferenceEquals(this, obj))
                 return true;
 
+            //
+            // Can only compare to a Url instance.
+            //
             Url u = obj as Url;
             if (u == null)
                 return false;
 
-            return (name == u.name) && ((Uri)this == (Uri)obj);
+            //
+            // Same friendly name and same Uri required.
+            //
+            return (FriendlyName == u.FriendlyName) && ((Uri)this == (Uri)obj);
         }
+
+        #endregion
+
+        #region Operators
 
         /// <summary>
         /// Checks for equality between a Url and a string-representation of a URL. Used for LINQ queries that compare a URL field with a string containing the URL's address.
@@ -97,6 +157,10 @@ namespace BdsSoft.SharePoint.Linq
             return !(url == address);
         }
 
+        #endregion
+
+        #region Serialization support
+
         /// <summary>
         /// Initializes a new instance of the Url class from the specified instances of the SerializationInfo and StreamingContext classes.
         /// </summary>
@@ -104,7 +168,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="context">An instance of the StreamingContext class containing the source of the serialized stream associated with the new Uri instance.</param>
         protected Url(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            name = (string)info.GetValue("FriendlyName", typeof(string));
+            FriendlyName = (string)info.GetValue("FriendlyName", typeof(string));
         }
 
         /// <summary>
@@ -115,8 +179,10 @@ namespace BdsSoft.SharePoint.Linq
         [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
         public new virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("FriendlyName", name);
+            info.AddValue("FriendlyName", FriendlyName);
             base.GetObjectData(info, context);
         }
+
+        #endregion
     }
 }

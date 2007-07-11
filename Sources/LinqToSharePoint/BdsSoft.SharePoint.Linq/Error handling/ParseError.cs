@@ -14,10 +14,14 @@
  * 0.2.1 - Introduction of ParseError and ParseErrorCollection.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {

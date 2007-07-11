@@ -14,10 +14,14 @@
  * 0.2.1 - Introduction of RuntimeErrors.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -26,69 +30,89 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     internal static class RuntimeErrors
     {
-        public static void MissingFieldMappingAttribute(string property)
+        public static Exception MissingFieldMappingAttribute(string property)
         {
-            throw new InvalidOperationException(String.Format(Errors.MissingFieldMappingAttribute, property));
+            return new InvalidOperationException(String.Format(Errors.MissingFieldMappingAttribute, property));
         }
 
-        public static void ListVersionMismatch()
+        public static Exception ListVersionMismatch()
         {
-            throw new InvalidOperationException(String.Format(Errors.ListVersionMismatch));
+            return new InvalidOperationException(String.Format(Errors.ListVersionMismatch));
         }
 
-        public static void ConnectionExceptionSp(string url, Exception innerException)
+        public static Exception ConnectionExceptionSp(string url, Exception innerException)
         {
-            throw new SharePointConnectionException(String.Format(Errors.ConnectionExceptionSp, url), innerException);
+            return new SharePointConnectionException(String.Format(Errors.ConnectionExceptionSp, url), innerException);
         }
 
-        public static void ConnectionExceptionWs(string url, Exception innerException)
+        public static Exception ConnectionExceptionWs(string url, Exception innerException)
         {
-            throw new SharePointConnectionException(String.Format(Errors.ConnectionExceptionWs, url), innerException);
+            return new SharePointConnectionException(String.Format(Errors.ConnectionExceptionWs, url), innerException);
         }
 
-        public static void InvalidLookupField(string property)
+        public static Exception InvalidLookupField(string property)
         {
-            throw new NotSupportedException(String.Format(Errors.InvalidLookupField, property));
+            return new NotSupportedException(String.Format(Errors.InvalidLookupField, property));
         }
 
-        public static void LookupFieldPatchError()
+        public static Exception LookupFieldPatchError()
         {
-            throw new InvalidOperationException(Errors.LookupFieldPatchError);
+            return new InvalidOperationException(Errors.LookupFieldPatchError);
         }
 
-        public static void UnrecognizedMappingType(string fieldType)
+        public static Exception UnrecognizedMappingType(string fieldType)
         {
-            throw new InvalidOperationException(String.Format(Errors.UnrecognizedMappingType, fieldType));
+            return new InvalidOperationException(String.Format(Errors.UnrecognizedMappingType, fieldType));
         }
 
-        public static void TooManyUnknownChoiceValues(string property)
+        public static Exception TooManyUnknownChoiceValues(string property)
         {
-            throw new InvalidOperationException(String.Format(Errors.TooManyUnknownChoiceValues, property));
+            return new InvalidOperationException(String.Format(Errors.TooManyUnknownChoiceValues, property));
         }
 
-        public static void InvalidOtherChoiceFieldMapping(string property)
+        public static Exception InvalidOtherChoiceFieldMapping(string property)
         {
-            throw new InvalidOperationException(String.Format(Errors.InvalidOtherChoiceFieldMapping, property));
+            return new InvalidOperationException(String.Format(Errors.InvalidOtherChoiceFieldMapping, property));
         }
 
-        public static void MissingOtherChoiceFieldMapping(string property)
+        public static Exception MissingOtherChoiceFieldMapping(string property)
         {
-            throw new InvalidOperationException(String.Format(Errors.MissingOtherChoiceFieldMapping, property));
+            return new InvalidOperationException(String.Format(Errors.MissingOtherChoiceFieldMapping, property));
         }
 
-        public static void UnsupportedQueryOperator(string queryOperator)
+        public static Exception UnsupportedQueryOperator(string queryOperator)
         {
-            throw new InvalidOperationException(String.Format(Errors.UnsupportedQueryOperator, queryOperator));
+            return new InvalidOperationException(String.Format(Errors.UnsupportedQueryOperator, queryOperator));
         }
 
-        public static void EmptySequence()
+        public static Exception EmptySequence()
         {
-            throw new InvalidOperationException(String.Format(Errors.EmptySequence));
+            return new InvalidOperationException(Errors.EmptySequence);
         }
 
-        public static void FatalError()
+        public static Exception FatalError()
         {
-            throw new InvalidOperationException(Errors.FatalError);
+            return new InvalidOperationException(Errors.FatalError);
+        }
+
+        public static Exception CamlMethodsInvalidUse()
+        {
+            return new InvalidOperationException(Errors.CamlMethodsInvalidUse);
+        }
+
+        public static Exception MissingListAttribute()
+        {
+            return new InvalidOperationException(Errors.MissingListAttribute);
+        }
+
+        public static Exception MoreThanOnePrimaryKey()
+        {
+            return new InvalidOperationException(Errors.MoreThanOnePrimaryKey);
+        }
+
+        public static Exception MissingPrimaryKey()
+        {
+            return new InvalidOperationException(Errors.MissingPrimaryKey);
         }
     }
 }

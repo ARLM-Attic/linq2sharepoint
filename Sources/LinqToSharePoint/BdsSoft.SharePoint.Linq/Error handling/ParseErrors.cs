@@ -14,8 +14,12 @@
  * 0.2.1 - Introduction of ParseErrors.
  */
 
+#region Namespace imports
+
 using System;
 using System.Xml;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -24,139 +28,139 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     internal static class ParseErrors
     {
-        public static XmlElement UnsupportedQueryOperator(this CamlQuery query, string queryOperator, int start, int end)
+        public static XmlElement UnsupportedQueryOperator(this QueryParser parser, string queryOperator, int start, int end)
         {
-            return KeepOrThrow(query, 1, String.Format(Errors.UnsupportedQueryOperator, queryOperator), start, end);
+            return KeepOrThrow(parser, 1, String.Format(Errors.UnsupportedQueryOperator, queryOperator), start, end);
         }
 
-        public static XmlElement NonBoolConstantValueInPredicate(this CamlQuery query, int start, int end)
+        public static XmlElement NonBoolConstantValueInPredicate(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 2, String.Format(Errors.NonBoolConstantValueInPredicate), start, end);
+            return KeepOrThrow(parser, 2, Errors.NonBoolConstantValueInPredicate, start, end);
         }
 
-        public static XmlElement PredicateAfterProjection(this CamlQuery query, int start, int end)
+        public static XmlElement PredicateAfterProjection(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 3, String.Format(Errors.PredicateAfterProjection), start, end);
+            return KeepOrThrow(parser, 3, Errors.PredicateAfterProjection, start, end);
         }
 
-        public static XmlElement DateRangesOverlapInvalidValueArgument(this CamlQuery query, int start, int end)
+        public static XmlElement DateRangesOverlapInvalidValueArgument(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 4, String.Format(Errors.DateRangesOverlapInvalidValueArgument), start, end);
+            return KeepOrThrow(parser, 4, Errors.DateRangesOverlapInvalidValueArgument, start, end);
         }
 
-        public static XmlElement DateRangesOverlapMissingFieldReferences(this CamlQuery query, int start, int end)
+        public static XmlElement DateRangesOverlapMissingFieldReferences(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 5, String.Format(Errors.DateRangesOverlapMissingFieldReferences), start, end);
+            return KeepOrThrow(parser, 5, Errors.DateRangesOverlapMissingFieldReferences, start, end);
         }
 
-        public static XmlElement PredicateContainsNonEntityReference(this CamlQuery query, string member, int start, int end)
+        public static XmlElement PredicateContainsNonEntityReference(this QueryParser parser, string member, int start, int end)
         {
-            return KeepOrThrow(query, 6, String.Format(Errors.PredicateContainsNonEntityReference, member), start, end);
+            return KeepOrThrow(parser, 6, String.Format(Errors.PredicateContainsNonEntityReference, member), start, end);
         }
 
-        public static XmlElement PredicateContainsNonEntityMethodCall(this CamlQuery query, string method, int start, int end)
+        public static XmlElement PredicateContainsNonEntityMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(query, 7, String.Format(Errors.PredicateContainsNonEntityMethodCall, method), start, end);
+            return KeepOrThrow(parser, 7, String.Format(Errors.PredicateContainsNonEntityMethodCall, method), start, end);
         }
 
-        public static XmlElement InvalidEntityReference(this CamlQuery query, string member, int start, int end)
+        public static XmlElement InvalidEntityReference(this QueryParser parser, string member, int start, int end)
         {
-            return KeepOrThrow(query, 8, String.Format(Errors.InvalidEntityReference, member), start, end);
+            return KeepOrThrow(parser, 8, String.Format(Errors.InvalidEntityReference, member), start, end);
         }
 
-        public static XmlElement UnsupportedStringMethodCall(this CamlQuery query, string method, int start, int end)
+        public static XmlElement UnsupportedStringMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(query, 9, String.Format(Errors.UnsupportedStringMethodCall, method), start, end);
+            return KeepOrThrow(parser, 9, String.Format(Errors.UnsupportedStringMethodCall, method), start, end);
         }
 
-        public static XmlElement UnsupportedMethodCall(this CamlQuery query, string method, int start, int end)
+        public static XmlElement UnsupportedMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(query, 10, String.Format(Errors.UnsupportedMethodCall, method), start, end);
+            return KeepOrThrow(parser, 10, String.Format(Errors.UnsupportedMethodCall, method), start, end);
         }
 
-        public static XmlElement CantNegate(this CamlQuery query, string expression, int start, int end)
+        public static XmlElement CantNegate(this QueryParser parser, string expression, int start, int end)
         {
-            return KeepOrThrow(query, 11, String.Format(Errors.CantNegate, expression), start, end);
+            return KeepOrThrow(parser, 11, String.Format(Errors.CantNegate, expression), start, end);
         }
 
-        public static XmlElement UnsupportedUnary(this CamlQuery query, string type, int start, int end)
+        public static XmlElement UnsupportedUnary(this QueryParser parser, string type, int start, int end)
         {
-            return KeepOrThrow(query, 12, String.Format(Errors.UnsupportedUnary, type), start, end);
+            return KeepOrThrow(parser, 12, String.Format(Errors.UnsupportedUnary, type), start, end);
         }
 
-        public static XmlElement UnsupportedBinary(this CamlQuery query, string type, int start, int end)
+        public static XmlElement UnsupportedBinary(this QueryParser parser, string type, int start, int end)
         {
-            return KeepOrThrow(query, 13, String.Format(Errors.UnsupportedBinary, type), start, end);
+            return KeepOrThrow(parser, 13, String.Format(Errors.UnsupportedBinary, type), start, end);
         }
 
-        public static XmlElement InvalidNullValuedCondition(this CamlQuery query, int start, int end)
+        public static XmlElement InvalidNullValuedCondition(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 14, String.Format(Errors.InvalidNullValuedCondition), start, end);
+            return KeepOrThrow(parser, 14, Errors.InvalidNullValuedCondition, start, end);
         }
 
-        public static XmlElement UnrecognizedEnumValue(this CamlQuery query, int start, int end)
+        public static XmlElement UnrecognizedEnumValue(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 15, String.Format(Errors.UnrecognizedEnumValue), start, end);
+            return KeepOrThrow(parser, 15, Errors.UnrecognizedEnumValue, start, end);
         }
 
-        public static XmlElement UnsupportedOrdering(this CamlQuery query, int start, int end)
+        public static XmlElement UnsupportedOrdering(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 16, String.Format(Errors.UnsupportedOrdering), start, end);
+            return KeepOrThrow(parser, 16, Errors.UnsupportedOrdering, start, end);
         }
 
-        public static XmlElement InvalidLookupMultiContainsCall(this CamlQuery query, int start, int end)
+        public static XmlElement InvalidLookupMultiContainsCall(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 17, String.Format(Errors.InvalidLookupMultiContainsCall), start, end);
+            return KeepOrThrow(parser, 17, Errors.InvalidLookupMultiContainsCall, start, end);
         }
 
-        public static XmlElement SecondProjectionExpression(this CamlQuery query, int start, int end)
+        public static XmlElement SecondProjectionExpression(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 18, String.Format(Errors.SecondProjectionExpression), start, end);
+            return KeepOrThrow(parser, 18, Errors.SecondProjectionExpression, start, end);
         }
 
-        public static XmlElement DateRangesOverlapInvalidFieldReferences(this CamlQuery query, int start, int end)
+        public static XmlElement DateRangesOverlapInvalidFieldReferences(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 19, String.Format(Errors.DateRangesOverlapInvalidFieldReferences), start, end);
+            return KeepOrThrow(parser, 19, Errors.DateRangesOverlapInvalidFieldReferences, start, end);
         }
 
-        public static XmlElement NonUniqueLookupField(this CamlQuery query, string property, int start, int end)
+        public static XmlElement NonUniqueLookupField(this QueryParser parser, string property, int start, int end)
         {
-            return KeepOrThrow(query, 20, String.Format(Errors.NonUniqueLookupField, property), start, end);
+            return KeepOrThrow(parser, 20, String.Format(Errors.NonUniqueLookupField, property), start, end);
         }
 
-        public static XmlElement MissingLookupFieldSetting(this CamlQuery query, string field, int start, int end)
+        public static XmlElement MissingLookupFieldSetting(this QueryParser parser, string field, int start, int end)
         {
-            return KeepOrThrow(query, 21, String.Format(Errors.MissingLookupFieldSetting, field), start, end);
+            return KeepOrThrow(parser, 21, String.Format(Errors.MissingLookupFieldSetting, field), start, end);
         }
 
-        public static XmlElement NonExistingLookupField(this CamlQuery query, string field, string lookup, int start, int end)
+        public static XmlElement NonExistingLookupField(this QueryParser parser, string field, string lookup, int start, int end)
         {
-            return KeepOrThrow(query, 22, String.Format(Errors.NonExistingLookupField, field, lookup), start, end);
+            return KeepOrThrow(parser, 22, String.Format(Errors.NonExistingLookupField, field, lookup), start, end);
         }
 
-        public static XmlElement NullValuedLookupField(this CamlQuery query, string field, string lookup, int start, int end)
+        public static XmlElement NullValuedLookupField(this QueryParser parser, string field, string lookup, int start, int end)
         {
-            return KeepOrThrow(query, 23, String.Format(Errors.NullValuedLookupField, field, lookup), start, end);
+            return KeepOrThrow(parser, 23, String.Format(Errors.NullValuedLookupField, field, lookup), start, end);
         }
 
-        public static XmlElement MultipleEntityReferencesInCondition(this CamlQuery query, int start, int end)
+        public static XmlElement MultipleEntityReferencesInCondition(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 24, String.Format(Errors.MultipleEntityReferencesInCondition), start, end);
+            return KeepOrThrow(parser, 24, Errors.MultipleEntityReferencesInCondition, start, end);
         }
 
-        public static XmlElement UnsupportedQueryExpression(this CamlQuery query, int start, int end)
+        public static XmlElement UnsupportedQueryExpression(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(query, 99, String.Format(Errors.UnsupportedQueryExpression), start, end);
+            return KeepOrThrow(parser, 99, Errors.UnsupportedQueryExpression, start, end);
         }
 
-        public static XmlElement MissingFieldMappingAttribute(this CamlQuery query, string property)
+        public static XmlElement MissingFieldMappingAttribute(this QueryParser parser, string property)
         {
-            return KeepOrThrow(query, 101, String.Format(Errors.MissingFieldMappingAttribute, property), 0, 0);
+            return KeepOrThrow(parser, 101, String.Format(Errors.MissingFieldMappingAttribute, property), 0, 0);
         }
 
-        public static XmlElement GeneralError(this CamlQuery query, string message, int start, int end)
+        public static XmlElement GeneralError(this QueryParser parser, string message, int start, int end)
         {
-            return KeepOrThrow(query, 9999, message, start, end);
+            return KeepOrThrow(parser, 9999, message, start, end);
         }
 
         public static void LookupFieldPatchError()
@@ -169,7 +173,7 @@ namespace BdsSoft.SharePoint.Linq
             throw new InvalidOperationException(Errors.FatalError);
         }
 
-        private static XmlElement KeepOrThrow(CamlQuery query, int errorCode, string message, int start, int end)
+        private static XmlElement KeepOrThrow(QueryParser parser, int errorCode, string message, int start, int end)
         {
             //
             // Error object.
@@ -179,21 +183,17 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Check run mode.
             //
-            if (query._errors != null)
+            if (parser._errors != null)
             {
                 //
                 // Create error message and add it to the errors collection of the query object.
                 //
-                int id = query._errors.Add(error);
+                int id = parser._errors.Add(error);
 
                 //
                 // Generate an error reference tag that will be inserted in the generated CAML on the faulting position.
                 //
-                XmlElement errorElement = query._doc.CreateElement("ParseError");
-                XmlAttribute idAttribute = query._doc.CreateAttribute("ID");
-                idAttribute.Value = id.ToString();
-                errorElement.Attributes.Append(idAttribute);
-                return errorElement;
+                return parser._factory.ParseError(id);
             }
             else
             {

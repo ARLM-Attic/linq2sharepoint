@@ -14,15 +14,19 @@
  * 0.2.1 - Introduction of SharePointDataContext.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text;
-using Microsoft.SharePoint;
 using System.Linq.Expressions;
 using System.Net;
-using System.IO;
-using System.Diagnostics;
+using System.Text;
+using Microsoft.SharePoint;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -91,6 +95,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="wsUri">URI to the SharePoint site.</param>
         public SharePointDataContext(Uri wsUri)
         {
+            if (wsUri == null)
+                throw new ArgumentNullException("wsUri");
+
             _wsUri = wsUri;
             _wsProxy = new Lists();
             _wsProxy.Url = wsUri.AbsoluteUri.TrimEnd('/') + "/_vti_bin/lists.asmx";
@@ -104,6 +111,9 @@ namespace BdsSoft.SharePoint.Linq
         [CLSCompliant(false)]
         public SharePointDataContext(SPSite site)
         {
+            if (site == null)
+                throw new ArgumentNullException("site");
+
             _site = site;
         }
 
@@ -119,6 +129,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             get
             {
+                CheckDisposed();
                 return _wsUri;
             }
         }
@@ -132,6 +143,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             get
             {
+                CheckDisposed();
                 return _site;
             }
         }
@@ -143,8 +155,8 @@ namespace BdsSoft.SharePoint.Linq
         [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
         public bool EnforceLookupFieldUniqueness
         {
-            get { return _enforceLookupFieldUniqueness; }
-            set { _enforceLookupFieldUniqueness = value; }
+            get { CheckDisposed(); return _enforceLookupFieldUniqueness; }
+            set { CheckDisposed(); _enforceLookupFieldUniqueness = value; }
         }
 
         /// <summary>
@@ -152,8 +164,8 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         public bool DeferredLoadingEnabled
         {
-            get { return _deferredLoadingEnabled; }
-            set { _deferredLoadingEnabled = value; }
+            get { CheckDisposed(); return _deferredLoadingEnabled; }
+            set { CheckDisposed(); _deferredLoadingEnabled = value; }
         }
 
         /// <summary>
@@ -161,8 +173,8 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         public TextWriter Log
         {
-            get { return _log; }
-            set { _log = value; }
+            get { CheckDisposed(); return _log; }
+            set { CheckDisposed(); _log = value; }
         }
 
         /// <summary>
@@ -171,8 +183,8 @@ namespace BdsSoft.SharePoint.Linq
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "CheckList")]
         public bool CheckListVersion
         {
-            get { return _checkVersion; }
-            set { _checkVersion = value; }
+            get { CheckDisposed(); return _checkVersion; }
+            set { CheckDisposed(); _checkVersion = value; }
         }
 
         /// <summary>
@@ -182,6 +194,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             get
             {
+                CheckDisposed();
                 if (_wsProxy == null)
                     throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
                 else
@@ -189,6 +202,7 @@ namespace BdsSoft.SharePoint.Linq
             }
             set
             {
+                CheckDisposed();
                 if (_wsProxy == null)
                     throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
                 else
@@ -198,6 +212,8 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
+        #region Methods
+
         /// <summary>
         /// Retrieves a list source object for the entity as specified by <typeparamref name="T">T</typeparamref>.
         /// </summary>
@@ -206,6 +222,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
         public SharePointList<T> GetList<T>() where T : SharePointListEntity
         {
+            CheckDisposed();
+
             Type t = typeof(T);
 
             if (!_lists.ContainsKey(t))
@@ -214,11 +232,24 @@ namespace BdsSoft.SharePoint.Linq
             return (SharePointList<T>)_lists[t];
         }
 
+        /// <summary>
+        /// Retrieves a list source object for the entity as specified by <paramref name="listType">T</paramref>.
+        /// </summary>
+        /// <param name="listType">Entity type to get a list source object for.</param>
+        /// <returns>List source object for the specified entity type.</returns>
+        /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
         internal object GetList(Type listType)
         {
+            Debug.Assert(listType != null);
+
+            CheckDisposed();
+
             if (!_lists.ContainsKey(listType))
             {
-                object list = typeof(SharePointList<>).MakeGenericType(listType).GetConstructor(new Type[] { typeof(SharePointDataContext) }).Invoke(new object[] { this });
+                object list = Activator.CreateInstance(
+                    typeof(SharePointList<>).MakeGenericType(listType),
+                    new object[] { this }
+                );
                 _lists.Add(listType, list);
             }
 
@@ -233,10 +264,17 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query results.</returns>
         public IEnumerator<T> ExecuteQuery<T>(Expression expression)
         {
+            CheckDisposed();
+
+            if (expression == null)
+                throw new ArgumentNullException("expression");
+
             CamlQuery query = CamlQuery.Parse(expression, false);
 
             return query.Execute<T>();
         }
+
+        #endregion
 
         #region Dispose pattern implementation
 
@@ -269,6 +307,15 @@ namespace BdsSoft.SharePoint.Linq
                 }
             }
             _disposed = true;
+        }
+
+        /// <summary>
+        /// Helper method to check for object disposal.
+        /// </summary>
+        private void CheckDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(null);
         }
 
         #endregion

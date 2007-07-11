@@ -8,8 +8,12 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
 using Microsoft.SharePoint;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -19,8 +23,7 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public sealed class FieldAttribute : Attribute
     {
-        private string field;
-        private FieldType fieldType;
+        #region Constructors
 
         /// <summary>
         /// Creates a field mapping to the specified underlying list field in SharePoint.
@@ -30,9 +33,13 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The field name should not be XML-encoded. This will be done automatically if needed.</remarks>
         public FieldAttribute(string field, FieldType fieldType)
         {
-            this.field = field;
-            this.fieldType = fieldType;
+            Field = field;
+            FieldType = fieldType;
         }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Name of the list field in SharePoint.
@@ -40,7 +47,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The field name should not be XML-encoded. This will be done automatically if needed.</remarks>
         public string Field
         {
-            get { return field; }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -48,76 +56,63 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         public FieldType FieldType
         {
-            get { return fieldType; }
+            get;
+            private set;
         }
-
-        private string id;
 
         /// <summary>
         /// String-representation of the GUID that uniquely identifies the list field in SharePoint.
         /// </summary>
         public string Id
         {
-            get { return id; }
-            set { id = value; }
+            get;
+            set;
         }
-
-        private bool primaryKey;
 
         /// <summary>
         /// Indicates that the field is mapped to the primary key field of the list.
         /// </summary>
         public bool PrimaryKey
         {
-            get { return primaryKey; }
-            set { primaryKey = value; }
+            get;
+            set;
         }
-
-        private string lookupDisplayField;
 
         /// <summary>
         /// Name of the field shown in a Lookup field.
         /// </summary>
         public string LookupDisplayField
         {
-            get { return lookupDisplayField; }
-            set { lookupDisplayField = value; }
+            get;
+            set;
         }
-
-        private bool readOnly;
 
         /// <summary>
         /// Indicates whether the list field in SharePoint is read-only.
         /// </summary>
         public bool ReadOnly
         {
-            get { return readOnly; }
-            set { readOnly = value; }
+            get;
+            set;
         }
-
-        private bool calculated;
 
         /// <summary>
         /// Indicates whether the list field in SharePoint is calculated.
         /// </summary>
         public bool Calculated
         {
-            get { return calculated; }
-            set { calculated = value; }
+            get;
+            set;
         }
-
-        private string otherChoice;
 
         /// <summary>
         /// Points to a string property in the entity type that contains the fill-in choice of a multi-choice list field in SharePoint.
         /// </summary>
         public string OtherChoice
         {
-            get { return otherChoice; }
-            set { otherChoice = value; }
+            get;
+            set;
         }
-
-        private bool isUnique;
 
         /// <summary>
         /// Indicates that the field is unique across all list entries. Used for Lookup field references that require uniqueness enforcement.
@@ -125,9 +120,11 @@ namespace BdsSoft.SharePoint.Linq
         [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
         public bool IsUnique
         {
-            get { return isUnique; }
-            set { isUnique = value; }
+            get;
+            set;
         }
+
+        #endregion
     }
 
     /// <summary>
@@ -136,7 +133,7 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class ListAttribute : Attribute
     {
-        private string list;
+        #region Constructors
 
         /// <summary>
         /// Creates an entity class mapping to the specified underlying SharePoint list.
@@ -144,49 +141,50 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="list">SharePoint list where the entity type is mapped to.</param>
         public ListAttribute(string list)
         {
-            this.list = list;
+            List = list;
         }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// SharePoint list where the entity type is mapped to.
         /// </summary>
         public string List
         {
-            get { return list; }
+            get;
+            private set;
         }
-
-        private string id;
 
         /// <summary>
         /// String-representation of the GUID that uniquely identifies the SharePoint list.
         /// </summary>
         public string Id
         {
-            get { return id; }
-            set { id = value; }
+            get;
+            set;
         }
-
-        private int version;
 
         /// <summary>
         /// Version number of the SharePoint list.
         /// </summary>
         public int Version
         {
-            get { return version; }
-            set { version = value; }
+            get;
+            set;
         }
-
-        private string path;
 
         /// <summary>
         /// Relative URL path to the SharePoint list on the server.
         /// </summary>
         public string Path
         {
-            get { return path; }
-            set { path = value; }
+            get;
+            set;
         }
+
+        #endregion
     }
 
     /// <summary>
@@ -195,6 +193,8 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public sealed class ChoiceAttribute : Attribute
     {
+        #region Constructors
+
         /// <summary>
         /// Creates an enum field mapping to the specified underlying SharePoint choice value.
         /// </summary>
@@ -202,10 +202,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The choice value should not be XML-encoded. This will be done automatically if needed.</remarks>
         public ChoiceAttribute(string choice)
         {
-            this.choice = choice;
+            Choice = choice;
         }
 
-        private string choice;
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Name of the choice value in SharePoint.
@@ -213,8 +215,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The choice value should not be XML-encoded. This will be done automatically if needed.</remarks>
         public string Choice
         {
-            get { return choice; }
+            get;
+            private set;
         }
+
+        #endregion
     }
 
     /// <summary>

@@ -14,11 +14,15 @@
  * 0.2.1 - Part of refactoring
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Runtime.Serialization;
+using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {

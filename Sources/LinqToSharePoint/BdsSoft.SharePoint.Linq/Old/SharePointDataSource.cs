@@ -3270,7 +3270,7 @@ namespace BdsSoft.SharePoint.Linq
                     // For URL values, a custom Url class has been defined that knows how to parse a SharePoint URL value to a Uri and a friendly name.
                     //
                     case FieldType.URL:
-                        Url url = new Url(valueAsString);
+                        Url url = Url.Parse(valueAsString);
                         if (entity == null)
                             property.SetValue(target, url, null);
                         else
@@ -3683,5 +3683,64 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Lazy loading thunk. Helps to load lookup fields lazily and acts as a marker for fields not yet loaded.
+    /// </summary>
+    /// <typeparam name="T">Original source representing the entity that contains the lookup field.</typeparam>
+    /// <typeparam name="R">Type of the lookup field to be loaded.</typeparam>
+    [Obsolete("As of 0.2.1 this class is obsolete. Use LazyLoadingThunk<R> instead.", true)]
+    internal class LazyLoadingThunk<T, R> : ILazyLoadingThunk
+    {
+        /// <summary>
+        /// Source for the containing list of the lookup field. Will be used to get the child entity from.
+        /// This allows for caching of loaded child entities on the level of the containing entity.
+        /// </summary>
+        private SharePointDataSource<T> source;
+
+        /// <summary>
+        /// Unique id of the entity to be loaded from the child (lookup) list. Used for Lookup fields.
+        /// </summary>
+        private int? id;
+
+        /// <summary>
+        /// List of id values of the entities to be loaded from the child (multi-lookup) list. Used for LookupMulti fields.
+        /// </summary>
+        private int[] ids;
+
+        /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
+        /// </summary>
+        /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
+        /// <param name="id">Unique id of the entity to be loaded from the child (lookup) list.</param>
+        public LazyLoadingThunk(SharePointDataSource<T> source, int id)
+        {
+            this.source = source;
+            this.id = id;
+        }
+
+        /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
+        /// </summary>
+        /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
+        /// <param name="ids">List of unique ids of the entities to be loaded from the child (lookup) list.</param>
+        public LazyLoadingThunk(SharePointDataSource<T> source, int[] ids)
+        {
+            this.source = source;
+            this.ids = ids;
+        }
+
+        /// <summary>
+        /// Loads the entity or set of entities from the thunk represented by the thunk's entity id(s).
+        /// </summary>
+        /// <returns></returns>
+        public object Load()
+        {
+            if (id != null)
+                return source.GetEntityById<R>(id.Value);
+            else
+                return source.GetEntitiesById<R>(ids);
+        }
     }
 }

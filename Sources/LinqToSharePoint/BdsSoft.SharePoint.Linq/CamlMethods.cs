@@ -8,7 +8,11 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -18,6 +22,8 @@ namespace BdsSoft.SharePoint.Linq
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
     public static class CamlMethods
     {
+        #region Properties
+
         /// <summary>
         /// Gets the current date/time. Represented by &lt;Now&gt; element in CAML.
         /// </summary>
@@ -34,6 +40,10 @@ namespace BdsSoft.SharePoint.Linq
             get { return DateTime.Today; }
         }
 
+        #endregion
+
+        #region Methods
+
         /// <summary>
         /// Inserts a &lt;DateRangesOverlap&gt; CAML element in the query.
         /// </summary>
@@ -42,7 +52,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Indicates whether or not the specified DateTimes overlap.</returns>
         public static bool DateRangesOverlap(DateTime value, params DateTime?[] fields)
         {
-            throw new InvalidOperationException("This method is not intended to be called directly; use it in LINQ query predicates only.");
+            throw RuntimeErrors.CamlMethodsInvalidUse();
         }
+
+        #endregion
     }
 }

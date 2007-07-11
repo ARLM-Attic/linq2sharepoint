@@ -1,0 +1,188 @@
+﻿/*
+ * LINQ-to-SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+/*
+ * Version history:
+ *
+ * 0.2.1 - Introduction of CamlFactory.
+ */
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml;
+
+namespace BdsSoft.SharePoint.Linq
+{
+    /// <summary>
+    /// Factory for CAML fragments.
+    /// </summary>
+    internal class CamlFactory
+    {
+        /// <summary>
+        /// XmlDocument object used to build query fragments; acts a the root for all XML elements used while parsing the query.
+        /// </summary>
+        private XmlDocument _doc = new XmlDocument();
+
+        public XmlElement IsNull()
+        {
+            return _doc.CreateElement("IsNull");
+        }
+
+        public XmlElement IsNotNull()
+        {
+            return _doc.CreateElement("IsNotNull");
+        }
+
+        public XmlElement Eq()
+        {
+            return _doc.CreateElement("Eq");
+        }
+
+        public XmlElement Neq()
+        {
+            return _doc.CreateElement("Neq");
+        }
+
+        public XmlElement Now()
+        {
+            return _doc.CreateElement("Now");
+        }
+
+        public XmlElement Today()
+        {
+            return _doc.CreateElement("Today");
+        }
+
+        public XmlElement DateRangesOverlap()
+        {
+            return _doc.CreateElement("DateRangesOverlap");
+        }
+
+        public XmlElement Contains()
+        {
+            return _doc.CreateElement("Contains");
+        }
+
+        public XmlElement BeginsWith()
+        {
+            return _doc.CreateElement("BeginsWith");
+        }
+
+        public XmlElement Where(XmlNode predicate)
+        {
+            XmlElement where = _doc.CreateElement("Where");
+            where.AppendChild(predicate);
+            return where;
+        }
+
+        public XmlElement And()
+        {
+            return _doc.CreateElement("And");
+        }
+
+        public XmlElement Or()
+        {
+            return _doc.CreateElement("Or");
+        }
+
+        public XmlElement OrderBy()
+        {
+            return _doc.CreateElement("OrderBy");
+        }
+
+        public XmlElement ViewFields()
+        {
+            return _doc.CreateElement("ViewFields");
+        }
+
+        public XmlElement FieldRef(string field)
+        {
+            XmlElement fieldRef = _doc.CreateElement("FieldRef");
+            XmlAttribute fieldName = _doc.CreateAttribute("Name");
+            fieldName.Value = XmlConvert.EncodeName(field);
+            fieldRef.Attributes.Append(fieldName);
+            return fieldRef;
+        }
+
+        public XmlElement And(XmlNode left, XmlNode right)
+        {
+            XmlElement and = _doc.CreateElement("And");
+            and.AppendChild(left);
+            and.AppendChild(right);
+            return and;
+        }
+
+        public XmlElement Or(XmlNode left, XmlNode right)
+        {
+            XmlElement or = _doc.CreateElement("Or");
+            or.AppendChild(left);
+            or.AppendChild(right);
+            return or;
+        }
+
+        public XmlElement CreateElement(string camlQueryElement)
+        {
+            return _doc.CreateElement(camlQueryElement);
+        }
+
+        /// <summary>
+        /// Gets a Boolean patch for use in query predicates. These patches are invalid CAML elements and should be removed by the query parser prior to query execution.
+        /// </summary>
+        /// <param name="value">Boolean value of the patch.</param>
+        /// <returns>Patch representing the specified Boolean value.</returns>
+        public XmlElement BooleanPatch(bool value)
+        {
+            return _doc.CreateElement(value ? "TRUE" : "FALSE");
+        }
+
+        public XmlElement Patch(string field)
+        {
+            XmlElement p = _doc.CreateElement("Patch");
+            XmlAttribute a = _doc.CreateAttribute("Field");
+            a.Value = field;
+            p.Attributes.Append(a);
+            return p;
+        }
+
+        public XmlElement Value(string type)
+        {
+            XmlElement valueElement = _doc.CreateElement("Value");
+            XmlAttribute ta = _doc.CreateAttribute("Type");
+            ta.Value = type;
+            valueElement.Attributes.Append(ta);
+            return valueElement;
+        }
+
+        public XmlElement ParseError(int id)
+        {
+            XmlElement errorElement = _doc.CreateElement("ParseError");
+            XmlAttribute idAttribute = _doc.CreateAttribute("ID");
+            idAttribute.Value = id.ToString();
+            errorElement.Attributes.Append(idAttribute);
+            return errorElement;
+        }
+
+        public XmlAttribute LookupAttribute()
+        {
+            XmlAttribute lookupAttribute = _doc.CreateAttribute("LookupId");
+            lookupAttribute.Value = "TRUE";
+            return lookupAttribute;
+        }
+
+        public XmlAttribute DescendingAttribute()
+        {
+            XmlAttribute ascending = _doc.CreateAttribute("Ascending");
+            ascending.Value = "FALSE";
+            return ascending;
+        }
+    }
+}

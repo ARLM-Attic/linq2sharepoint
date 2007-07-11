@@ -14,6 +14,8 @@
  * 0.2.1 - Introduction of Helpers.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +23,9 @@ using System.Text;
 using System.Reflection;
 using System.IO;
 using System.Xml;
+using System.Diagnostics;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -29,6 +34,8 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     static internal class Helpers
     {
+        #region Helpers for attributes
+
         /// <summary>
         /// Retrieves the FieldAttribute applied on the specified entity property, if one is set.
         /// </summary>
@@ -36,6 +43,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>The FieldAttribute applied on the specified entity property; null if not set.</returns>
         internal static FieldAttribute GetFieldAttribute(PropertyInfo member)
         {
+            Debug.Assert(member != null);
+
             //
             // Get custom attributes of type FieldAttribute that are applied on the member.
             //
@@ -53,12 +62,60 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>ListAttribute applied on the entity object.</returns>
         internal static ListAttribute GetListAttribute(Type type)
         {
+            Debug.Assert(type != null);
+
             ListAttribute[] la = type.GetCustomAttributes(typeof(ListAttribute), false) as ListAttribute[];
             if (la != null && la.Length != 0)
                 return la[0];
             else
-                throw new InvalidOperationException("Missing ListAttribute on the entity type.");
+                throw RuntimeErrors.MissingListAttribute();
         }
+
+        /// <summary>
+        /// Finds the primary key field on a given entity type.
+        /// </summary>
+        /// <param name="entityType">Entity type to get the primary key field for.</param>
+        /// <param name="pkField">Field attribute for the found primary key. Will be null if no primary key is found and <paramref name="required">required</paramref> is set to false.</param>
+        /// <param name="pkProp">Property info for the property acting as the primary key. Will be null if no primary key is found and <paramref name="required">required</paramref> is set to false.</param>
+        /// <param name="required">If set to true, an exception will be thrown if no primary key field is found on the entity type.</param>
+        /// <exception cref="InvalidOperationException">
+        /// If more than one property is found with a primary key field attribute, or,
+        /// if <paramref name="required">required</paramref> is set and no primary key is found.
+        /// </exception>
+        internal static void FindPrimaryKey(Type entityType, out FieldAttribute pkField, out PropertyInfo pkProp, bool required)
+        {
+            Debug.Assert(entityType != null);
+
+            pkField = null;
+            pkProp = null;
+
+            //
+            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
+            //
+            foreach (PropertyInfo property in entityType.GetProperties())
+            {
+                FieldAttribute field = Helpers.GetFieldAttribute(property);
+                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
+                {
+                    if (pkField != null)
+                        throw RuntimeErrors.MoreThanOnePrimaryKey();
+
+                    pkField = field;
+                    pkProp = property;
+                    break;
+                }
+            }
+
+            //
+            // Primary key field should be present in order to make the query.
+            //
+            if (required && (pkField == null || pkProp == null))
+                throw RuntimeErrors.MissingPrimaryKey();
+        }
+
+        #endregion
+
+        #region Helpers for logging
 
         /// <summary>
         /// Helper method to log query information before fetching results.
@@ -69,6 +126,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="projection">Projection clause.</param>
         internal static void LogTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
         {
+            Debug.Assert(output != null);
+
             //
             // We'll output XML representing various CAML elements. Output should be indented for natural reading.
             //
@@ -101,33 +160,6 @@ namespace BdsSoft.SharePoint.Linq
             output.Flush();
         }
 
-        internal static void FindPrimaryKey(Type t, out FieldAttribute pkField, out PropertyInfo pkProp, bool required)
-        {
-            pkField = null;
-            pkProp = null;
-
-            //
-            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
-            //
-            foreach (PropertyInfo property in t.GetProperties())
-            {
-                FieldAttribute field = Helpers.GetFieldAttribute(property);
-                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
-                {
-                    if (pkField != null)
-                        throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
-
-                    pkField = field;
-                    pkProp = property;
-                    break;
-                }
-            }
-
-            //
-            // Primary key field should be present in order to make the query.
-            //
-            if (required && (pkField == null || pkProp == null))
-                throw new InvalidOperationException("No primary key field found on entity type.");
-        }
+        #endregion
     }
 }

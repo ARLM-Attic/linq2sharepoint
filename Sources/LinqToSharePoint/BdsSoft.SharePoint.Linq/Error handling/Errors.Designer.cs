@@ -61,6 +61,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This method is not intended to be called directly; use it in LINQ query predicates only..
+        /// </summary>
+        internal static string CamlMethodsInvalidUse {
+            get {
+                return ResourceManager.GetString("CamlMethodsInvalidUse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can&apos;t negate a {0} query expression..
         /// </summary>
         internal static string CantNegate {
@@ -187,6 +196,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid SharePoint Url field value..
+        /// </summary>
+        internal static string InvalidUrlParseArgument {
+            get {
+                return ResourceManager.GetString("InvalidUrlParseArgument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to List version mismatch between entity type and list definition on the server..
         /// </summary>
         internal static string ListVersionMismatch {
@@ -214,6 +232,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Missing ListAttribute on the entity type..
+        /// </summary>
+        internal static string MissingListAttribute {
+            get {
+                return ResourceManager.GetString("MissingListAttribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Lookup field {0} doesn&apos;t have an associated LookupField attribute property set..
         /// </summary>
         internal static string MissingLookupFieldSetting {
@@ -228,6 +255,24 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string MissingOtherChoiceFieldMapping {
             get {
                 return ResourceManager.GetString("MissingOtherChoiceFieldMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No primary key field found on entity type..
+        /// </summary>
+        internal static string MissingPrimaryKey {
+            get {
+                return ResourceManager.GetString("MissingPrimaryKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type..
+        /// </summary>
+        internal static string MoreThanOnePrimaryKey {
+            get {
+                return ResourceManager.GetString("MoreThanOnePrimaryKey", resourceCulture);
             }
         }
         

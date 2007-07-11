@@ -8,11 +8,15 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
-using Microsoft.VisualStudio.DebuggerVisualizers;
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using System.Reflection;
+using System.Windows.Forms;
+using Microsoft.VisualStudio.DebuggerVisualizers;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {

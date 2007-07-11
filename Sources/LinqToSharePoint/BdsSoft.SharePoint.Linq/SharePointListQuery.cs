@@ -14,18 +14,22 @@
  * 0.2.1 - Introduction of SharePointListQuery<T>
  */
 
+#region Namespace imports
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Linq.Expressions;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
-using System.IO;
+using System.Text;
 using System.Xml;
-using System.Globalization;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -37,6 +41,8 @@ namespace BdsSoft.SharePoint.Linq
     [Serializable]
     class SharePointListQuery<T> : IOrderedQueryable<T>, ISerializable
     {
+        #region Private members
+
         /// <summary>
         /// Data context object used to connect to SharePoint.
         /// </summary>
@@ -46,6 +52,10 @@ namespace BdsSoft.SharePoint.Linq
         /// Expression representing the query.
         /// </summary>
         private Expression _expression;
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Creates a query object for querying a SharePoint list.
@@ -57,6 +67,36 @@ namespace BdsSoft.SharePoint.Linq
             _context = context;
             _expression = expression;
         }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the type of the elements returned by the query.
+        /// </summary>
+        public Type ElementType
+        {
+            get
+            {
+                return typeof(T);
+            }
+        }
+
+        /// <summary>
+        /// Gets the expression representing the query.
+        /// </summary>
+        public Expression Expression
+        {
+            get
+            {
+                return _expression;
+            }
+        }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Creates a query on top of the existing query. Allows incremental query definition as done in LINQ.
@@ -88,28 +128,6 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Gets the type of the elements returned by the query.
-        /// </summary>
-        public Type ElementType
-        {
-            get
-            {
-                return typeof(T);
-            }
-        }
-
-        /// <summary>
-        /// Gets the expression representing the query.
-        /// </summary>
-        public Expression Expression
-        {
-            get
-            {
-                return _expression;
-            }
-        }
-
-        /// <summary>
         /// Executes the query and returns a single result of the specified type.
         /// </summary>
         /// <typeparam name="TResult">Type of the query result object.</typeparam>
@@ -117,27 +135,46 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Singleton query result object.</returns>
         public TResult Execute<TResult>(Expression expression)
         {
+            //
+            // We expect a method call expression.
+            //
             MethodCallExpression mc = expression as MethodCallExpression;
             if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
             {
+                //
+                // First and FirstOrDefault query operators.
+                //
                 if (mc.Method.Name == "First" || mc.Method.Name == "FirstOrDefault")
                 {
+                    //
+                    // Execute the query. The parser will take care of the retrieval of only one item.
+                    //
                     IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
+
+                    //
+                    // Return the first element of the sequence, if it exists.
+                    //
                     if (res.MoveNext())
                         return res.Current;
+                    //
+                    // Empty sequence is valid for FirstOrDefault call. Return the default value of TResult.
+                    //
                     else if (mc.Method.Name.EndsWith("OrDefault"))
                         return default(TResult);
+                    //
+                    // Empty sequence is invalid for First call.
+                    //
                     else
-                        RuntimeErrors.EmptySequence();
+                        throw RuntimeErrors.EmptySequence();
                 }
                 else
-                    RuntimeErrors.UnsupportedQueryOperator(mc.Method.Name);
+                    throw RuntimeErrors.UnsupportedQueryOperator(mc.Method.Name);
             }
 
-            RuntimeErrors.FatalError();
-
-            return default(TResult); //Won't occur
+            throw RuntimeErrors.FatalError();
         }
+
+        #endregion
 
         #region Not implemented
 
@@ -154,6 +191,8 @@ namespace BdsSoft.SharePoint.Linq
         #endregion
 
         #region Debugger visualizer support
+
+        #region Private members
 
         /// <summary>
         /// CAML of the query.
@@ -179,6 +218,10 @@ namespace BdsSoft.SharePoint.Linq
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private ParseErrorCollection _errorsForDebuggerVisualizer;
 
+        #endregion
+
+        #region Serialization support
+
         /// <summary>
         /// Constructor to support debugger visualizers. Not for direct use in end-user code.
         /// </summary>
@@ -202,35 +245,28 @@ namespace BdsSoft.SharePoint.Linq
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            CamlQuery query = null;
-            try
-            {
-                query = CamlQuery.Parse(_expression, true); //TODO: can throw exceptions
-            }
-            catch
-            {
-                info.AddValue("Caml", null);
-                info.AddValue("Entity", null); //TODO: get the entity name
-                return;
-            }
+            //
+            // Any errors in the validation parser mode (second parameter set to true) are considered fatal.
+            //
+            CamlQuery query = CamlQuery.Parse(_expression, true);
 
-            StringBuilder caml = new StringBuilder();
+            //
+            // Store the CAML query and the entity name.
+            //
+            info.AddValue("Caml", query.ToString());
+            info.AddValue("Entity", query._results.EntityType.Name);
 
-            StringWriter sw = new StringWriter(caml, CultureInfo.InvariantCulture);
-            XmlTextWriter writer = new XmlTextWriter(sw);
-            writer.Formatting = Formatting.Indented;
-
-            Helpers.LogTo(sw, query._where, query._order, query._projection);
-
-            info.AddValue("Caml", caml.ToString());
-            info.AddValue("Entity", query._entityType.Name);
-
+            //
+            // Store errors, if any.
+            //
             if (query._errors != null)
             {
                 info.AddValue("Errors", query._errors);
                 info.AddValue("Linq", query._errors.Expression);
             }
         }
+
+        #endregion
 
         #endregion
     }

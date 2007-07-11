@@ -8,15 +8,19 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.IO;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -250,8 +254,6 @@ namespace BdsSoft.SharePoint.Linq
             this.Close();
         }
 
-        #endregion
-
         private void txtLinq_MouseMove(object sender, MouseEventArgs e)
         {
             //
@@ -435,11 +437,27 @@ namespace BdsSoft.SharePoint.Linq
                 MessageBox.Show(currentError.ErrorCode + ": " + currentError.Message);
             }
         }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Helper struct to keep the position of a parser error.
+    /// </summary>
     internal struct Position
     {
+        #region Fields
+
+        /// <summary>
+        /// Start position of parser error.
+        /// </summary>
         public int Start;
+
+        /// <summary>
+        /// End position of parser error.
+        /// </summary>
         public int End;
+
+        #endregion
     }
 }

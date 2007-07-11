@@ -14,13 +14,18 @@
  * 0.2.1 - Introduction of SharePointList<T>
  */
 
+#region Namespace imports
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Linq.Expressions;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -29,12 +34,23 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
-    public class SharePointList<T> : IOrderedQueryable<T>, ISharePointList<T> where T : SharePointListEntity
+    public class SharePointList<T> : IOrderedQueryable<T> where T : SharePointListEntity
     {
+        #region Private members
+
         /// <summary>
         /// Data context object used to connect to SharePoint.
         /// </summary>
         private SharePointDataContext _context;
+
+        /// <summary>
+        /// Cache of entities retrieved using a *ById method.
+        /// </summary>
+        private Dictionary<int, T> cache = new Dictionary<int, T>();
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Create a list source object for querying of a SharePoint list.
@@ -42,8 +58,13 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="context">Data context object used to connect to SharePoint.</param>
         public SharePointList(SharePointDataContext context)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+
             _context = context;
         }
+
+        #endregion
 
         #region Properties
 
@@ -82,6 +103,8 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
+        #region IQuerable<T> implementation
+
         /// <summary>
         /// Creates a query for the list source.
         /// </summary>
@@ -90,6 +113,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Query object representing the list query.</returns>
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
         {
+            if (expression == null)
+                throw new ArgumentNullException("expression");
+
             return new SharePointListQuery<TElement>(_context, expression);
         }
 
@@ -119,6 +145,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Singleton query result object.</returns>
         public TResult Execute<TResult>(Expression expression)
         {
+            if (expression == null)
+                throw new ArgumentNullException("expression");
+
             IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
             if (res.MoveNext())
                 return res.Current;
@@ -140,12 +169,9 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
-        #region Support for entity retrieval by key value
+        #endregion
 
-        /// <summary>
-        /// Cache of entities retrieved using a *ById method.
-        /// </summary>
-        private Dictionary<int, T> cache = new Dictionary<int, T>();
+        #region Support for entity retrieval by key value
 
         /// <summary>
         /// Retrieves an entity by the given ID (primary key field).
@@ -195,6 +221,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>List of entity objects with the given IDs; null if not found.</returns>
         public IList<T> GetEntitiesById(int[] ids)
         {
+            if (ids == null)
+                throw new ArgumentNullException("ids");
+
             //
             // TODO
             //
@@ -211,6 +240,11 @@ namespace BdsSoft.SharePoint.Linq
 
         #region Internal access to entity cache
 
+        /// <summary>
+        /// Retrieve an entity object from the cache.
+        /// </summary>
+        /// <param name="id">Primary key value to get the entity object for.</param>
+        /// <returns>Entity object corresponding to the specified primary key if present; otherwise null.</returns>
         internal T FromCache(int id)
         {
             if (cache.ContainsKey(id))
@@ -219,8 +253,18 @@ namespace BdsSoft.SharePoint.Linq
                 return null;
         }
 
+        /// <summary>
+        /// Adds the specified entity with the specified primary key value to the cache.
+        /// </summary>
+        /// <param name="id">Primary key value.</param>
+        /// <param name="item">Entity object to add to the cache.</param>
         internal void ToCache(int id, T item)
         {
+            Debug.Assert(item != null);
+
+            //
+            // Remove duplicates.
+            //
             if (cache.ContainsKey(id))
                 cache.Remove(id);
 
@@ -228,11 +272,5 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
-    }
-
-    interface ISharePointList<T>
-    {
-        T GetEntityById(int id);
-        IList<T> GetEntitiesById(int[] ids);
     }
 }

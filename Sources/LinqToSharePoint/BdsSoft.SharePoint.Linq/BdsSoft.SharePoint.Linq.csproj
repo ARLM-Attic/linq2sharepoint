@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
+    <Compile Include="CamlFactory.cs" />
     <Compile Include="CamlMethods.cs" />
     <Compile Include="CamlQuery.cs" />
     <Compile Include="Error handling\Errors.Designer.cs">
@@ -68,18 +69,24 @@
     <Compile Include="Error handling\RuntimeErrors.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="LazyLoadingThunk.cs" />
     <Compile Include="Lists.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Error handling\ParseErrors.cs" />
-    <Compile Include="Old\SharePointDataSource.cs" />
-    <Compile Include="Old\SharePointDataSourceVisualizer.cs" />
+    <Compile Include="Old\SharePointDataSource.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Old\SharePointDataSourceVisualizer.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Old\Visualizer.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Old\Visualizer.Designer.cs">
       <DependentUpon>Visualizer.cs</DependentUpon>
     </Compile>
+    <Compile Include="QueryParser.cs" />
     <Compile Include="SharePointConnectionException.cs" />
     <Compile Include="SharePointDataContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

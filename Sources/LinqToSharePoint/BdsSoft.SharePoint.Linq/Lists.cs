@@ -8,11 +8,15 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
 using System.Web.Services;
-using System.Web.Services.Protocols;
 using System.Web.Services.Description;
+using System.Web.Services.Protocols;
 using System.Xml;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {

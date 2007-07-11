@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CamlMethodsInvalidUse" xml:space="preserve">
+    <value>This method is not intended to be called directly; use it in LINQ query predicates only.</value>
+  </data>
   <data name="CantNegate" xml:space="preserve">
     <value>Can't negate a {0} query expression.</value>
     <comment>SP0011</comment>
@@ -172,6 +175,9 @@
     <value>Invalid OtherChoice field mapping for MultiChoice field {0}.</value>
     <comment>SP0109</comment>
   </data>
+  <data name="InvalidUrlParseArgument" xml:space="preserve">
+    <value>Invalid SharePoint Url field value.</value>
+  </data>
   <data name="ListVersionMismatch" xml:space="preserve">
     <value>List version mismatch between entity type and list definition on the server.</value>
     <comment>SP0102</comment>
@@ -184,6 +190,9 @@
     <value>Missing field mapping attribute for entity property {0}.</value>
     <comment>SP0101</comment>
   </data>
+  <data name="MissingListAttribute" xml:space="preserve">
+    <value>Missing ListAttribute on the entity type.</value>
+  </data>
   <data name="MissingLookupFieldSetting" xml:space="preserve">
     <value>The Lookup field {0} doesn't have an associated LookupField attribute property set.</value>
     <comment>SP0021</comment>
@@ -191,6 +200,12 @@
   <data name="MissingOtherChoiceFieldMapping" xml:space="preserve">
     <value>An unknown fill-in choice value was encountered for field {0} but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?</value>
     <comment>SP0110</comment>
+  </data>
+  <data name="MissingPrimaryKey" xml:space="preserve">
+    <value>No primary key field found on entity type.</value>
+  </data>
+  <data name="MoreThanOnePrimaryKey" xml:space="preserve">
+    <value>More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.</value>
   </data>
   <data name="MultipleEntityReferencesInCondition" xml:space="preserve">
     <value>Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.</value>
