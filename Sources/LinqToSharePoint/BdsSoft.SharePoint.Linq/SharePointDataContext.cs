@@ -22,6 +22,7 @@ using Microsoft.SharePoint;
 using System.Linq.Expressions;
 using System.Net;
 using System.IO;
+using System.Diagnostics;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -197,6 +198,17 @@ namespace BdsSoft.SharePoint.Linq
                 _lists.Add(t, new SharePointList<T>(this));
 
             return (SharePointList<T>)_lists[t];
+        }
+
+        internal object GetList(Type listType)
+        {
+            if (!_lists.ContainsKey(listType))
+            {
+                object list = typeof(SharePointList<>).MakeGenericType(listType).GetConstructor(new Type[] { typeof(SharePointDataContext) }).Invoke(new object[] { this });
+                _lists.Add(listType, list);
+            }
+
+            return _lists[listType];
         }
 
         /// <summary>

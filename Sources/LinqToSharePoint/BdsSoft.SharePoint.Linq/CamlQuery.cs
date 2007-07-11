@@ -32,6 +32,7 @@ using System.Xml;
 using System.Web.Services.Protocols;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
+using System.Diagnostics;
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -2868,11 +2869,19 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
+            // Still an entity?
+            //
+            object lst = null;
+            MethodInfo fromCache = null;
+            MethodInfo toCache = null;
+            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
+
+            //
             // Fetch results using an iterator.
             //
             foreach (SPListItem item in items)
             {
-                yield return GetItem<T>(item, null);
+                yield return GetItem<T>(item, null, lst, fromCache, toCache);
             }
         }
 
@@ -2938,12 +2947,40 @@ namespace BdsSoft.SharePoint.Linq
                 yield break;
 
             //
+            // Still an entity?
+            //
+            object lst = null;
+            MethodInfo fromCache = null;
+            MethodInfo toCache = null;
+            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
+
+            //
             // Fetch results using an iterator.
             //
             foreach (DataRow row in tbl.Rows)
             {
-                yield return GetItem<T>(null, row);
+                yield return GetItem<T>(null, row, lst, fromCache, toCache);
             }
+        }
+
+        private void GetEntityAccessors<T>(out object lst, out MethodInfo fromCache, out MethodInfo toCache)
+        {
+            lst = null;
+            fromCache = null;
+            toCache = null;
+
+            if (typeof(T) == _entityType)
+            {
+                lst = _context.GetList(_entityType);
+                Type listType = lst.GetType();
+                fromCache = listType.GetMethod("FromCache", BindingFlags.NonPublic | BindingFlags.Instance);
+                toCache = listType.GetMethod("ToCache", BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+
+            Debug.Assert(
+                   (lst == null && fromCache == null && toCache == null)
+                || (lst != null && fromCache != null && toCache != null)
+            );
         }
 
         /// <summary>
@@ -2988,9 +3025,33 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="row">Item retrieved via the SharePoint list web service.</param>
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
-        private T GetItem<T>(SPListItem item, DataRow row)
+        private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
         {
-            //validItem = true;
+            Debug.Assert(item != null || row != null);
+
+            bool isEntity = lst != null;
+            int? id = null;
+
+            //
+            // Still an entity?
+            //
+            if (isEntity)
+            {
+                //
+                // Get the id.
+                //
+                if (item != null)
+                    id = (int)item["ID"];
+                else
+                    id = int.Parse((string)row["ows_ID"]);
+
+                //
+                // Already in list?
+                //
+                object o = fromCache.Invoke(lst, new object[] { id.Value });
+                if (o != null)
+                    return (T)o;
+            }
 
             //
             // Create an instance of the entity type. This instance will be used to perform the projection operation on (if any).
@@ -2998,9 +3059,10 @@ namespace BdsSoft.SharePoint.Linq
             object result = Activator.CreateInstance(_entityType);
 
             //
-            // Get the collection of properties that have to be set on the entity. If a projection isn't present, all properties will be set; otherwise, only the required properties will be set.
+            // Get the collection of properties that have to be set on the entity.
+            // Only in case the result type is still an entity, we'll set all properties; otherwise, we'll set the properties from the projection.
             //
-            IEnumerable<PropertyInfo> props = (_project != null ? (IEnumerable<PropertyInfo>)_projectProps : typeof(T).GetProperties());
+            IEnumerable<PropertyInfo> props = (!isEntity ? (IEnumerable<PropertyInfo>)_projectProps : typeof(T).GetProperties());
 
             //
             // Data comes from the SharePoint Object Model.
@@ -3022,8 +3084,12 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Perform projection if required.
             //
-            if (_project == null)
-                return (T)result;
+            if (isEntity)
+            {
+                T res = (T)result;
+                toCache.Invoke(lst, new object[] { id.Value, res });
+                return res;
+            }
             else
                 return (T)_project.DynamicInvoke(result);
         }

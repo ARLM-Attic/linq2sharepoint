@@ -47,7 +47,7 @@ namespace Demo
 
             Console.WriteLine("BY ID 1");
             Console.WriteLine("-------\n");
-            Demo d1 = users.GetEntityById(1, true);
+            Demo d1 = users.GetEntityById(1);
             if (d1 != null)
                 Console.WriteLine(d1.Title);
             Console.WriteLine();
@@ -55,7 +55,7 @@ namespace Demo
 
             Console.WriteLine("BY ID 1");
             Console.WriteLine("-------\n");
-            d1 = users.GetEntityById(1, true); //from cache
+            d1 = users.GetEntityById(1); //from cache
             if (d1 != null)
                 Console.WriteLine(d1.Title);
             Console.WriteLine();
@@ -63,7 +63,7 @@ namespace Demo
 
             Console.WriteLine("BY ID 2");
             Console.WriteLine("-------\n");
-            Demo d2 = users.GetEntityById(2, true);
+            Demo d2 = users.GetEntityById(2);
             if (d2 != null)
                 Console.WriteLine(d2.Title);
             Console.WriteLine();
@@ -71,7 +71,7 @@ namespace Demo
 
             Console.WriteLine("BY ID 3");
             Console.WriteLine("-------\n");
-            Demo d3 = users.GetEntityById(3, true);
+            Demo d3 = users.GetEntityById(3);
             if (d3 != null)
                 Console.WriteLine(d3.Title);
             Console.WriteLine();
@@ -840,7 +840,7 @@ namespace Demo
             Console.WriteLine("--------\n");
 
             var res57 = from d in demo2
-                        where d.Profile != users2.GetEntityById(1, true) //will do key matching with Lookup list
+                        where d.Profile != users2.GetEntityById(1) //will do key matching with Lookup list
                         && d.Profile != (from u in users2 where u.Title.StartsWith("Bart") select u).AsEnumerable().First()
                         select d;
 

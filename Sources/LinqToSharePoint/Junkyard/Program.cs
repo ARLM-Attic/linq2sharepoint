@@ -47,6 +47,7 @@ namespace Junkyard
             //var res = from t in src.GetList<Products>() where t.Category.CategoryName == "Beverages" select t;
             //var res = from t in src.GetList<Products>() where t.Category == cat select t;
 
+            /*
             var res = from p in src.GetList<Products>()
                       where p.Category.CategoryName.StartsWith("Con")
                             && (p.Supplier.Country == "USA" && p.Supplier.Region == "LA"
@@ -55,6 +56,16 @@ namespace Junkyard
 
             foreach (var t in res)
                 ;
+             */
+
+            //var res = from t in src.GetList<Test>() group t by t.Age;// select new { Age = g.Key };
+            //var res = from t in src.GetList<Test>() group t by t.Age into g select g;
+            //var res = from t in src.GetList<Test>() group t by t.Age into g select new { Age = g.Key, Items = g.GetEnumerator() };
+            //var res = from t in src.GetList<Test>() group t by t.Age into g where g.Key >= 25 select new { Age = g.Key, Items = g.GetEnumerator() };
+            var res1 = (from t in src.GetList<Test>() select t).First();
+            var res2 = (from t in src.GetList<Test>() select t).First();
+            bool b = object.ReferenceEquals(res1, res2);
+            //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
             string s = "";
 

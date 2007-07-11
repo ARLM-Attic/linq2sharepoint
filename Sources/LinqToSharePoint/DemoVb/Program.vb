@@ -24,9 +24,9 @@ Module Program
         users.Context.CheckListVersion = False
 
 
-        Dim d1 As Demo = users.GetEntityById(1, True)
-        Dim d2 As Demo = users.GetEntityById(2, True)
-        Dim d3 As Demo = users.GetEntityById(3, True)
+        Dim d1 As Demo = users.GetEntityById(1)
+        Dim d2 As Demo = users.GetEntityById(2)
+        Dim d3 As Demo = users.GetEntityById(3)
 
 
         Console.WriteLine("QUERY 1")

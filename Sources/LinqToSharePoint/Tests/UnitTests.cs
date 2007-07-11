@@ -195,8 +195,35 @@ namespace Tests
             // Get entity by id.
             //
             var src = new SharePointList<People>(spContext);
-            People _p1 = src.GetEntityById(1, false);
+            People _p1 = src.GetEntityById(1);
             Assert.IsTrue(p1.Equals(_p1), "Invalid entity returned by GetEntityById method");
+        }
+
+        [TestMethod]
+        public void EnsureEntityIdentity()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { ID = 1, FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBio = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // Get entity twice.
+            //
+            var src = new SharePointList<People>(spContext);
+            var res1 = (from p in src where p.Age == 24 select p).First();
+            var res2 = (from p in src where p.IsMember select p).First();
+
+            //
+            // Should refer to the same object.
+            //
+            Assert.IsTrue(object.ReferenceEquals(res1, res2), "Entity identity check failed (EnsureEntityIdentity).");
         }
 
         [TestMethod]

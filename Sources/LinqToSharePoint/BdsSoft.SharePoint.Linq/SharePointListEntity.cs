@@ -246,9 +246,9 @@ namespace BdsSoft.SharePoint.Linq
         public object LoadEntity()
         {
             if (id != null)
-                return context.GetList<R>().GetEntityById(id.Value, true);
+                return context.GetList<R>().GetEntityById(id.Value);
             else
-                return context.GetList<R>().GetEntitiesById(ids, true);
+                return context.GetList<R>().GetEntitiesById(ids);
         }
     }
 }

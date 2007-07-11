@@ -29,7 +29,7 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
-    public class SharePointList<T> : IOrderedQueryable<T> where T : SharePointListEntity
+    public class SharePointList<T> : IOrderedQueryable<T>, ISharePointList<T> where T : SharePointListEntity
     {
         /// <summary>
         /// Data context object used to connect to SharePoint.
@@ -151,14 +151,13 @@ namespace BdsSoft.SharePoint.Linq
         /// Retrieves an entity by the given ID (primary key field).
         /// </summary>
         /// <param name="id">ID of the entity to retrieve.</param>
-        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
         /// <returns>Entity object with the given ID; null if not found.</returns>
-        public T GetEntityById(int id, bool fromCache)
+        public T GetEntityById(int id)
         {
             //
             // Look in cache first.
             //
-            if (fromCache && cache.ContainsKey(id))
+            if (cache.ContainsKey(id))
                 return cache[id];
 
             //
@@ -178,7 +177,7 @@ namespace BdsSoft.SharePoint.Linq
 
             //
             // Return the result if found, null otherwise.
-            // Remark: AsEnumerable() is required because calling SingleOrDefualt on the IQueryable directly triggers the Execute method (not implemented).
+            // Remark: AsEnumerable() is required because SingleOrDefault isn't directly supported in LINQ to SharePoint at the moment.
             //
             T result = Queryable.Where<T>(this, filter).AsEnumerable().SingleOrDefault();
 
@@ -193,9 +192,8 @@ namespace BdsSoft.SharePoint.Linq
         /// Retrieves a list of entities by the given set of IDs (primary key field).
         /// </summary>
         /// <param name="ids">IDs of the entities to retrieve.</param>
-        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
         /// <returns>List of entity objects with the given IDs; null if not found.</returns>
-        public IList<T> GetEntitiesById(int[] ids, bool fromCache)
+        public IList<T> GetEntitiesById(int[] ids)
         {
             //
             // TODO
@@ -205,10 +203,36 @@ namespace BdsSoft.SharePoint.Linq
             //
             List<T> lst = new List<T>();
             foreach (int id in ids)
-                lst.Add(GetEntityById(id, fromCache));
+                lst.Add(GetEntityById(id));
             return lst;
         }
 
         #endregion
+
+        #region Internal access to entity cache
+
+        internal T FromCache(int id)
+        {
+            if (cache.ContainsKey(id))
+                return cache[id];
+            else
+                return null;
+        }
+
+        internal void ToCache(int id, T item)
+        {
+            if (cache.ContainsKey(id))
+                cache.Remove(id);
+
+            cache.Add(id, item);
+        }
+
+        #endregion
+    }
+
+    interface ISharePointList<T>
+    {
+        T GetEntityById(int id);
+        IList<T> GetEntitiesById(int[] ids);
     }
 }
