@@ -27,10 +27,16 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     internal class CamlFactory
     {
+        #region Private members
+
         /// <summary>
         /// XmlDocument object used to build query fragments; acts a the root for all XML elements used while parsing the query.
         /// </summary>
         private XmlDocument _doc = new XmlDocument();
+
+        #endregion
+
+        #region Null checks
 
         public XmlElement IsNull()
         {
@@ -42,6 +48,10 @@ namespace BdsSoft.SharePoint.Linq
             return _doc.CreateElement("IsNotNull");
         }
 
+        #endregion
+
+        #region Equality check
+
         public XmlElement Eq()
         {
             return _doc.CreateElement("Eq");
@@ -51,6 +61,10 @@ namespace BdsSoft.SharePoint.Linq
         {
             return _doc.CreateElement("Neq");
         }
+
+        #endregion
+
+        #region DateTime support
 
         public XmlElement Now()
         {
@@ -67,6 +81,10 @@ namespace BdsSoft.SharePoint.Linq
             return _doc.CreateElement("DateRangesOverlap");
         }
 
+        #endregion
+
+        #region String operators
+
         public XmlElement Contains()
         {
             return _doc.CreateElement("Contains");
@@ -77,12 +95,9 @@ namespace BdsSoft.SharePoint.Linq
             return _doc.CreateElement("BeginsWith");
         }
 
-        public XmlElement Where(XmlNode predicate)
-        {
-            XmlElement where = _doc.CreateElement("Where");
-            where.AppendChild(predicate);
-            return where;
-        }
+        #endregion
+
+        #region Binary operators
 
         public XmlElement And()
         {
@@ -92,6 +107,33 @@ namespace BdsSoft.SharePoint.Linq
         public XmlElement Or()
         {
             return _doc.CreateElement("Or");
+        }
+
+        public XmlElement And(XmlNode left, XmlNode right)
+        {
+            XmlElement and = _doc.CreateElement("And");
+            and.AppendChild(left);
+            and.AppendChild(right);
+            return and;
+        }
+
+        public XmlElement Or(XmlNode left, XmlNode right)
+        {
+            XmlElement or = _doc.CreateElement("Or");
+            or.AppendChild(left);
+            or.AppendChild(right);
+            return or;
+        }
+
+        #endregion
+
+        #region Core query schema
+
+        public XmlElement Where(XmlNode predicate)
+        {
+            XmlElement where = _doc.CreateElement("Where");
+            where.AppendChild(predicate);
+            return where;
         }
 
         public XmlElement OrderBy()
@@ -113,26 +155,27 @@ namespace BdsSoft.SharePoint.Linq
             return fieldRef;
         }
 
-        public XmlElement And(XmlNode left, XmlNode right)
+        public XmlElement Value(string type)
         {
-            XmlElement and = _doc.CreateElement("And");
-            and.AppendChild(left);
-            and.AppendChild(right);
-            return and;
+            XmlElement valueElement = _doc.CreateElement("Value");
+            XmlAttribute ta = _doc.CreateAttribute("Type");
+            ta.Value = type;
+            valueElement.Attributes.Append(ta);
+            return valueElement;
         }
 
-        public XmlElement Or(XmlNode left, XmlNode right)
-        {
-            XmlElement or = _doc.CreateElement("Or");
-            or.AppendChild(left);
-            or.AppendChild(right);
-            return or;
-        }
+        #endregion
+
+        #region General CreateElement method
 
         public XmlElement CreateElement(string camlQueryElement)
         {
             return _doc.CreateElement(camlQueryElement);
         }
+
+        #endregion
+
+        #region Helper elements for LINQ to SharePoint parser
 
         /// <summary>
         /// Gets a Boolean patch for use in query predicates. These patches are invalid CAML elements and should be removed by the query parser prior to query execution.
@@ -153,15 +196,6 @@ namespace BdsSoft.SharePoint.Linq
             return p;
         }
 
-        public XmlElement Value(string type)
-        {
-            XmlElement valueElement = _doc.CreateElement("Value");
-            XmlAttribute ta = _doc.CreateAttribute("Type");
-            ta.Value = type;
-            valueElement.Attributes.Append(ta);
-            return valueElement;
-        }
-
         public XmlElement ParseError(int id)
         {
             XmlElement errorElement = _doc.CreateElement("ParseError");
@@ -170,6 +204,10 @@ namespace BdsSoft.SharePoint.Linq
             errorElement.Attributes.Append(idAttribute);
             return errorElement;
         }
+
+        #endregion
+
+        #region Helper attributes
 
         public XmlAttribute LookupAttribute()
         {
@@ -184,5 +222,7 @@ namespace BdsSoft.SharePoint.Linq
             ascending.Value = "FALSE";
             return ascending;
         }
+
+        #endregion
     }
 }

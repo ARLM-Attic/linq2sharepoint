@@ -175,8 +175,13 @@
     <value>Invalid OtherChoice field mapping for MultiChoice field {0}.</value>
     <comment>SP0109</comment>
   </data>
+  <data name="InvalidStoragePropertyFieldReference" xml:space="preserve">
+    <value>Invalid Storage property on the FieldAttribute for entity property {0}.</value>
+    <comment>SP0117</comment>
+  </data>
   <data name="InvalidUrlParseArgument" xml:space="preserve">
     <value>Invalid SharePoint Url field value.</value>
+    <comment>SP0112</comment>
   </data>
   <data name="ListVersionMismatch" xml:space="preserve">
     <value>List version mismatch between entity type and list definition on the server.</value>
@@ -192,6 +197,7 @@
   </data>
   <data name="MissingListAttribute" xml:space="preserve">
     <value>Missing ListAttribute on the entity type.</value>
+    <comment>SP0113</comment>
   </data>
   <data name="MissingLookupFieldSetting" xml:space="preserve">
     <value>The Lookup field {0} doesn't have an associated LookupField attribute property set.</value>
@@ -203,9 +209,11 @@
   </data>
   <data name="MissingPrimaryKey" xml:space="preserve">
     <value>No primary key field found on entity type.</value>
+    <comment>SP0114</comment>
   </data>
   <data name="MoreThanOnePrimaryKey" xml:space="preserve">
     <value>More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.</value>
+    <comment>SP0115</comment>
   </data>
   <data name="MultipleEntityReferencesInCondition" xml:space="preserve">
     <value>Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.</value>
@@ -218,6 +226,10 @@
   <data name="NonExistingLookupField" xml:space="preserve">
     <value>The Lookup field {0} links to a non-existing LookupField: {1}.</value>
     <comment>SP0022</comment>
+  </data>
+  <data name="NonReadOnlyFieldWithoutSetter" xml:space="preserve">
+    <value>No property setter found on the non-read-only entity property {0}.</value>
+    <comment>SP0118</comment>
   </data>
   <data name="NonUniqueLookupField" xml:space="preserve">
     <value>Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule.</value>
@@ -242,6 +254,10 @@
   <data name="SecondProjectionExpression" xml:space="preserve">
     <value>Second projection expression encountered during parsing. Queries can only contain one projection expression.</value>
     <comment>SP0018</comment>
+  </data>
+  <data name="StoragePropertyMissingOnReadOnlyField" xml:space="preserve">
+    <value>Missing Storage property on the FieldAttribute for read-only entity property {0}.</value>
+    <comment>SP0116</comment>
   </data>
   <data name="TooManyUnknownChoiceValues" xml:space="preserve">
     <value>More than one unknown choice value encountered for field {0}. Only one fill-in value is supported. Is the entity mapping for the list outdated?</value>

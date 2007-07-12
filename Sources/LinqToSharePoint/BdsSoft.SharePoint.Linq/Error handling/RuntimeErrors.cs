@@ -114,5 +114,20 @@ namespace BdsSoft.SharePoint.Linq
         {
             return new InvalidOperationException(Errors.MissingPrimaryKey);
         }
+
+        public static Exception StoragePropertyMissingOnReadOnlyField(string property)
+        {
+            return new InvalidOperationException(String.Format(Errors.StoragePropertyMissingOnReadOnlyField, property));
+        }
+
+        public static Exception InvalidStoragePropertyFieldReference(string property)
+        {
+            return new InvalidOperationException(String.Format(Errors.StoragePropertyMissingOnReadOnlyField, property));
+        }
+
+        public static Exception NonReadOnlyFieldWithoutSetter(string property)
+        {
+            return new InvalidOperationException(String.Format(Errors.NonReadOnlyFieldWithoutSetter, property));
+        }
     }
 }

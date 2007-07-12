@@ -22,19 +22,40 @@ using System.Text;
 namespace BdsSoft.SharePoint.Linq
 {
     /// <summary>
-    /// Entity reference. Used to enable lazy loading.
+    /// Entity reference. Used to enable deferred loading.
     /// </summary>
     /// <typeparam name="T">Type of the referenced entity.</typeparam>
     public struct EntityRef<T>
         where T : class
     {
-        private SharePointList<T> _list;
-        private int _id;
-        private T _entity;
-        private bool _loaded;
+        #region Private members
 
         /// <summary>
-        /// Creates an entity reference for lazy loading.
+        /// List to retrieve the entity from.
+        /// </summary>
+        private SharePointList<T> _list;
+
+        /// <summary>
+        /// Id of the entity referenced to. Allows deferred loading.
+        /// </summary>
+        private int _id;
+
+        /// <summary>
+        /// Entity referenced to. Will be null if not loaded yet.
+        /// </summary>
+        private T _entity;
+
+        /// <summary>
+        /// Indicates whether or not the entity has been loaded already.
+        /// </summary>
+        private bool _loaded;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates an entity reference for deferred loading.
         /// </summary>
         /// <param name="context">Context used to load the entity.</param>
         /// <param name="id">Primary key of the entity to be loaded.</param>
@@ -46,6 +67,10 @@ namespace BdsSoft.SharePoint.Linq
             _loaded = false;
         }
 
+        #endregion
+
+        #region Properties
+
         /// <summary>
         /// Gets or sets the referenced entity. If the entity isn't loaded already, deferred loading will be done.
         /// </summary>
@@ -54,7 +79,7 @@ namespace BdsSoft.SharePoint.Linq
             get
             {
                 //
-                // Lazy loading.
+                // Deferred loading.
                 //
                 if (!_loaded)
                     this.Load();
@@ -80,8 +105,12 @@ namespace BdsSoft.SharePoint.Linq
             get
             {
                 return _loaded;
-            }            
+            }
         }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Loads the entity being referred to.
@@ -91,5 +120,7 @@ namespace BdsSoft.SharePoint.Linq
             _entity = _list.GetEntityById(_id);
             _loaded = true;
         }
+
+        #endregion
     }
 }

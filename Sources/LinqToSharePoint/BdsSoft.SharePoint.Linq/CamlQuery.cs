@@ -17,6 +17,7 @@
  *         Error handling with position tracking in the parser.
  *         Improvement to Lookup field subqueries; now using a foreign key concept.
  *         Refactoring of parser functionality into QueryParser.
+ * 0.2.2 - New entity model; changes to property assignment and lazy loading.
  */
 
 #region Namespace imports
@@ -400,10 +401,8 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         if (patch != null) //FIX
                             patches.Add(new Patch() { Parent = e.ParentNode, NewChild = patch, OldChild = e });
-                            //e.ParentNode.ReplaceChild(patch, e);
                         else
                             patches.Add(new Patch() { Parent = e.ParentNode, NewChild = _factory.BooleanPatch(false), OldChild = e });
-                            //e.ParentNode.ReplaceChild(GetBooleanPatch(false), e);
                     }
                     else
                         GetPatches(e, ref patches);
@@ -736,12 +735,23 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        /// <summary>
+        /// Retrieves the entity accessors on the list type. These allow retrieval from and storage to the entity cache that's stored with the list.
+        /// </summary>
+        /// <typeparam name="T">Type of the entity to retrieve accessors for.</typeparam>
+        /// <param name="lst">List object corresponding to the entity type.</param>
+        /// <param name="fromCache">Cache retrieval accessor.</param>
+        /// <param name="toCache">Cache storage accessor.</param>
         private void GetEntityAccessors<T>(out object lst, out MethodInfo fromCache, out MethodInfo toCache)
         {
             lst = null;
             fromCache = null;
             toCache = null;
 
+            //
+            // Get accessors only when the resulting objects are of the entity type.
+            // Otherwise, the temporary entity objects will be incomplete due to projections and are therefore not suitable for storage in the cache.
+            //
             if (typeof(T) == _results.EntityType)
             {
                 lst = _results.Context.GetList(_results.EntityType);
@@ -877,11 +887,6 @@ namespace BdsSoft.SharePoint.Linq
         private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)
         {
             //
-            // Convert to entity to set property values via SetValue method if an entity type is used.
-            //
-            //SharePointListEntity entity = target as SharePointListEntity;
-
-            //
             // Get the field mapping attribute for the given property.
             //
             FieldAttribute field = Helpers.GetFieldAttribute(property);
@@ -954,10 +959,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.Boolean:
                         bool bb = (valueAsString == "1" ? true : (valueAsString == "0" ? false : bool.Parse(valueAsString)));
-                        //if (entity == null)
-                        //    property.SetValue(target, bb, null);
-                        //else
-                        //    entity.SetValue(property.Name, bb);
                         AssignValue(target, property, field, bb);
                         break;
                     //
@@ -965,10 +966,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.DateTime:
                         DateTime dt = DateTime.ParseExact(valueAsString, "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-us")); //FIX hh to HH (check!)
-                        //if (entity == null)
-                        //    property.SetValue(target, dt, null);
-                        //else
-                        //    entity.SetValue(property.Name, dt);
                         AssignValue(target, property, field, dt);
                         break;
                     //
@@ -976,10 +973,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.Counter:
                         int pk = int.Parse(valueAsString, new CultureInfo("en-us"));
-                        //if (entity == null)
-                        //    property.SetValue(target, pk, null);
-                        //else
-                        //    entity.SetValue(property.Name, pk);
                         AssignValue(target, property, field, pk);
                         break;
                     //
@@ -988,10 +981,6 @@ namespace BdsSoft.SharePoint.Linq
                     case FieldType.Number:
                     case FieldType.Currency:
                         double dd = double.Parse(valueAsString, new CultureInfo("en-us"));
-                        //if (entity == null)
-                        //    property.SetValue(target, dd, null);
-                        //else
-                        //    entity.SetValue(property.Name, dd);
                         AssignValue(target, property, field, dd);
                         break;
                     //
@@ -999,10 +988,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.Integer:
                         int ii = int.Parse(valueAsString, new CultureInfo("en-us"));
-                        //if (entity == null)
-                        //    property.SetValue(target, ii, null);
-                        //else
-                        //    entity.SetValue(property.Name, ii);
                         AssignValue(target, property, field, ii);
                         break;
                     //
@@ -1010,10 +995,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.URL:
                         Url url = Url.Parse(valueAsString);
-                        //if (entity == null)
-                        //    property.SetValue(target, url, null);
-                        //else
-                        //    entity.SetValue(property.Name, url);
                         AssignValue(target, property, field, url);
                         break;
                     //
@@ -1021,10 +1002,6 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.Text:
                     case FieldType.Note:
-                        //if (entity == null)
-                        //    property.SetValue(target, valueAsString, null);
-                        //else
-                        //    entity.SetValue(property.Name, valueAsString);
                         AssignValue(target, property, field, valueAsString);
                         break;
                     //
@@ -1047,21 +1024,6 @@ namespace BdsSoft.SharePoint.Linq
                             throw RuntimeErrors.InvalidLookupField(property.Name);
                         else
                         {
-                            //
-                            // Lazy loading
-                            //
-                            //Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType);
-                            //ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkey);
-
-                            //
-                            // Store the thunk if deferred loading is turned on.
-                            // Otherwise, load the entity through the thunk and store the result.
-                            //
-                            //if (_results.Context.DeferredLoadingEnabled)
-                            //    entity.SetValue(property.Name, thunk);
-                            //else
-                            //    entity.SetValue(property.Name, thunk.Load());
-
                             //
                             // Create EntityRef<T>.
                             //
@@ -1100,25 +1062,10 @@ namespace BdsSoft.SharePoint.Linq
                         else
                         {
                             //
-                            // Lazy loading.
-                            //
-                            //Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType.GetGenericArguments()[0]);
-                            //ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkeys);
-
-                            //
-                            // Store the thunk if deferred loading is turned on.
-                            // Otherwise, load the entity through the thunk and store the result.
-                            //
-                            //if (_results.Context.DeferredLoadingEnabled)
-                            //    entity.SetValue(property.Name, thunk);
-                            //else
-                            //    entity.SetValue(property.Name, thunk.Load());
-
-                            //
-                            // Create EntityRef<T>.
+                            // Create EntitySef<T>. TODO: hook up event handlers for Add and Remove actions.
                             //
                             Type t = typeof(EntitySet<>).MakeGenericType(property.PropertyType);
-                            object entitySet = Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { _results.Context, fkeys }, null);
+                            object entitySet = Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { _results.Context, fkeys, null, null }, null);
                             AssignValue(target, property, field, entitySet);
 
                             //
@@ -1145,6 +1092,13 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        /// <summary>
+        /// Helper method to assign a value to a target object's specified property.
+        /// </summary>
+        /// <param name="target">Target object to assign a property value to.</param>
+        /// <param name="property">Property on the target object to assign a value to.</param>
+        /// <param name="field">Field corresponding with the property to be set.</param>
+        /// <param name="value">Value to assign to the specified property on the specified object.</param>
         private static void AssignValue(object target, PropertyInfo property, FieldAttribute field, object value)
         {
             Debug.Assert(target != null);
@@ -1155,7 +1109,7 @@ namespace BdsSoft.SharePoint.Linq
             // Read-only fields require 
             //
             if (field.ReadOnly && field.Storage == null)
-                throw new Exception(); //TODO: read-only field requires Storage property
+                throw RuntimeErrors.StoragePropertyMissingOnReadOnlyField(property.Name);
 
             //
             // Can bypass?
@@ -1164,7 +1118,7 @@ namespace BdsSoft.SharePoint.Linq
             {
                 FieldInfo fi = target.GetType().GetField(field.Storage, BindingFlags.Instance | BindingFlags.NonPublic);
                 if (fi == null)
-                    throw new Exception(); //TODO: invalid Storage field setting
+                    throw RuntimeErrors.InvalidStoragePropertyFieldReference(property.Name);
 
                 fi.SetValue(target, value);
             }
@@ -1174,7 +1128,7 @@ namespace BdsSoft.SharePoint.Linq
             else
             {
                 if (!property.CanWrite)
-                    throw new Exception(); //TODO: read-only property for field not marked as ReadOnly
+                    throw RuntimeErrors.NonReadOnlyFieldWithoutSetter(property.Name);
 
                 property.SetValue(target, value, null);
             }
@@ -1191,11 +1145,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Value of the enum corresponding to the val parameter.</returns>
         private static object AssignResultPropertyAsEnum(PropertyInfo property, object target, FieldAttribute field, object val, Type propertyType)
         {
-            //
-            // Convert to entity to set property values via SetValue method if an entity type is used.
-            //
-            //SharePointListEntity entity = target as SharePointListEntity;
-
             //
             // Find all of the choices of the enum type. A reverse mapping from SharePoint CHOICE names to enum field names is maintained, which will be used to allow Enum.Parse calls further on.
             //
@@ -1240,15 +1189,7 @@ namespace BdsSoft.SharePoint.Linq
             if (v.Length != 0)
             {
                 val = Enum.Parse(propertyType, v);
-
-                //if (entity == null)
-                //    property.SetValue(target, val, null);
-                //else
-                //    entity.SetValue(property.Name, val);
-
                 AssignValue(target, property, field, val);
-
-                //property.SetValue(target, val, null); //FIX v0.1.3
             }
 
             //
@@ -1288,7 +1229,6 @@ namespace BdsSoft.SharePoint.Linq
                         if (otherFieldAttr == null)
                             throw RuntimeErrors.MissingFieldMappingAttribute(pOther.Name);
 
-                        //pOther.SetValue(target, other, null);
                         AssignValue(target, pOther, otherFieldAttr, other);
                     }
                     else

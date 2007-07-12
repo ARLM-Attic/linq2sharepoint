@@ -196,6 +196,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid Storage property on the FieldAttribute for entity property {0}..
+        /// </summary>
+        internal static string InvalidStoragePropertyFieldReference {
+            get {
+                return ResourceManager.GetString("InvalidStoragePropertyFieldReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid SharePoint Url field value..
         /// </summary>
         internal static string InvalidUrlParseArgument {
@@ -304,6 +313,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No property setter found on the non-read-only entity property {0}..
+        /// </summary>
+        internal static string NonReadOnlyFieldWithoutSetter {
+            get {
+                return ResourceManager.GetString("NonReadOnlyFieldWithoutSetter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule..
         /// </summary>
         internal static string NonUniqueLookupField {
@@ -354,6 +372,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string SecondProjectionExpression {
             get {
                 return ResourceManager.GetString("SecondProjectionExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Missing Storage property on the FieldAttribute for read-only entity property {0}..
+        /// </summary>
+        internal static string StoragePropertyMissingOnReadOnlyField {
+            get {
+                return ResourceManager.GetString("StoragePropertyMissingOnReadOnlyField", resourceCulture);
             }
         }
         
