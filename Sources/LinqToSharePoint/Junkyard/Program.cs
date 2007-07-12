@@ -23,6 +23,11 @@ namespace Junkyard
             var src = new SharePointDataContext(new Uri("http://wss3demo"));
             src.CheckListVersion = false;
 
+            bool b = true;
+            int i = 0;
+            var res = from t in src.GetList<Test>() where t.IsMember && b || t.LastName == "De Smet" || i / 2 == 0 select t;
+            SharePointListQueryVisualizer.TestShowVisualizer(res);
+
             //var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
             //var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).First();
             //var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).Select(t => t).Select(t => t.Age).Select(t => 2 * t);
@@ -104,11 +109,11 @@ namespace Junkyard
             //var res = (from t in lst where j.User.IsMember select t);
             //var res = from t in lst where t.FirstName.EndsWith("Test") select t;
             //var res = from t in lst where t.Created.Value.IsDaylightSavingTime() select t;
-            var res = from t in lst where !(t.FirstName.Contains("Bart") && t.Age >= 24) || t.LastName.EndsWith("De Smet") && CamlMethods.DateRangesOverlap(t.Modified.Value) orderby 1 select t;
+            //var res = from t in lst where !(t.FirstName.Contains("Bart") && t.Age >= 24) || t.LastName.EndsWith("De Smet") && CamlMethods.DateRangesOverlap(t.Modified.Value) orderby 1 select t;
             //var res = (from t in lst where t.LastName.Length == 0 select t);
             //var res = from t in lst where CamlMethods.DateRangesOverlap(DateTime.Now, t.Modified, t.Created) orderby 1 select t;
             //var res = from t in lst where t.FirstName.Contains(t.LastName) select t;
-            SharePointListQueryVisualizer.TestShowVisualizer(res);
+            //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
             //SharePointDataSource<Test> lst = new SharePointDataSource<Test>(site);//new Uri("http://wss3demo"));
             //SharePointDataSource<Users> usr = new SharePointDataSource<Users>(site);//new Uri("http://wss3demo"));

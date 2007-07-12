@@ -412,7 +412,11 @@ namespace BdsSoft.SharePoint.Linq
                 return c;
             }
             else
-                return /* PARSE ERROR */ this.PredicateContainsNonEntityReference(me.Member.Name, ppS, ppE);
+            {
+                bool b = (bool)Expression.Lambda<Func<bool>>(me).Compile().DynamicInvoke();
+                return _factory.BooleanPatch(b);
+                //return /* PARSE ERROR */ this.PredicateContainsNonEntityReference(me.Member.Name, ppS, ppE);
+            }
         }
 
         /// <summary>
