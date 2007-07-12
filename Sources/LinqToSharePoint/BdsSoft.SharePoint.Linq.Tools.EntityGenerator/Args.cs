@@ -12,6 +12,7 @@
  * Version history:
  * 
  * 0.2.1 - Entity generator creation
+ * 0.2.2 - New entity model
  */
 
 using System;
@@ -51,5 +52,26 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Namespace to put code in.
         /// </summary>
         public string Namespace { get; set; }
+
+        /// <summary>
+        /// Language to generate entity class code in.
+        /// </summary>
+        public Language Language { get; set; }
+    }
+
+    /// <summary>
+    /// Supported code generation languages.
+    /// </summary>
+    public enum Language
+    {
+        /// <summary>
+        /// Generate C# code.
+        /// </summary>
+        CSharp,
+
+        /// <summary>
+        /// Generate VB.NET code.
+        /// </summary>
+        VB
     }
 }

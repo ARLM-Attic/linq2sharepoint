@@ -12,6 +12,7 @@
  * Version history:
  *
  * 0.2.1 - Introduction of Helpers.
+ * 0.2.2 - Change of GetListAttribute.
  */
 
 #region Namespace imports
@@ -59,8 +60,9 @@ namespace BdsSoft.SharePoint.Linq
         /// Helper method to get the ListAttribute applied for the given entity type. An InvalidOperationException will be thrown if no ListAttribute is found.
         /// </summary>
         /// <param name="type">Type to get the ListAttribute for.</param>
+        /// <param name="throwExceptionIfMissing">Indicates whether or not to throw an exception if the list attribute is missing.</param>
         /// <returns>ListAttribute applied on the entity object.</returns>
-        internal static ListAttribute GetListAttribute(Type type)
+        internal static ListAttribute GetListAttribute(Type type, bool throwExceptionIfMissing)
         {
             Debug.Assert(type != null);
 
@@ -68,7 +70,12 @@ namespace BdsSoft.SharePoint.Linq
             if (la != null && la.Length != 0)
                 return la[0];
             else
-                throw RuntimeErrors.MissingListAttribute();
+            {
+                if (throwExceptionIfMissing)
+                    throw RuntimeErrors.MissingListAttribute();
+                else
+                    return null;
+            }
         }
 
         /// <summary>

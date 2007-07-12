@@ -18,7 +18,7 @@ using System.Reflection;
 
 namespace Tests
 {
-    public class SharePointListEntityTest : SharePointListEntity
+    public class SharePointListEntityTest// : SharePointListEntity
     {
         public SharePointListEntityTest() : base()
         {
@@ -65,21 +65,21 @@ namespace Tests
             return hash;
         }
 
-        public static void Add(SPList lst, SharePointListEntityTest e)
+        public static void Add(SPList lst, object e)
         {
             SPListItem item = lst.Items.Add();
 
             foreach (PropertyInfo prop in e.GetType().GetProperties())
             {
                 FieldAttribute fa = GetFieldAttribute(prop);
-                if (fa != null && !fa.PrimaryKey)
+                if (fa != null && !fa.PrimaryKey && !fa.ReadOnly)
                     item[fa.Field] = prop.GetValue(e, null);
             }
 
             item.Update();
         }
 
-        public static SPList CreateList<T>(SPWeb web) where T : SharePointListEntityTest
+        public static SPList CreateList<T>(SPWeb web) //where T : SharePointListEntityTest
         {
             ListAttribute la = GetListAttribute(typeof(T));
 
@@ -100,7 +100,7 @@ namespace Tests
             return lst;
         }
 
-        public static SPList Create<T>(SPWeb web) where T : SharePointListEntityTest, new()
+        public static SPList Create<T>(SPWeb web) where T : new() //where T : SharePointListEntityTest, new()
         {
             SPList lst = CreateList<T>(web);
 

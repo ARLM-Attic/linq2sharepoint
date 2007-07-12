@@ -12,6 +12,7 @@
  * Version history:
  *
  * 0.2.1 - Introduction of SharePointList<T>
+ * 0.2.2 - New entity model
  */
 
 #region Namespace imports
@@ -34,7 +35,9 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
-    public class SharePointList<T> : IOrderedQueryable<T> where T : SharePointListEntity
+    public class SharePointList<T> : IOrderedQueryable<T>
+        //where T : SharePointListEntity
+        where T : class
     {
         #region Private members
 

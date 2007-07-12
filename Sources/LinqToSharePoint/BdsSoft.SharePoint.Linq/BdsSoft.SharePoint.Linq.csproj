@@ -60,6 +60,8 @@
     <Compile Include="CamlFactory.cs" />
     <Compile Include="CamlMethods.cs" />
     <Compile Include="CamlQuery.cs" />
+    <Compile Include="EntityRef.cs" />
+    <Compile Include="EntitySet.cs" />
     <Compile Include="Error handling\Errors.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -69,7 +71,7 @@
     <Compile Include="Error handling\RuntimeErrors.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="LazyLoadingThunk.cs" />
+    <Compile Include="Old\LazyLoadingThunk.cs" />
     <Compile Include="Lists.cs">
       <SubType>Component</SubType>
     </Compile>

@@ -8,11 +8,11 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("TestHelpersVb")> 
+<Assembly: AssemblyTitle("Helpers for unit tests")> 
 <Assembly: AssemblyDescription("")> 
-<Assembly: AssemblyCompany("Microsoft")> 
-<Assembly: AssemblyProduct("TestHelpersVb")> 
-<Assembly: AssemblyCopyright("Copyright © Microsoft 2007")> 
+<Assembly: AssemblyCompany("BdsSoft")> 
+<Assembly: AssemblyProduct("LINQ to SharePoint")> 
+<Assembly: AssemblyCopyright("Copyright © Bart De Smet 2007")> 
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("1.0.0.0")> 
-<Assembly: AssemblyFileVersion("1.0.0.0")> 
+<Assembly: AssemblyVersion("0.2.2.0")> 
+<Assembly: AssemblyFileVersion("0.2.2.0")> 

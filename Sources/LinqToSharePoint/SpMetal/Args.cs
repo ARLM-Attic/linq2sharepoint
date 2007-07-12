@@ -115,10 +115,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 if (language != "CS" && language != "VB" && language != "C#")
                     return null;
                 else
-                    res.Language = language.Replace("CS", "C#");
+                    res.Language = language.Replace("C#", "CS");
             }
             else
-                res.Language = "C#";
+                res.Language = "CS";
 
             //
             // Out can optionally be empty; in that case, take the lists's name suffixed with the language extension.

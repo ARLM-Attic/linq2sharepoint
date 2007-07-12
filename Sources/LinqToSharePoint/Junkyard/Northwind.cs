@@ -9,7 +9,7 @@ namespace Junkyard
     /// Categories
     /// </summary>
     [global::BdsSoft.SharePoint.Linq.ListAttribute("Categories", Id = "2f5a24e6-43dd-4af0-b28f-dfb75c96c380", Version = 3, Path = "/Lists/Categories")]
-    public partial class Categories : global::BdsSoft.SharePoint.Linq.SharePointListEntity
+    public partial class Categories// : global::BdsSoft.SharePoint.Linq.SharePointListEntity
     {
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Junkyard
     /// Suppliers
     /// </summary>
     [global::BdsSoft.SharePoint.Linq.ListAttribute("Suppliers", Id = "287cc088-9e8f-4c34-b3a0-e8a9d89f3f39", Version = 11, Path = "/Lists/Suppliers")]
-    public partial class Suppliers : global::BdsSoft.SharePoint.Linq.SharePointListEntity
+    public partial class Suppliers// : global::BdsSoft.SharePoint.Linq.SharePointListEntity
     {
 
         /// <summary>
@@ -369,7 +369,7 @@ namespace Junkyard
     /// Products
     /// </summary>
     [global::BdsSoft.SharePoint.Linq.ListAttribute("Products", Id = "d6be2daa-f0c3-48fe-ae0b-3d3bd6b860ef", Version = 15, Path = "/Lists/Products")]
-    public partial class Products : global::BdsSoft.SharePoint.Linq.SharePointListEntity
+    public partial class Products// : global::BdsSoft.SharePoint.Linq.SharePointListEntity
     {
 
         /// <summary>

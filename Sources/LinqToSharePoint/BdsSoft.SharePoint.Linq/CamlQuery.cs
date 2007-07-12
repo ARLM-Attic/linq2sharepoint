@@ -122,7 +122,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Get list information.
             //
-            ListAttribute la = Helpers.GetListAttribute(_results.EntityType);
+            ListAttribute la = Helpers.GetListAttribute(_results.EntityType, true);
             if (_results.Context._site != null)
                 _list = _results.Context._site.RootWeb.GetList(la.Path);
             else
@@ -223,17 +223,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Find the list attribute, which is required to perform a list version match check.
             //
-            if (GetListAttribute().Version != version)
+            if (Helpers.GetListAttribute(_results.EntityType, true).Version != version)
                 throw RuntimeErrors.ListVersionMismatch();
-        }
-
-        /// <summary>
-        /// Helper method to get the ListAttribute applied on the entity object. An InvalidOperationException will be thrown if no ListAttribute is found.
-        /// </summary>
-        /// <returns>ListAttribute applied on the entity object.</returns>
-        private ListAttribute GetListAttribute()
-        {
-            return Helpers.GetListAttribute(_results.EntityType);
         }
 
         /// <summary>
@@ -296,7 +287,7 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Get information about the Lookup list.
                         //
-                        ListAttribute innerListAttribute = Helpers.GetListAttribute(lookupField.PropertyType);
+                        ListAttribute innerListAttribute = Helpers.GetListAttribute(lookupField.PropertyType, true);
                         string innerList = innerListAttribute.List;
 
                         //
@@ -888,7 +879,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Convert to entity to set property values via SetValue method if an entity type is used.
             //
-            SharePointListEntity entity = target as SharePointListEntity;
+            //SharePointListEntity entity = target as SharePointListEntity;
 
             //
             // Get the field mapping attribute for the given property.
@@ -963,30 +954,33 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.Boolean:
                         bool bb = (valueAsString == "1" ? true : (valueAsString == "0" ? false : bool.Parse(valueAsString)));
-                        if (entity == null)
-                            property.SetValue(target, bb, null);
-                        else
-                            entity.SetValue(property.Name, bb);
+                        //if (entity == null)
+                        //    property.SetValue(target, bb, null);
+                        //else
+                        //    entity.SetValue(property.Name, bb);
+                        AssignValue(target, property, field, bb);
                         break;
                     //
                     // DateTime values can be parsed using System.DateTime.Parse.
                     //
                     case FieldType.DateTime:
                         DateTime dt = DateTime.ParseExact(valueAsString, "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-us")); //FIX hh to HH (check!)
-                        if (entity == null)
-                            property.SetValue(target, dt, null);
-                        else
-                            entity.SetValue(property.Name, dt);
+                        //if (entity == null)
+                        //    property.SetValue(target, dt, null);
+                        //else
+                        //    entity.SetValue(property.Name, dt);
+                        AssignValue(target, property, field, dt);
                         break;
                     //
                     // Counter field represents an integer and is used in primary key values. (v0.2.0.0)
                     //
                     case FieldType.Counter:
                         int pk = int.Parse(valueAsString, new CultureInfo("en-us"));
-                        if (entity == null)
-                            property.SetValue(target, pk, null);
-                        else
-                            entity.SetValue(property.Name, pk);
+                        //if (entity == null)
+                        //    property.SetValue(target, pk, null);
+                        //else
+                        //    entity.SetValue(property.Name, pk);
+                        AssignValue(target, property, field, pk);
                         break;
                     //
                     // Number and Currency values are represented as floats that can be parsed using System.Double.Parse.
@@ -994,40 +988,44 @@ namespace BdsSoft.SharePoint.Linq
                     case FieldType.Number:
                     case FieldType.Currency:
                         double dd = double.Parse(valueAsString, new CultureInfo("en-us"));
-                        if (entity == null)
-                            property.SetValue(target, dd, null);
-                        else
-                            entity.SetValue(property.Name, dd);
+                        //if (entity == null)
+                        //    property.SetValue(target, dd, null);
+                        //else
+                        //    entity.SetValue(property.Name, dd);
+                        AssignValue(target, property, field, dd);
                         break;
                     //
                     // Integer values are 32-bit signed numbers that can be parsed using System.Int32.Parse.
                     //
                     case FieldType.Integer:
                         int ii = int.Parse(valueAsString, new CultureInfo("en-us"));
-                        if (entity == null)
-                            property.SetValue(target, ii, null);
-                        else
-                            entity.SetValue(property.Name, ii);
+                        //if (entity == null)
+                        //    property.SetValue(target, ii, null);
+                        //else
+                        //    entity.SetValue(property.Name, ii);
+                        AssignValue(target, property, field, ii);
                         break;
                     //
                     // For URL values, a custom Url class has been defined that knows how to parse a SharePoint URL value to a Uri and a friendly name.
                     //
                     case FieldType.URL:
                         Url url = Url.Parse(valueAsString);
-                        if (entity == null)
-                            property.SetValue(target, url, null);
-                        else
-                            entity.SetValue(property.Name, url);
+                        //if (entity == null)
+                        //    property.SetValue(target, url, null);
+                        //else
+                        //    entity.SetValue(property.Name, url);
+                        AssignValue(target, property, field, url);
                         break;
                     //
                     // Text and Note values are plain simple strings.
                     //
                     case FieldType.Text:
                     case FieldType.Note:
-                        if (entity == null)
-                            property.SetValue(target, valueAsString, null);
-                        else
-                            entity.SetValue(property.Name, valueAsString);
+                        //if (entity == null)
+                        //    property.SetValue(target, valueAsString, null);
+                        //else
+                        //    entity.SetValue(property.Name, valueAsString);
+                        AssignValue(target, property, field, valueAsString);
                         break;
                     //
                     // Lookup fields represent n-to-1 mappings and require lazy loading of the referenced list entity.
@@ -1042,26 +1040,40 @@ namespace BdsSoft.SharePoint.Linq
                         int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
 
                         //
-                        // We'll only support lazy loading on entity types that implement SharePointListEntity.
+                        // We'll only support lazy loading on entity types.
                         //
-                        if (entity == null)
+                        //if (entity == null)
+                        if (Helpers.GetListAttribute(target.GetType(), false) == null)
                             throw RuntimeErrors.InvalidLookupField(property.Name);
                         else
                         {
                             //
                             // Lazy loading
                             //
-                            Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType);
-                            ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkey);
+                            //Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType);
+                            //ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkey);
 
                             //
                             // Store the thunk if deferred loading is turned on.
                             // Otherwise, load the entity through the thunk and store the result.
                             //
-                            if (_results.Context.DeferredLoadingEnabled)
-                                entity.SetValue(property.Name, thunk);
-                            else
-                                entity.SetValue(property.Name, thunk.Load());
+                            //if (_results.Context.DeferredLoadingEnabled)
+                            //    entity.SetValue(property.Name, thunk);
+                            //else
+                            //    entity.SetValue(property.Name, thunk.Load());
+
+                            //
+                            // Create EntityRef<T>.
+                            //
+                            Type t = typeof(EntityRef<>).MakeGenericType(property.PropertyType);
+                            object entityRef = Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { _results.Context, fkey }, null);
+                            AssignValue(target, property, field, entityRef);
+
+                            //
+                            // Load if deferred loading is disabled.
+                            //
+                            if (!_results.Context.DeferredLoadingEnabled)
+                                t.GetMethod("Load", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(entityRef, new object[] { });
                         }
                         break;
                     //
@@ -1080,26 +1092,40 @@ namespace BdsSoft.SharePoint.Linq
                         int[] fkeys = lstFkeys.ToArray();
 
                         //
-                        // We'll only support lazy loading on entity types that implement SharePointListEntity.
+                        // We'll only support lazy loading on entity types.
                         //
-                        if (entity == null)
+                        //if (entity == null)
+                        if (Helpers.GetListAttribute(target.GetType(), false) == null)
                             throw RuntimeErrors.InvalidLookupField(property.Name);
                         else
                         {
                             //
                             // Lazy loading.
                             //
-                            Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType.GetGenericArguments()[0]);
-                            ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkeys);
+                            //Type t = typeof(LazyLoadingThunk<>).MakeGenericType(property.PropertyType.GetGenericArguments()[0]);
+                            //ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, _results.Context, fkeys);
 
                             //
                             // Store the thunk if deferred loading is turned on.
                             // Otherwise, load the entity through the thunk and store the result.
                             //
-                            if (_results.Context.DeferredLoadingEnabled)
-                                entity.SetValue(property.Name, thunk);
-                            else
-                                entity.SetValue(property.Name, thunk.Load());
+                            //if (_results.Context.DeferredLoadingEnabled)
+                            //    entity.SetValue(property.Name, thunk);
+                            //else
+                            //    entity.SetValue(property.Name, thunk.Load());
+
+                            //
+                            // Create EntityRef<T>.
+                            //
+                            Type t = typeof(EntitySet<>).MakeGenericType(property.PropertyType);
+                            object entitySet = Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { _results.Context, fkeys }, null);
+                            AssignValue(target, property, field, entitySet);
+
+                            //
+                            // Load if deferred loading is disabled.
+                            //
+                            if (!_results.Context.DeferredLoadingEnabled)
+                                t.GetMethod("Load", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(entitySet, new object[] { });
                         }
                         break;
                     default:
@@ -1111,10 +1137,46 @@ namespace BdsSoft.SharePoint.Linq
             //
             else
             {
-                if (entity == null)
-                    property.SetValue(target, val, null);
-                else
-                    entity.SetValue(property.Name, val);
+                //if (entity == null)
+                //    property.SetValue(target, val, null);
+                //else
+                //    entity.SetValue(property.Name, val);
+                AssignValue(target, property, field, val);
+            }
+        }
+
+        private static void AssignValue(object target, PropertyInfo property, FieldAttribute field, object value)
+        {
+            Debug.Assert(target != null);
+            Debug.Assert(property != null);
+            Debug.Assert(field != null);
+
+            //
+            // Read-only fields require 
+            //
+            if (field.ReadOnly && field.Storage == null)
+                throw new Exception(); //TODO: read-only field requires Storage property
+
+            //
+            // Can bypass?
+            //
+            if (field.Storage != null)
+            {
+                FieldInfo fi = target.GetType().GetField(field.Storage, BindingFlags.Instance | BindingFlags.NonPublic);
+                if (fi == null)
+                    throw new Exception(); //TODO: invalid Storage field setting
+
+                fi.SetValue(target, value);
+            }
+            //
+            // Go through property.
+            //
+            else
+            {
+                if (!property.CanWrite)
+                    throw new Exception(); //TODO: read-only property for field not marked as ReadOnly
+
+                property.SetValue(target, value, null);
             }
         }
 
@@ -1132,7 +1194,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Convert to entity to set property values via SetValue method if an entity type is used.
             //
-            SharePointListEntity entity = target as SharePointListEntity;
+            //SharePointListEntity entity = target as SharePointListEntity;
 
             //
             // Find all of the choices of the enum type. A reverse mapping from SharePoint CHOICE names to enum field names is maintained, which will be used to allow Enum.Parse calls further on.
@@ -1179,10 +1241,12 @@ namespace BdsSoft.SharePoint.Linq
             {
                 val = Enum.Parse(propertyType, v);
 
-                if (entity == null)
-                    property.SetValue(target, val, null);
-                else
-                    entity.SetValue(property.Name, val);
+                //if (entity == null)
+                //    property.SetValue(target, val, null);
+                //else
+                //    entity.SetValue(property.Name, val);
+
+                AssignValue(target, property, field, val);
 
                 //property.SetValue(target, val, null); //FIX v0.1.3
             }
@@ -1219,7 +1283,14 @@ namespace BdsSoft.SharePoint.Linq
                     // Assign the fill-in choice value to the OtherChoice field.
                     //
                     if (pOther != null)
-                        pOther.SetValue(target, other, null);
+                    {
+                        FieldAttribute otherFieldAttr = Helpers.GetFieldAttribute(pOther);
+                        if (otherFieldAttr == null)
+                            throw RuntimeErrors.MissingFieldMappingAttribute(pOther.Name);
+
+                        //pOther.SetValue(target, other, null);
+                        AssignValue(target, pOther, otherFieldAttr, other);
+                    }
                     else
                         throw RuntimeErrors.InvalidOtherChoiceFieldMapping(property.Name);
                 }

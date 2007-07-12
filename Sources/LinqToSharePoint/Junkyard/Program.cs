@@ -8,18 +8,32 @@ using System.Net;
 using BdsSoft.SharePoint.Linq;
 using Microsoft.SharePoint;
 using System.Data.Linq.SqlClient;
+using System.Reflection;
 
 namespace Junkyard
 {
     class Junk
     {
-        public Users User;
+        //public Users User;
     }
 
     class Program
     {
         static void Main(string[] args)
         {
+            SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
+            int fkey = 1;
+
+            Type t = typeof(EntityRef<>).MakeGenericType(typeof(Junk));
+            ConstructorInfo c = t.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(SharePointDataContext), typeof(int) }, null);
+            object o = c.Invoke(new object[] { ctx, fkey });
+            foreach (ConstructorInfo ci in t.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+            }
+            Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { ctx, fkey }, null);
+
+            string s = "";
+            /*
             var src = new SharePointDataContext(new Uri("http://wss3demo"));
             src.CheckListVersion = false;
 
@@ -27,6 +41,7 @@ namespace Junkyard
             int i = 0;
             var res = from t in src.GetList<Test>() where t.IsMember && b || t.LastName == "De Smet" || i / 2 == 0 select t;
             SharePointListQueryVisualizer.TestShowVisualizer(res);
+             */
 
             //var res = from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select new { t.Age, t.FirstName };
             //var res = (from t in src.GetList<Test>() where t.Age >= 24 orderby t.FirstName select t).First();
@@ -72,11 +87,13 @@ namespace Junkyard
             //bool b = object.ReferenceEquals(res1, res2);
             //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
+            /*
             foreach (var t in src.GetList<Test>())
             {
             }
 
             string s = "";
+             */
 
             /*
             var res2 = from t in src.GetList<Test>() select t;
@@ -91,7 +108,7 @@ namespace Junkyard
 
             //SPSite site = new SPSite("http://wss3demo");
 
-            var lst = new SharePointList<Test>(new SharePointDataContext(new Uri("http://wss3demo")));
+            //var lst = new SharePointList<Test>(new SharePointDataContext(new Uri("http://wss3demo")));
             //var temp = (from t in lst select t).Skip(5);
             //var temp = from t in lst where !t.FirstName.Contains("a") select t;
             //var temp = (from t in lst select new { Name = t.FirstName, Age = t.Age }).Select(t => t.Age);
@@ -221,11 +238,12 @@ namespace Junkyard
         }
     }
 
+    /*
     /// <summary>
     /// Use the Tasks list to keep track of work that you or your team needs to complete.
     /// </summary>
     [List("Tasks", Id = "f9a325b5-8929-4ebd-9fdc-2ebdebf459fd", Version = 0, Path = "/Lists/Tasks")]
-    class Tasks : SharePointListEntity
+    class Tasks// : SharePointListEntity
     {
         /// <summary>
         /// Content Type
@@ -306,7 +324,7 @@ namespace Junkyard
     /// Some description
     /// </summary>
     [List("Test", Id = "f49dd431-7a05-4532-8ef5-af507badc427", Version = 14, Path = "/Lists/Test")]
-    class Test : SharePointListEntity
+    class Test// : SharePointListEntity
     {
         /// <summary>
         /// Title
@@ -447,7 +465,7 @@ namespace Junkyard
     /// Users
     /// </summary>
     [List("Users", Id = "2b719ff2-8390-4386-9089-39570ddfa7ae", Version = 0, Path = "/Lists/Users")]
-    class Users : SharePointListEntity
+    class Users// : SharePointListEntity
     {
         /// <summary>
         /// ID
@@ -508,4 +526,5 @@ namespace Junkyard
             get { return (string)GetValue("Version"); }
         }
     }
+     */
 }

@@ -8,6 +8,12 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+/*
+ * Version history:
+ * 
+ * 0.2.2 - New entity model; added Storage property to FieldAttribute
+ */
+
 #region Namespace imports
 
 using System;
@@ -119,6 +125,16 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
         public bool IsUnique
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// References the entity class field that holds the value of the list field.
+        /// Used to set read-only fields and to bypass the property getters and setters in some cases.
+        /// </summary>
+        public string Storage
         {
             get;
             set;

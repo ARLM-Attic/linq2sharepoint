@@ -15,6 +15,7 @@
  *         Support for Lookup fields and lazy loading.
  * 0.2.1 - Event model.
  *         New LazyLoadingThunk implementation (see LazyLoadingThunk.cs).
+ * 0.2.2 - Class deprecated.
  */
 
 #region Namespace imports
@@ -32,6 +33,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Base class for entities used in LINQ to SharePoint.
     /// </summary>
+    [Obsolete("As of 0.2.2 this class is obsolete. The new entity model doesn't use a base class anymore.", true)]
     public class SharePointListEntity : INotifyPropertyChanged, INotifyPropertyChanging
     {
         #region Private members

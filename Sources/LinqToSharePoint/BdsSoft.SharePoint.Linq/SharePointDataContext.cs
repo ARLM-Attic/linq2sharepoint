@@ -12,6 +12,7 @@
  * Version history:
  *
  * 0.2.1 - Introduction of SharePointDataContext.
+ * 0.2.2 - New entity model
  */
 
 #region Namespace imports
@@ -220,7 +221,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <typeparam name="T">Entity type to get a list source object for.</typeparam>
         /// <returns>List source object for the specified entity type.</returns>
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
-        public SharePointList<T> GetList<T>() where T : SharePointListEntity
+        public SharePointList<T> GetList<T>()
+            //where T : SharePointListEntity
+            where T : class
         {
             CheckDisposed();
 

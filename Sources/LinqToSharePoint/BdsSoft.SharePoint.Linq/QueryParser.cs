@@ -1313,8 +1313,13 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     // Enums might be compiled to numeric values; reconstruct the enum back if needed.
                     //
-                    if (!(value is Enum) && value is uint) // TODO: require uint base type for enums (spec)
-                        value = Enum.ToObject(enumCheck, (uint)value);
+                    if (!(value is Enum))
+                    {
+                        if (value is uint)
+                            value = Enum.ToObject(enumCheck, (uint)value);
+                        else if (value is int)
+                            value = Enum.ToObject(enumCheck, (int)value);
+                    }
 
                     //
                     // Check whether the type of the value has been marked as [Flags].
@@ -1549,31 +1554,39 @@ namespace BdsSoft.SharePoint.Linq
                 valueElement.InnerText = GetChoiceName(value.GetType(), choice);
             }
             //
-            // Support for lookup fields (v0.2.0.0).
-            //
-            else if (value is SharePointListEntity)
-            {
-                lookup = true;
-
-                //
-                // Find primary key field and property.
-                //
-                FieldAttribute pkField;
-                PropertyInfo pkProp;
-                Helpers.FindPrimaryKey(value.GetType(), out pkField, out pkProp, true);
-
-                //
-                // Get the value and assign it to the Value element.
-                //
-                object val = pkProp.GetValue(value, null);
-                valueElement.InnerText = val.ToString();
-            }
-            //
-            // Other types will be converted to a string.
-            // TODO: I18n issues might occur for numeric values; this should be checked.
+            // Other cases.
             //
             else
-                valueElement.InnerText = value.ToString();
+            {
+                ListAttribute la = Helpers.GetListAttribute(value.GetType(), false);
+
+                //
+                // Support for lookup fields (v0.2.0.0).
+                //
+                if (la != null)
+                {
+                    lookup = true;
+
+                    //
+                    // Find primary key field and property.
+                    //
+                    FieldAttribute pkField;
+                    PropertyInfo pkProp;
+                    Helpers.FindPrimaryKey(value.GetType(), out pkField, out pkProp, true);
+
+                    //
+                    // Get the value and assign it to the Value element.
+                    //
+                    object val = pkProp.GetValue(value, null);
+                    valueElement.InnerText = val.ToString();
+                }
+                //
+                // Other types will be converted to a string.
+                // TODO: I18n issues might occur for numeric values; this should be checked.
+                //
+                else
+                    valueElement.InnerText = value.ToString();
+            }
 
             return valueElement;
         }

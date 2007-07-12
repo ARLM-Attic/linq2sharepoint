@@ -7,7 +7,7 @@ namespace Junkyard
     /// Parent
     /// </summary>
     [List("Parent", Id = "04eb5131-db8c-4735-b177-2ab542f2e607", Version = 2, Path = "/Lists/Parent")]
-    class Parent : SharePointListEntity
+    class Parent// : SharePointListEntity
     {
         /// <summary>
         /// Title
@@ -89,7 +89,7 @@ namespace Junkyard
     /// Bar
     /// </summary>
     [List("Bar", Id = "7d8fdcb9-ca35-4875-b0b6-700442546e91", Version = 0, Path = "/Lists/Bar")]
-    class Bar : SharePointListEntity
+    class Bar// : SharePointListEntity
     {
         /// <summary>
         /// ID
@@ -151,7 +151,7 @@ namespace Junkyard
     /// Foo
     /// </summary>
     [List("Foo", Id = "05a4d23b-7ea3-4fce-a3f8-7f41164dfe41", Version = 0, Path = "/Lists/Foo")]
-    class Foo : SharePointListEntity
+    class Foo// : SharePointListEntity
     {
         /// <summary>
         /// ID

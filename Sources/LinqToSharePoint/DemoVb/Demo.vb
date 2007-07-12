@@ -16,7 +16,7 @@ Imports BdsSoft.SharePoint.Linq
 ''' </summary>
 <List("Demo", Id:="34c90895-fbf3-4da7-a260-4b3ddc67146d", Version:=39, Path:="/Lists/Demo")> _
 Class Demo
-    Inherits SharePointListEntity
+    'Inherits SharePointListEntity
 
     ''' <summary>
     ''' Title

@@ -8,6 +8,13 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+/*
+ * Version history:
+ * 
+ * 0.2.1 - Creation as part of refactoring
+ * 0.2.2 - New entity model
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +86,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     sb.Append(c);
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets the name for a helper property, typically used for (Multi)Choice field types with fill-in choice enabled.
+        /// </summary>
+        /// <param name="fieldName">Name of the field to create a helper for.</param>
+        /// <returns>Helper field name.</returns>
+        public static string GetHelperName(string fieldName)
+        {
+            return GetFriendlyName(fieldName + "Other");
         }
     }
 }

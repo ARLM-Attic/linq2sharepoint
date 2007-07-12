@@ -25,6 +25,7 @@
  *         Support for Lookup fields with recursive entity type generation
  * 0.2.1 - Use of EntityGenerator back-end
  *         Refactoring of argument parsing to Args class.
+ * 0.2.2 - New entity model
  */
 
 using System;
@@ -78,7 +79,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                                              User = a.User, 
                                              Password = a.Password, 
                                              Url = a.Url,
-                                             Namespace = a.Namespace }
+                                             Namespace = a.Namespace,
+                                             Language = (a.Language == "VB" ? EG.Language.VB : EG.Language.CSharp)
+                                            }
                                          );
             
             //
@@ -100,7 +103,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             if (a.File == null || a.File.Length == 0)
             {
-                string file = a.List + (a.Language.Replace("CS", "C#") == "C#" ? ".cs" : ".vb");
+                string file = a.List + (a.Language == "CS" ? ".cs" : ".vb");
                 foreach (char c in Path.GetInvalidFileNameChars())
                     file = file.Replace(c.ToString(), "");
                 a.File = file;

@@ -8,6 +8,13 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+/*
+ * Version history:
+ * 
+ * 0.2.0 - SPML introduction
+ * 0.2.2 - Added language tracking to provide to the entity generator
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,6 +26,8 @@ using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.CodeDom;
 using System.IO;
 using System.Xml;
+using EnvDTE;
+using System.Diagnostics;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
@@ -73,6 +82,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
             EG.EntityGeneratorArgs args = new EG.EntityGeneratorArgs();
             args.Namespace = this.FileNameSpace;
+            
+            string lang = GetProject().CodeModel.Language;
+            Debug.Assert(lang == CodeModelLanguageConstants.vsCMLanguageCSharp || lang == CodeModelLanguageConstants.vsCMLanguageVB);
+
+            if (lang == CodeModelLanguageConstants.vsCMLanguageCSharp)
+                args.Language = EG.Language.CSharp;
+            else if (lang == CodeModelLanguageConstants.vsCMLanguageVB)
+                args.Language = EG.Language.VB;
+            else
+                throw new NotSupportedException("Specified language not supported.");
 
             args.Url = url;
 

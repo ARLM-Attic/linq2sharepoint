@@ -12,6 +12,7 @@
  * Version history:
  * 
  * 0.2.1 - New LazyLoadingThunk implementation.
+ * 0.2.2 - Class deprecated.
  */
 
 #region Namespace imports
@@ -29,6 +30,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Helper interface for lazy loading.
     /// </summary>
+    [Obsolete("As of 0.2.2 this class is obsolete. The new entity model relies on EntityRef<T> and EntitySet<T> instead.", true)]
     internal interface ILazyLoadingThunk
     {
         /// <summary>
@@ -42,6 +44,7 @@ namespace BdsSoft.SharePoint.Linq
     /// Lazy loading thunk. Helps to load lookup fields lazily and acts as a marker for fields not yet loaded.
     /// </summary>
     /// <typeparam name="R">Type of the lookup field to be loaded.</typeparam>
+    [Obsolete("As of 0.2.2 this class is obsolete. The new entity model relies on EntityRef<T> and EntitySet<T> instead.", true)]
     internal class LazyLoadingThunk<R> : ILazyLoadingThunk
         where R : SharePointListEntity
     {

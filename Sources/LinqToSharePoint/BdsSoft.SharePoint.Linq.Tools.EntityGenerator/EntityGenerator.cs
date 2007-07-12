@@ -14,6 +14,7 @@
  * 0.2.0 - Restructuring of class files in project
  *         Hosting model with events
  * 0.2.1 - Use of CodeDom for code generation; move from SpMetal code to EntityGenerator
+ * 0.2.2 - New entity model
  */
 
 using System;
@@ -265,7 +266,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             CodeTypeDeclaration listType = new CodeTypeDeclaration(GetTypeName(list.Name));
             listType.Attributes = MemberAttributes.Public;
-            listType.BaseTypes.Add(new CodeTypeReference(typeof(SharePointListEntity), CodeTypeReferenceOptions.GlobalReference));
+            //listType.BaseTypes.Add(new CodeTypeReference(typeof(SharePointListEntity), CodeTypeReferenceOptions.GlobalReference));
+            listType.BaseTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanged), CodeTypeReferenceOptions.GlobalReference));
+            listType.BaseTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanging), CodeTypeReferenceOptions.GlobalReference));
             listType.IsClass = true;
             listType.IsPartial = true;
 
@@ -336,17 +339,18 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         // Create helper field and refer to it in case a multi-choice fields with fill-in choice was detected.
                         // The helper field has the same name as the .NET type (which will be an enum) suffixed with "Other".
                         //
-                        string helper = null;
                         if (field.FillInChoiceEnabled)
-                        {
-                            helper = Helpers.GetFriendlyName(field.DisplayName + "Other");
-                            fieldAttributeArgs.Add(new CodeAttributeArgument("OtherChoice", new CodePrimitiveExpression(helper)));
-                        }
+                            fieldAttributeArgs.Add(new CodeAttributeArgument("OtherChoice", new CodePrimitiveExpression(Helpers.GetHelperName(field.DisplayName))));
 
                         //
                         // Runtime type for entity property. Will be supplied in type-specific switching logic below.
+                        // Keep track of value (and Nullable) types for VB code generation (compare using .Equals instead of Is or =).
+                        // Keep track of Lookup and LookupMulti fields for special code generation.
                         //
                         CodeTypeReference bclTypeRef;
+                        bool isValue = false;
+                        bool isLookup = false;
+                        bool isLookupMulti = false;
 
                         //
                         // Type-specific generation actions; generate other entities or choice enums if required.
@@ -355,6 +359,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         {
                             case FieldType.Choice:
                             case FieldType.MultiChoice:
+                                isValue = true;
                                 bool flags = field.FieldType == FieldType.MultiChoice;
                                 if (field.IsRequired)
                                     bclTypeRef = new CodeTypeReference(GenerateChoiceEnum(field, flags));
@@ -374,18 +379,32 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                                     fieldAttributeArgs.Add(new CodeAttributeArgument("LookupDisplayField", new CodePrimitiveExpression(field.LookupField)));
 
                                     //
-                                    // LookupMulti fields are mapped on IList<T> properties.
+                                    // Lookup fields are mapped on EntityRef<T> properties.
                                     //
-                                    if (field.FieldType == FieldType.LookupMulti)
+                                    if (field.FieldType == FieldType.Lookup)
                                     {
+                                        isLookup = true;
+                                    }
+                                    //
+                                    // LookupMulti fields are mapped on EntitySet<T> properties.
+                                    //
+                                    else
+                                    {
+                                        isLookupMulti = true;
+
                                         CodeTypeReference t = bclTypeRef;
-                                        bclTypeRef = new CodeTypeReference(typeof(IList<>), CodeTypeReferenceOptions.GlobalReference);
+                                        //bclTypeRef = new CodeTypeReference(typeof(IList<>), CodeTypeReferenceOptions.GlobalReference);
+                                        bclTypeRef = new CodeTypeReference(typeof(EntitySet<>), CodeTypeReferenceOptions.GlobalReference);
                                         bclTypeRef.TypeArguments.Add(t);
                                     }
                                 }
                                 break;
                             default:
                                 bclTypeRef = new CodeTypeReference(field.RuntimeType, CodeTypeReferenceOptions.GlobalReference);
+                                if (field.RuntimeType.IsGenericType)
+                                    isValue = (field.RuntimeType.GetGenericTypeDefinition() == typeof(Nullable<>));
+                                else
+                                    isValue = (field.RuntimeType.BaseType == typeof(System.ValueType));
                                 break;
                         }
 
@@ -398,8 +417,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         // Create field property definition.
                         //
                         string fieldName = Helpers.GetFriendlyName(field.DisplayName);
-                        CodeMemberProperty fieldProperty = GetFieldMemberProperty(field.DisplayName, field.Description, readOnly, bclTypeRef, fieldName, fieldAttributeArgs);
+                        CodeMemberField storageField;
+                        CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField);
                         listType.Members.Add(fieldProperty);
+                        listType.Members.Add(storageField);
 
                         //
                         // Generate additional helper property if needed.
@@ -428,8 +449,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                             //
                             // Create field definition for helper.
                             //
-                            CodeMemberProperty helperField = GetFieldMemberProperty(field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), helper, helperFieldAttributeArgs);
+                            CodeMemberField helperStorageField;
+                            CodeMemberProperty helperField = GetFieldMemberProperty(listType, field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), false, fieldName, helperFieldAttributeArgs, true, false, false, out helperStorageField);
                             listType.Members.Add(helperField);
+                            listType.Members.Add(helperStorageField);
                         }
 
                         //
@@ -439,6 +462,18 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     }
                 }
             }
+
+            //
+            // Event model: events.
+            //
+            listType.Members.Add(GetEventModelEvent("PropertyChanging"));
+            listType.Members.Add(GetEventModelEvent("PropertyChanged"));
+
+            //
+            // Event model: On* methods.
+            //
+            listType.Members.Add(GetEventModelMethod("PropertyChanging"));
+            listType.Members.Add(GetEventModelMethod("PropertyChanged"));
 
             //
             // Send event about schema exporting completion.
@@ -456,6 +491,85 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Return type definition.
             //
             return listType;
+        }
+
+        /// <summary>
+        /// Gets the entity event model's event definition for the specified event.
+        /// </summary>
+        /// <param name="eventName">Event to generate event definition for.</param>
+        /// <returns>Event definition.</returns>
+        private CodeMemberEvent GetEventModelEvent(string eventName)
+        {
+            CodeMemberEvent evt = new CodeMemberEvent();
+            evt.Attributes = MemberAttributes.Public;
+            evt.Name = eventName;
+
+            if (eventName == "PropertyChanging")
+            {
+                evt.Type = new CodeTypeReference(typeof(System.ComponentModel.PropertyChangingEventHandler), CodeTypeReferenceOptions.GlobalReference);
+                if (args.Language == Language.VB)
+                    evt.ImplementationTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanging), CodeTypeReferenceOptions.GlobalReference));
+            }
+            else
+            {
+                evt.Type = new CodeTypeReference(typeof(System.ComponentModel.PropertyChangedEventHandler), CodeTypeReferenceOptions.GlobalReference);
+                if (args.Language == Language.VB)
+                    evt.ImplementationTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanged), CodeTypeReferenceOptions.GlobalReference));
+            }
+
+            return evt;
+        }
+
+        private CodeMemberMethod GetEventModelMethod(string eventName)
+        {
+            //
+            // Declaration.
+            //
+            CodeMemberMethod method = new CodeMemberMethod();
+            method.Attributes = MemberAttributes.Family | MemberAttributes.Final;
+            method.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(System.Diagnostics.DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
+            method.Name = "On" + eventName;
+            CodeParameterDeclarationExpression param = new CodeParameterDeclarationExpression(typeof(string), "propertyName");
+            method.Parameters.Add(param);
+
+            //
+            // Statements.
+            //
+            CodeExpression left = new CodeEventReferenceExpression(new CodeThisReferenceExpression(), eventName);
+            CodeExpression right = new CodePrimitiveExpression(null);
+
+            CodeExpression cond;
+            if (args.Language == Language.CSharp)
+                cond =
+                    new CodeBinaryOperatorExpression(
+                        left,
+                        CodeBinaryOperatorType.IdentityInequality,
+                        right
+                    );
+            else
+                cond =
+                    new CodeBinaryOperatorExpression(
+                        new CodeBinaryOperatorExpression(
+                            left,
+                            CodeBinaryOperatorType.IdentityEquality,
+                            right
+                        ),
+                        CodeBinaryOperatorType.ValueEquality,
+                        new CodePrimitiveExpression(false)
+                    );
+            CodeExpression eventArgs;
+            if (eventName == "PropertyChanging")
+                eventArgs = new CodeObjectCreateExpression(new CodeTypeReference(typeof(System.ComponentModel.PropertyChangingEventArgs), CodeTypeReferenceOptions.GlobalReference), new CodeSnippetExpression(param.Name));
+            else
+                eventArgs = new CodeObjectCreateExpression(new CodeTypeReference(typeof(System.ComponentModel.PropertyChangedEventArgs), CodeTypeReferenceOptions.GlobalReference), new CodeSnippetExpression(param.Name));
+            CodeStatement trues = new CodeExpressionStatement(new CodeDelegateInvokeExpression(left, new CodeThisReferenceExpression(), eventArgs));
+            CodeConditionStatement condition = new CodeConditionStatement(cond, trues);
+            method.Statements.Add(condition);
+
+            //
+            // Return result.
+            //
+            return method;
         }
 
         /// <summary>
@@ -480,6 +594,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Create enum definition.
             //
             CodeTypeDeclaration enumType = new CodeTypeDeclaration(name);
+            enumType.BaseTypes.Add(typeof(uint));
             enumType.Attributes = MemberAttributes.Public;
             enumType.IsEnum = true;
             if (flags)
@@ -499,10 +614,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 // Detect duplicate values; shouldn't occur in most cases.
                 //
-                int j = 0;
-                while (choices.Contains(choice))
-                    choice += (++j).ToString();
-                choices.Add(choice);
+                string s = choice;
+                int j = 2;
+                while (choices.Contains(s))
+                    s = choice + (j++);
+                choices.Add(s);
 
                 //
                 // Create field definition and set flag value in case a flags enum is generated.
@@ -549,52 +665,159 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Generates the property definition for the specified SharePoint list field.
         /// </summary>
+        /// <param name="listType">List type the field and property are generated for.</param>
         /// <param name="displayName">Display name of the list field.</param>
         /// <param name="description">Description of the list field.</param>
         /// <param name="readOnly">Indicates whether or not the list field is read-only.</param>
         /// <param name="bclTypeRef">Type reference for the runtime type to be used for the generated property.</param>
+        /// <param name="isValue">Indicates whether the target type is a value type or not.</param>
         /// <param name="fieldName">Name to be used for the generated property.</param>
         /// <param name="fieldAttributeArgs">Custom attribute arguments for the FieldAttribute on the generated property.</param>
+        /// <param name="isHelper">Indicates whether or not the field is used as a helper field.</param>
+        /// <param name="isLookup">Indicates whether or not the field is a Lookup field.</param>
+        /// <param name="isLookupMulti">Indicates whether or not the field is a LookupMulti field.</param>
+        /// <param name="field">Storage field for the property.</param>
         /// <returns>Property definition for the specified SharePoint list field.</returns>
-        private CodeMemberProperty GetFieldMemberProperty(string displayName, string description, bool readOnly, CodeTypeReference bclTypeRef, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs)
+        private CodeMemberProperty GetFieldMemberProperty(CodeTypeDeclaration listType, string displayName, string description, bool readOnly, CodeTypeReference bclTypeRef, bool isValue, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, bool isHelper, bool isLookup, bool isLookupMulti, out CodeMemberField field)
         {
             //
             // Property definition for the field.
             //
-            CodeMemberProperty field = new CodeMemberProperty();
-            field.Name = fieldName;
-            field.Type = bclTypeRef;
-            field.Attributes = MemberAttributes.Public | MemberAttributes.Final;
+            CodeMemberProperty prop = new CodeMemberProperty();
+            prop.Name = Uniquify(listType, isHelper ? Helpers.GetHelperName(fieldName) : fieldName);
+            prop.Type = bclTypeRef;
+            prop.Attributes = MemberAttributes.Public | MemberAttributes.Final;
+
+            //
+            // Add documentation comments.
+            //
+            prop.Comments.Add(new CodeCommentStatement("<summary>", true));
+            prop.Comments.Add(new CodeCommentStatement(description ?? displayName, true));
+            prop.Comments.Add(new CodeCommentStatement("</summary>", true));
+
+            if (isLookup)
+            {
+                //
+                // Field definition.
+                //
+                CodeTypeReference type = new CodeTypeReference(typeof(EntityRef<>), CodeTypeReferenceOptions.GlobalReference);
+                type.TypeArguments.Add(bclTypeRef);
+                field = new CodeMemberField(type, "_" + prop.Name);
+                fieldAttributeArgs.Add(new CodeAttributeArgument("Storage", new CodePrimitiveExpression(field.Name)));
+
+                SetLookupMemberProperty(prop, displayName, description, bclTypeRef, prop.Name, fieldAttributeArgs, field);
+            }
+            else if (isLookupMulti)
+            {
+                //
+                // Field definition.
+                //
+                field = new CodeMemberField(bclTypeRef, "_" + prop.Name);
+                fieldAttributeArgs.Add(new CodeAttributeArgument("Storage", new CodePrimitiveExpression(field.Name)));
+
+                SetLookupMultiMemberProperty(prop, displayName, description, bclTypeRef, prop.Name, fieldAttributeArgs, field);
+            }
+            else
+            {
+                //
+                // Field definition.
+                //
+                field = new CodeMemberField(bclTypeRef, "_" + prop.Name);
+                fieldAttributeArgs.Add(new CodeAttributeArgument("Storage", new CodePrimitiveExpression(field.Name)));
+
+                SetMemberProperty(prop, displayName, description, readOnly, bclTypeRef, isValue, prop.Name, fieldAttributeArgs, isHelper, field);
+            }
+
+            //
+            // Return the property definition.
+            //
+            return prop;
+        }
+
+        private Dictionary<CodeTypeDeclaration, HashSet<string>> propertyNames = new Dictionary<CodeTypeDeclaration, HashSet<string>>();
+
+        private string Uniquify(CodeTypeDeclaration listType, string name)
+        {
+            if (!propertyNames.ContainsKey(listType))
+                propertyNames.Add(listType, new HashSet<string>());
+
+            HashSet<string> properties = propertyNames[listType];
+
+            string s = name;
+            int j = 2;
+            while (properties.Contains(s))
+                s = name + (j++);
+            properties.Add(s);
+
+            return s;
+        }
+
+        private void SetMemberProperty(CodeMemberProperty prop, string displayName, string description, bool readOnly, CodeTypeReference bclTypeRef, bool isValue, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, bool isHelper, CodeMemberField field)
+        {
+            //
+            // Field reference.
+            //
+            CodeExpression fieldRef = 
+                new CodeFieldReferenceExpression(
+                    new CodeThisReferenceExpression(),
+                    field.Name
+                );
 
             //
             // Add getter.
             //
-            field.GetStatements.Add(
-                new CodeMethodReturnStatement(
-                    new CodeCastExpression(
-                        bclTypeRef,
-                        new CodeMethodInvokeExpression(
-                            new CodeBaseReferenceExpression(),
-                            "GetValue",
-                            new CodePrimitiveExpression(fieldName)
-                        )
-                    )
-                )
-            );
+            prop.GetStatements.Add(new CodeMethodReturnStatement(fieldRef));
 
             //
             // Add setter.
             //
             if (readOnly)
-                field.HasSet = false;
+                prop.HasSet = false;
             else
             {
-                field.SetStatements.Add(
-                    new CodeMethodInvokeExpression(
-                        new CodeBaseReferenceExpression(),
-                        "SetValue",
-                        new CodePrimitiveExpression(fieldName),
+                CodeExpression cond;
+                if (args.Language == Language.CSharp)
+                {
+                    cond = new CodeBinaryOperatorExpression(
+                        fieldRef,
+                        CodeBinaryOperatorType.IdentityInequality,
                         new CodePropertySetValueReferenceExpression()
+                    );
+                }
+                else
+                {
+                    if (!isValue)
+                        cond = new CodeBinaryOperatorExpression(
+                            new CodeBinaryOperatorExpression(
+                                fieldRef,
+                                CodeBinaryOperatorType.IdentityEquality,
+                                new CodePropertySetValueReferenceExpression()
+                            ),
+                            CodeBinaryOperatorType.ValueEquality,
+                            new CodePrimitiveExpression(false)
+                        );
+                    else
+                        cond = new CodeBinaryOperatorExpression(
+                            new CodeMethodInvokeExpression(
+                                fieldRef,
+                                "Equals",
+                                new CodePropertySetValueReferenceExpression()
+                            ),
+                            CodeBinaryOperatorType.ValueEquality,
+                            new CodePrimitiveExpression(false)
+                        );
+                }
+
+                prop.SetStatements.Add(
+                    new CodeConditionStatement(
+                        cond,
+                        new CodeExpressionStatement(
+                            new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanging", new CodePrimitiveExpression(fieldName))
+                        ),
+                        new CodeAssignStatement(fieldRef, new CodePropertySetValueReferenceExpression()),
+                        new CodeExpressionStatement(
+                            new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanged", new CodePrimitiveExpression(fieldName))
+                        )
                     )
                 );
             }
@@ -602,24 +825,118 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Add a FieldAttribute to the property.
             //
-            field.CustomAttributes.Add(
+            prop.CustomAttributes.Add(
                 new CodeAttributeDeclaration(
                     new CodeTypeReference(typeof(FieldAttribute), CodeTypeReferenceOptions.GlobalReference),
                     fieldAttributeArgs.ToArray()
                 )
             );
+        }
+
+        private void SetLookupMemberProperty(CodeMemberProperty prop, string displayName, string description, CodeTypeReference bclTypeRef, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, CodeMemberField field)
+        {
+            //
+            // Field reference.
+            //
+            CodeExpression fieldRef =
+                new CodePropertyReferenceExpression(
+                    new CodeFieldReferenceExpression(
+                        new CodeThisReferenceExpression(),
+                        field.Name
+                    ),
+                    "Entity"
+                );
 
             //
-            // Add documentation comments.
+            // Add getter.
             //
-            field.Comments.Add(new CodeCommentStatement("<summary>", true));
-            field.Comments.Add(new CodeCommentStatement(description ?? displayName, true));
-            field.Comments.Add(new CodeCommentStatement("</summary>", true));
+            prop.GetStatements.Add(new CodeMethodReturnStatement(fieldRef));
 
             //
-            // Return the property definition.
+            // Add setter.
             //
-            return field;
+            CodeExpression cond;
+            if (args.Language == Language.CSharp)
+            {
+                cond = new CodeBinaryOperatorExpression(
+                    fieldRef,
+                    CodeBinaryOperatorType.IdentityInequality,
+                    new CodePropertySetValueReferenceExpression()
+                );
+            }
+            else
+            {
+                cond = new CodeBinaryOperatorExpression(
+                    new CodeBinaryOperatorExpression(
+                        fieldRef,
+                        CodeBinaryOperatorType.IdentityEquality,
+                        new CodePropertySetValueReferenceExpression()
+                    ),
+                    CodeBinaryOperatorType.ValueEquality,
+                    new CodePrimitiveExpression(false)
+                );
+            }
+
+            prop.SetStatements.Add(
+                new CodeConditionStatement(
+                    cond,
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanging", new CodePrimitiveExpression(fieldName))
+                    ),
+                    new CodeAssignStatement(fieldRef, new CodePropertySetValueReferenceExpression()),
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanged", new CodePrimitiveExpression(fieldName))
+                    )
+                )
+            );
+
+            //
+            // Add a FieldAttribute to the property.
+            //
+            prop.CustomAttributes.Add(
+                new CodeAttributeDeclaration(
+                    new CodeTypeReference(typeof(FieldAttribute), CodeTypeReferenceOptions.GlobalReference),
+                    fieldAttributeArgs.ToArray()
+                )
+            );
+        }
+
+        private void SetLookupMultiMemberProperty(CodeMemberProperty prop, string displayName, string description, CodeTypeReference bclTypeRef, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, CodeMemberField field)
+        {
+            //
+            // Field reference.
+            //
+            CodeExpression fieldRef =
+                new CodeFieldReferenceExpression(
+                    new CodeThisReferenceExpression(),
+                    field.Name
+                );
+
+            //
+            // Add getter.
+            //
+            prop.GetStatements.Add(new CodeMethodReturnStatement(fieldRef));
+
+            //
+            // Add setter.
+            //
+            prop.SetStatements.Add(
+                new CodeMethodInvokeExpression(
+                    fieldRef,
+                    "Assign",
+                    new CodePropertySetValueReferenceExpression()
+                )
+            );
+
+            //
+            // Add a FieldAttribute to the property.
+            //
+            prop.CustomAttributes.Add(
+                new CodeAttributeDeclaration(
+                    new CodeTypeReference(typeof(FieldAttribute), CodeTypeReferenceOptions.GlobalReference),
+                    fieldAttributeArgs.ToArray()
+                )
+            );
         }
 
         /// <summary>
