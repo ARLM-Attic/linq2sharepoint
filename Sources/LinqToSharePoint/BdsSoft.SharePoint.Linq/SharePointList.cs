@@ -65,6 +65,7 @@ namespace BdsSoft.SharePoint.Linq
                 throw new ArgumentNullException("context");
 
             _context = context;
+            _context.RegisterList(this);
         }
 
         #endregion
@@ -102,6 +103,17 @@ namespace BdsSoft.SharePoint.Linq
             {
                 return Expression.Constant(this);
             }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the actual SharePoint list version should be matched against the list version as indicated by the metadata on the list entity type.
+        /// If null, this setting is ignored and the entity type's ListAttribute setting is taken.
+        /// </summary>
+        /// <remarks>This setting can be overridden on the SharePointDataContext level.</remarks>
+        public bool? CheckVersion
+        {
+            get;
+            set;
         }
 
         #endregion

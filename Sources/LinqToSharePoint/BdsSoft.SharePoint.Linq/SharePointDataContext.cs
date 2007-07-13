@@ -73,7 +73,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Indicates whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
         /// </summary>
-        private bool _checkVersion = true;
+        private bool? _checkListVersion;
 
         /// <summary>
         /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
@@ -179,13 +179,14 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Gets or sets whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
+        /// Gets or sets whether the actual SharePoint list version should be matched against the list version as indicated by the metadata on the list entity type.
+        /// If null, this setting is ignored and the SharePointList's setting is taken.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "CheckList")]
-        public bool CheckListVersion
+        public bool? CheckListVersion
         {
-            get { CheckDisposed(); return _checkVersion; }
-            set { CheckDisposed(); _checkVersion = value; }
+            get { CheckDisposed(); return _checkListVersion; }
+            set { CheckDisposed(); _checkListVersion = value; }
         }
 
         /// <summary>
@@ -230,13 +231,18 @@ namespace BdsSoft.SharePoint.Linq
             Type t = typeof(T);
 
             if (!_lists.ContainsKey(t))
-                _lists.Add(t, new SharePointList<T>(this));
+            {
+                //
+                // Constructor will add list to the context.
+                //
+                new SharePointList<T>(this);
+            }
 
             return (SharePointList<T>)_lists[t];
         }
 
         /// <summary>
-        /// Retrieves a list source object for the entity as specified by <paramref name="listType">T</paramref>.
+        /// Retrieves a list source object for the entity as specified by <paramref name="listType">listType</paramref>.
         /// </summary>
         /// <param name="listType">Entity type to get a list source object for.</param>
         /// <returns>List source object for the specified entity type.</returns>
@@ -247,16 +253,46 @@ namespace BdsSoft.SharePoint.Linq
 
             CheckDisposed();
 
+            object list;
             if (!_lists.ContainsKey(listType))
             {
-                object list = Activator.CreateInstance(
+                //
+                // Constructor will add list to the context.
+                //
+                list = Activator.CreateInstance(
                     typeof(SharePointList<>).MakeGenericType(listType),
                     new object[] { this }
                 );
-                _lists.Add(listType, list);
             }
+            else
+            {
+                list = _lists[listType];
+                Debug.Assert(list.GetType().IsGenericType && list.GetType().GetGenericTypeDefinition() == typeof(SharePointList<>));
+            }
+            
+            return list;
+        }
 
-            return _lists[listType];
+        /// <summary>
+        /// Registers a list source object for the entity as specified by <typeparamref name="T">T</typeparamref>.
+        /// </summary>
+        /// <param name="list">List source to register.</param>
+        /// <typeparam name="T">Entity type to register the correspondong list source object for.</typeparam>
+        internal void RegisterList<T>(SharePointList<T> list) where T : class
+        {
+            Debug.Assert(list != null);
+
+            CheckDisposed();
+
+            Type t = typeof(T);
+
+            //
+            // The context can only hold one SharePointList<T> object for each type T.
+            //
+            if (_lists.ContainsKey(t))
+                throw new Exception("Cannot register two SharePointList objects for the same entity type."); //TODO
+
+            _lists.Add(t, list);
         }
 
         /// <summary>

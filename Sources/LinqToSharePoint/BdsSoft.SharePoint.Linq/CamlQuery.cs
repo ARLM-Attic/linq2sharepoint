@@ -103,7 +103,7 @@ namespace BdsSoft.SharePoint.Linq
 
             query._results = parser.Parse();
             query._errors = parser._errors;
-            
+
             //
             // Return constructed query object.
             //
@@ -118,6 +118,7 @@ namespace BdsSoft.SharePoint.Linq
         /// Triggers the query and fetches results.
         /// </summary>
         /// <returns>Query results.</returns>
+        /// <typeparam name="T">Type of the result objects.</typeparam>
         public IEnumerator<T> Execute<T>()
         {
             //
@@ -130,10 +131,9 @@ namespace BdsSoft.SharePoint.Linq
                 _wsList = la.List;
 
             //
-            // Version check required for the list?
+            // Perform version check; the _CheckListVersion method will figure out whether or not such a check is required.
             //
-            if (_results.Context.CheckListVersion)
-                _CheckVersion();
+            _CheckListVersion();
 
             //
             // We don't want the default view, so we'll make an exhaustive list of all the properties to retrieve.
@@ -206,9 +206,41 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Performs a list version check to make sure that the exported list definition matches the online list version.
         /// </summary>
-        private void _CheckVersion()
+        private void _CheckListVersion()
         {
+            bool check;
             int version;
+
+            //
+            // Find the list attribute, which is required to perform a list version match check.
+            //
+            ListAttribute la = Helpers.GetListAttribute(_results.EntityType, true);
+
+            //
+            // Check on context level.
+            //
+            bool? checkContext = _results.Context.CheckListVersion;
+            if (checkContext == null)
+            {
+                object list = _results.Context.GetList(_results.EntityType);
+
+                //
+                // Check on list level.
+                //
+                bool? checkList = (bool?)list.GetType().GetProperty("CheckVersion").GetValue(list, null);
+                if (checkList == null)
+                    check = la.CheckVersion;
+                else
+                    check = checkList.Value;
+            }
+            else
+                check = checkContext.Value;
+
+            //
+            // Should check?
+            //
+            if (!check)
+                return;
 
             //
             // Check version via the SharePoint Object Model or via SharePoint web services.
@@ -222,9 +254,9 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
-            // Find the list attribute, which is required to perform a list version match check.
+            // Check the version.
             //
-            if (Helpers.GetListAttribute(_results.EntityType, true).Version != version)
+            if (la.Version != version)
                 throw RuntimeErrors.ListVersionMismatch();
         }
 

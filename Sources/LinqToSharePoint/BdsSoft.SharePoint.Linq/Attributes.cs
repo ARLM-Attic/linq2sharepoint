@@ -158,6 +158,7 @@ namespace BdsSoft.SharePoint.Linq
         public ListAttribute(string list)
         {
             List = list;
+            CheckVersion = true;
         }
 
         #endregion
@@ -183,6 +184,15 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Relative URL path to the SharePoint list on the server.
+        /// </summary>
+        public string Path
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Version number of the SharePoint list.
         /// </summary>
         public int Version
@@ -192,9 +202,10 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Relative URL path to the SharePoint list on the server.
+        /// Gets or sets whether the actual SharePoint list version should be matched against the list version as indicated by the metadata on the list entity type (default is true).
         /// </summary>
-        public string Path
+        /// <remarks>This setting can be overridden on the SharePointList&lt;T&gt; and SharePointDataContext level.</remarks>
+        public bool CheckVersion
         {
             get;
             set;
