@@ -159,7 +159,7 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     // Empty sequence is valid for FirstOrDefault call. Return the default value of TResult.
                     //
-                    else if (mc.Method.Name.EndsWith("OrDefault"))
+                    else if (mc.Method.Name.EndsWith("OrDefault", StringComparison.Ordinal))
                         return default(TResult);
                     //
                     // Empty sequence is invalid for First call.

@@ -49,6 +49,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="s">SharePoint Url field value.</param>
         /// <returns>Url object representing the specified field value.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "s")]
         public static Url Parse(string s)
         {
             if (s == null)
@@ -88,7 +89,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Returns the hash code for the URL.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Hash code.</returns>
         public override int GetHashCode()
         {
             return ((Uri)this).GetHashCode() ^ FriendlyName.GetHashCode();
@@ -135,7 +136,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="url">Url to check.</param>
         /// <param name="address">URL address string representation to check.</param>
-        /// <returns>True if the Url and the string refer to the same URL; false otherwise.</returns>
+        /// <returns>true if the Url and the string refer to the same URL; otherwise, false.</returns>
         public static bool operator ==(Url url, string address)
         {
             if (url == null && address == null)
@@ -147,11 +148,11 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Checks for non-equality between a Url and a string-representation of a URL. Used for LINQ queries that compare a URL field with a string containing the URL's address.
+        /// Checks for inequality between a Url and a string-representation of a URL. Used for LINQ queries that compare a URL field with a string containing the URL's address.
         /// </summary>
         /// <param name="url">Url to check.</param>
         /// <param name="address">URL address string representation to check.</param>
-        /// <returns>True if the Url and the string don't refer to the same URL; false otherwise.</returns>
+        /// <returns>true if the Url and the string don't refer to the same URL; otherwise, false.</returns>
         public static bool operator !=(Url url, string address)
         {
             return !(url == address);

@@ -14,10 +14,14 @@
  * 0.2.2 - Introduction of EntityRef<T>; replaces lazy loading thunk functionality.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -61,6 +65,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="id">Primary key of the entity to be loaded.</param>
         internal EntityRef(SharePointDataContext context, int id)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+
             _list = context.GetList<T>();
             _id = id;
             _entity = default(T);
@@ -119,6 +126,85 @@ namespace BdsSoft.SharePoint.Linq
         {
             _entity = _list.GetEntityById(_id);
             _loaded = true;
+        }
+
+        #endregion
+
+        #region Equals and equality operators
+
+        /// <summary>
+        /// Checks for equality with a given a object instance.
+        /// </summary>
+        /// <param name="obj">Object to check for equality.</param>
+        /// <returns>True if both objects represent the same EntityRef; false otherwise.</returns>
+        public override bool Equals(object obj)
+        {
+            //
+            // Instances compared to null aren't equal.
+            //
+            if (obj == null)
+                return false;
+
+            //
+            // Same reference?
+            //
+            if (object.ReferenceEquals(this, obj))
+                return true;
+
+            //
+            // Can only compare to another EntityRef instance.
+            //
+            if (!(obj is EntityRef<T>))
+                return false;
+            EntityRef<T> e = (EntityRef<T>)obj;
+
+            //
+            // Compare both instances.
+            //
+            return object.ReferenceEquals(e._list, _list)
+                && e._id == _id
+                && e._loaded == _loaded;
+                
+                /*
+                   don't need this: if an entity with the same id is loaded through the same list, the instances will match
+                   && object.ReferenceEquals(e._entity, _entity)
+                 */
+        }
+
+        /// <summary>
+        /// Returns the hash code for the EntityRef.
+        /// </summary>
+        /// <returns>Hash code.</returns>
+        public override int GetHashCode()
+        {
+            return _id.GetHashCode() ^ _loaded.GetHashCode() ^ (_list != null ? _list.GetHashCode() : 0) ^ (_entity != null ? _entity.GetHashCode() : 0);
+        }
+
+        /// <summary>
+        /// Checks for equality between two EntityRefs.
+        /// </summary>
+        /// <param name="entityRef1">First EntityRef to compare.</param>
+        /// <param name="entityRef2">Second EntityRef to compare.</param>
+        /// <returns>true if both EntityRefs are equal; otherwise, false.</returns>
+        public static bool operator ==(EntityRef<T> entityRef1, EntityRef<T> entityRef2)
+        {
+            if (entityRef1 == null && entityRef2 == null)
+                return true;
+            else if (entityRef1 == null || entityRef2 == null)
+                return false;
+            else
+                return entityRef1.Equals(entityRef2);
+        }
+
+        /// <summary>
+        /// Checks for inequality between two EntityRefs.
+        /// </summary>
+        /// <param name="entityRef1">First EntityRef to compare.</param>
+        /// <param name="entityRef2">Second EntityRef to compare.</param>
+        /// <returns>true if both EntityRefs are equal; otherwise, false.</returns>
+        public static bool operator !=(EntityRef<T> entityRef1, EntityRef<T> entityRef2)
+        {
+            return !(entityRef1 == entityRef2);
         }
 
         #endregion

@@ -380,7 +380,7 @@ namespace BdsSoft.SharePoint.Linq
                             foreach (DataRow row in tbl.Rows)
                             {
                                 //fks.Add(row["ows_" + lookup.LookupField]);
-                                ids.Add(int.Parse((string)row["ows_ID"]));
+                                ids.Add(int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat));
                             }
                         }
 
@@ -555,7 +555,7 @@ namespace BdsSoft.SharePoint.Linq
             XmlElement cond = _factory.Eq();
 
             XmlElement val = _factory.Value("Lookup");
-            val.InnerText = value.ToString();
+            val.InnerText = value.ToString(CultureInfo.InvariantCulture.NumberFormat);
             cond.AppendChild(val);
 
             XmlElement fieldRef = GetFieldRef(field);
@@ -806,6 +806,9 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="item">Item retrieved via the SharePoint object model.</param>
         /// <param name="row">Item retrieved via the SharePoint list web service.</param>
+        /// <param name="lst">List that will hold the entity (if result still is an entity).</param>
+        /// <param name="fromCache">Accessor method to get entity from list entity cache.</param>
+        /// <param name="toCache">Accessor method to store entity in list entity cache.</param>
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
         private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
@@ -826,7 +829,7 @@ namespace BdsSoft.SharePoint.Linq
                 if (item != null)
                     id = (int)item["ID"];
                 else
-                    id = int.Parse((string)row["ows_ID"]);
+                    id = int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat);
 
                 //
                 // Already in list?

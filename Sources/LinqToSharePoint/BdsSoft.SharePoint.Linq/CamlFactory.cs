@@ -14,11 +14,16 @@
  * 0.2.1 - Introduction of CamlFactory.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Xml;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -200,7 +205,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             XmlElement errorElement = _doc.CreateElement("ParseError");
             XmlAttribute idAttribute = _doc.CreateAttribute("ID");
-            idAttribute.Value = id.ToString();
+            idAttribute.Value = id.ToString(CultureInfo.InvariantCulture.NumberFormat);
             errorElement.Attributes.Append(idAttribute);
             return errorElement;
         }

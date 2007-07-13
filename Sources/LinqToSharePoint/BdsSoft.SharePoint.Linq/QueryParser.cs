@@ -216,7 +216,7 @@ namespace BdsSoft.SharePoint.Linq
         #region Query predicate expression parsing (Where)
 
         /// <summary>
-        /// Parses a query filter expression, resulting in a CAML Where element (<see cref="_where"/>).
+        /// Parses a query filter expression, resulting in a CAML Where element.
         /// </summary>
         /// <param name="predicate">Lambda expression of the query predicate to parse.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
@@ -255,7 +255,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Patches required for lookup fields?
                 //
                 if (lookup != null)
-                    PatchQueryExpressionNode(lookup, ref pred, ppS, ppE);
+                    PatchQueryExpressionNode(lookup, ref pred);
 
                 //
                 // If this is the first predicate, create a new <Where> element.
@@ -318,7 +318,7 @@ namespace BdsSoft.SharePoint.Linq
             // 
             else if ((me = predicate as MemberExpression) != null)
             {
-                return ParsePredicateMember(predicate, predicateParameter, isPositive, me, ref lookup, ppS, ppE);
+                return ParsePredicateMember(isPositive, me, ref lookup, ppS, ppE);
             }
             //
             // Method calls are supported for a limited set of string operations and for LookupMulti fields.
@@ -344,22 +344,20 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Fall-through case (shouldn't occur under normal circumstances).
             //
-            ParseErrors.FatalError(ppS, ppE); /* PARSE ERROR */
+            ParseErrors.FatalError(); /* PARSE ERROR */
             return null;
         }
 
         /// <summary>
         /// Helper method to parse member expressions in a query predicate.
         /// </summary>
-        /// <param name="predicate">Predicate expression to be parsed.</param>
-        /// <param name="predicateParameter">Parameter of the predicate lambda expression. Used to detect references to the entity type itself.</param>
         /// <param name="isPositive">Indicates whether the predicate should be evaluated as a positive condition or not; serves boolean negation using De Morgan's law.</param>
         /// <param name="me">Member expression to parse.</param>
         /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate member expression in CAML syntax.</returns>
-        private XmlElement ParsePredicateMember(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MemberExpression me, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicateMember(bool isPositive, MemberExpression me, ref PropertyInfo lookup, int ppS, int ppE)
         {
             //
             // Check for (and trim) Nullable wrapper.
@@ -402,7 +400,7 @@ namespace BdsSoft.SharePoint.Linq
                 {
                     c = _factory.Eq();
                     bool isLookup;
-                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member), out isLookup, ppS, ppE));
+                    c.AppendChild(GetValue(isPositive, Helpers.GetFieldAttribute((PropertyInfo)me.Member), out isLookup));
                 }
 
                 //
@@ -484,7 +482,7 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Find fields argument location in parent expression.
                         //
-                        int ppSD2 = ppS + predicate.ToString().IndexOf(fields.ToString());
+                        int ppSD2 = ppS + predicate.ToString().IndexOf(fields.ToString(), StringComparison.Ordinal);
                         int ppED2 = ppE - 1;
 
                         return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD2, ppED2);
@@ -572,7 +570,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Only method calls on entity type properties are supported.
             //
-            Expression ex = DropToString(mce.Object, ref ppSO, ref ppEO);
+            Expression ex = DropToString(mce.Object, ref ppEO);
             bool? isHasValue;
             MemberExpression o = ex as MemberExpression;
             if (o != null)
@@ -687,7 +685,7 @@ namespace BdsSoft.SharePoint.Linq
                 if (val != null)
                 {
                     bool isLookup;
-                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), out isLookup, ppS, ppE));
+                    cond.AppendChild(GetValue(val, Helpers.GetFieldAttribute(property), out isLookup));
                 }
                 else
                     return null;
@@ -739,7 +737,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Build condition based on the referenced field and the lookup key field.
                 //
                 bool isLookup; //should always be true
-                XmlElement value = GetValue(val, Helpers.GetFieldAttribute(property), out isLookup, ppS, ppE);
+                XmlElement value = GetValue(val, Helpers.GetFieldAttribute(property), out isLookup);
                 XmlElement fieldRef = GetFieldRef(property);
                 if (isLookup)
                     fieldRef.Attributes.Append(_factory.LookupAttribute());
@@ -890,9 +888,9 @@ namespace BdsSoft.SharePoint.Linq
                                 lookup = null;
 
                                 if (lookupLeft != null)
-                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppT);
+                                    PatchQueryExpressionNode(lookupLeft, ref left);
                                 if (lookupRight != null)
-                                    PatchQueryExpressionNode(lookupRight, ref right, ppD, ppE);
+                                    PatchQueryExpressionNode(lookupRight, ref right);
                             }
 
                             //
@@ -919,7 +917,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupLeft != null)
                                 {
                                     lookup = lookupLeft;
-                                    PatchQueryExpressionNode(lookupLeft, ref left, ppS, ppT);
+                                    PatchQueryExpressionNode(lookupLeft, ref left);
                                 }
 
                                 return left;
@@ -935,7 +933,7 @@ namespace BdsSoft.SharePoint.Linq
                                 if (lookupRight != null)
                                 {
                                     lookup = lookupRight;
-                                    PatchQueryExpressionNode(lookupRight, ref right, ppD, ppE);
+                                    PatchQueryExpressionNode(lookupRight, ref right);
                                 }
 
                                 return right;
@@ -971,9 +969,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="lookup">Lookup entity property to make a patch for.</param>
         /// <param name="node">Node of the query expression to be patched.</param>
-        /// <param name="ppS">Start position for parser error tracking.</param>
-        /// <param name="ppE">End position for parser error tracking.</param>
-        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node, int ppS, int ppE)
+        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node)
         {
             //
             // Apply the patch.
@@ -1075,7 +1071,7 @@ namespace BdsSoft.SharePoint.Linq
                 ppS += (left.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
                 ppT -= 1;
             }
-            left = DropToString(left, ref ppS, ref ppT);
+            left = DropToString(left, ref ppT);
 
             while (right.NodeType == ExpressionType.Convert || right.NodeType == ExpressionType.ConvertChecked)
             {
@@ -1084,7 +1080,7 @@ namespace BdsSoft.SharePoint.Linq
                 ppD += (right.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
                 ppE -= 1;
             }
-            right = DropToString(right, ref ppD, ref ppE);
+            right = DropToString(right, ref ppE);
 
             //
             // Detect and trim Nullable wrappers on both arguments. Keep track of .HasValue calls.
@@ -1333,7 +1329,7 @@ namespace BdsSoft.SharePoint.Linq
                     {
                         c = _factory.CreateElement(camlQueryElement);
                         bool isLookup; //can be ignored
-                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup, ppS, ppE));
+                        c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup));
                     }
                     //
                     // MultiChoice type case.
@@ -1351,7 +1347,7 @@ namespace BdsSoft.SharePoint.Linq
                         bool isLookup; //can be ignored
                         foreach (uint o in Enum.GetValues(enumType))
                             if ((enumValue & o) == o)
-                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f, out isLookup, ppS, ppE));
+                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f, out isLookup));
 
                         //
                         // If no flags values have been set, we're faced with an invalid value.
@@ -1393,7 +1389,7 @@ namespace BdsSoft.SharePoint.Linq
                 {
                     c = _factory.CreateElement(camlQueryElement);
                     bool isLookup;
-                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup, ppS, ppE));
+                    c.AppendChild(GetValue(value, Helpers.GetFieldAttribute(entityProperty), out isLookup));
 
                     //
                     // Lookup fields should use the LookupId attribute.
@@ -1513,10 +1509,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="value">Field value to get a Value element for.</param>
         /// <param name="field">Field to get a Value element for.</param>
         /// <param name="lookup"></param>
-        /// <param name="ppS">Start position for parser error tracking.</param>
-        /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>CAML Value element representing the given value for the given field.</returns>
-        private XmlElement GetValue(object value, FieldAttribute field, out bool lookup, int ppS, int ppE)
+        private XmlElement GetValue(object value, FieldAttribute field, out bool lookup)
         {
             //
             // Create Value element and set the Type attribute.
@@ -1637,7 +1631,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Trim ToString() calls for ordering expressions on textual fields. Allows more flexibility.
             //
-            Expression orderExpression = DropToString(ordering.Body, ref ppS2, ref ppE2);
+            Expression orderExpression = DropToString(ordering.Body, ref ppE2);
 
             //
             // Convert the ordering expression as a MemberExpression.
@@ -1788,8 +1782,9 @@ namespace BdsSoft.SharePoint.Linq
         /// Helper method to drop excessive tail ToString calls on string instances for a given expression.
         /// </summary>
         /// <param name="e">Expression to drop excessive tail ToString calls for.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Expression without tail ToString calls on string instances.</returns>
-        private static Expression DropToString(Expression e, ref int ppS, ref int ppE)
+        private static Expression DropToString(Expression e, ref int ppE)
         {
             while (true)
             {
@@ -2028,7 +2023,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             else
             {
-                ParseErrors.FatalError(ppS, ppE); /* PARSE ERROR */
+                ParseErrors.FatalError(); /* PARSE ERROR */
                 return false;
             }
         }
@@ -2262,12 +2257,12 @@ namespace BdsSoft.SharePoint.Linq
         public SharePointDataContext Context { get; set; }
 
         /// <summary>
-        /// Set of PropertyInfo objects for all the fields used in the projection portion of the query. Used to build the projection (<see cref="_projection"/>) without duplicates.
+        /// Set of PropertyInfo objects for all the fields used in the projection portion of the query. Used to build the projection without duplicates.
         /// </summary>
         public HashSet<PropertyInfo> ProjectionProperties { get; set; }
 
         /// <summary>
-        /// Delegate for the projection logic, generated by compiling the projection's lambda expression (e.g. u => new { u.Name }). Takes an object of the original entity type used in the query (<see cref="_results.EntityType"/>).
+        /// Delegate for the projection logic, generated by compiling the projection's lambda expression (e.g. u => new { u.Name }). Takes an object of the original entity type used in the query.
         /// </summary>
         public Delegate Project { get; set; }
 

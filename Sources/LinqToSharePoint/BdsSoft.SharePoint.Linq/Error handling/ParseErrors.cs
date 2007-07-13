@@ -17,6 +17,7 @@
 #region Namespace imports
 
 using System;
+using System.Globalization;
 using System.Xml;
 
 #endregion
@@ -30,7 +31,7 @@ namespace BdsSoft.SharePoint.Linq
     {
         public static XmlElement UnsupportedQueryOperator(this QueryParser parser, string queryOperator, int start, int end)
         {
-            return KeepOrThrow(parser, 1, String.Format(Errors.UnsupportedQueryOperator, queryOperator), start, end);
+            return KeepOrThrow(parser, 1, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedQueryOperator, queryOperator), start, end);
         }
 
         public static XmlElement NonBoolConstantValueInPredicate(this QueryParser parser, int start, int end)
@@ -53,44 +54,44 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 5, Errors.DateRangesOverlapMissingFieldReferences, start, end);
         }
 
-        public static XmlElement PredicateContainsNonEntityReference(this QueryParser parser, string member, int start, int end)
-        {
-            return KeepOrThrow(parser, 6, String.Format(Errors.PredicateContainsNonEntityReference, member), start, end);
-        }
+        //public static XmlElement PredicateContainsNonEntityReference(this QueryParser parser, string member, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 6, String.Format(CultureInfo.InvariantCulture, Errors.PredicateContainsNonEntityReference, member), start, end);
+        //}
 
         public static XmlElement PredicateContainsNonEntityMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(parser, 7, String.Format(Errors.PredicateContainsNonEntityMethodCall, method), start, end);
+            return KeepOrThrow(parser, 7, String.Format(CultureInfo.InvariantCulture, Errors.PredicateContainsNonEntityMethodCall, method), start, end);
         }
 
         public static XmlElement InvalidEntityReference(this QueryParser parser, string member, int start, int end)
         {
-            return KeepOrThrow(parser, 8, String.Format(Errors.InvalidEntityReference, member), start, end);
+            return KeepOrThrow(parser, 8, String.Format(CultureInfo.InvariantCulture, Errors.InvalidEntityReference, member), start, end);
         }
 
         public static XmlElement UnsupportedStringMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(parser, 9, String.Format(Errors.UnsupportedStringMethodCall, method), start, end);
+            return KeepOrThrow(parser, 9, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedStringMethodCall, method), start, end);
         }
 
         public static XmlElement UnsupportedMethodCall(this QueryParser parser, string method, int start, int end)
         {
-            return KeepOrThrow(parser, 10, String.Format(Errors.UnsupportedMethodCall, method), start, end);
+            return KeepOrThrow(parser, 10, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedMethodCall, method), start, end);
         }
 
         public static XmlElement CantNegate(this QueryParser parser, string expression, int start, int end)
         {
-            return KeepOrThrow(parser, 11, String.Format(Errors.CantNegate, expression), start, end);
+            return KeepOrThrow(parser, 11, String.Format(CultureInfo.InvariantCulture, Errors.CantNegate, expression), start, end);
         }
 
         public static XmlElement UnsupportedUnary(this QueryParser parser, string type, int start, int end)
         {
-            return KeepOrThrow(parser, 12, String.Format(Errors.UnsupportedUnary, type), start, end);
+            return KeepOrThrow(parser, 12, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedUnary, type), start, end);
         }
 
         public static XmlElement UnsupportedBinary(this QueryParser parser, string type, int start, int end)
         {
-            return KeepOrThrow(parser, 13, String.Format(Errors.UnsupportedBinary, type), start, end);
+            return KeepOrThrow(parser, 13, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedBinary, type), start, end);
         }
 
         public static XmlElement InvalidNullValuedCondition(this QueryParser parser, int start, int end)
@@ -123,25 +124,25 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 19, Errors.DateRangesOverlapInvalidFieldReferences, start, end);
         }
 
-        public static XmlElement NonUniqueLookupField(this QueryParser parser, string property, int start, int end)
-        {
-            return KeepOrThrow(parser, 20, String.Format(Errors.NonUniqueLookupField, property), start, end);
-        }
+        //public static XmlElement NonUniqueLookupField(this QueryParser parser, string property, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 20, String.Format(CultureInfo.InvariantCulture, Errors.NonUniqueLookupField, property), start, end);
+        //}
 
-        public static XmlElement MissingLookupFieldSetting(this QueryParser parser, string field, int start, int end)
-        {
-            return KeepOrThrow(parser, 21, String.Format(Errors.MissingLookupFieldSetting, field), start, end);
-        }
+        //public static XmlElement MissingLookupFieldSetting(this QueryParser parser, string field, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 21, String.Format(CultureInfo.InvariantCulture, Errors.MissingLookupFieldSetting, field), start, end);
+        //}
 
-        public static XmlElement NonExistingLookupField(this QueryParser parser, string field, string lookup, int start, int end)
-        {
-            return KeepOrThrow(parser, 22, String.Format(Errors.NonExistingLookupField, field, lookup), start, end);
-        }
+        //public static XmlElement NonExistingLookupField(this QueryParser parser, string field, string lookup, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 22, String.Format(CultureInfo.InvariantCulture, Errors.NonExistingLookupField, field, lookup), start, end);
+        //}
 
-        public static XmlElement NullValuedLookupField(this QueryParser parser, string field, string lookup, int start, int end)
-        {
-            return KeepOrThrow(parser, 23, String.Format(Errors.NullValuedLookupField, field, lookup), start, end);
-        }
+        //public static XmlElement NullValuedLookupField(this QueryParser parser, string field, string lookup, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 23, String.Format(CultureInfo.InvariantCulture, Errors.NullValuedLookupField, field, lookup), start, end);
+        //}
 
         public static XmlElement MultipleEntityReferencesInCondition(this QueryParser parser, int start, int end)
         {
@@ -155,20 +156,20 @@ namespace BdsSoft.SharePoint.Linq
 
         public static XmlElement MissingFieldMappingAttribute(this QueryParser parser, string property)
         {
-            return KeepOrThrow(parser, 101, String.Format(Errors.MissingFieldMappingAttribute, property), 0, 0);
+            return KeepOrThrow(parser, 101, String.Format(CultureInfo.InvariantCulture, Errors.MissingFieldMappingAttribute, property), 0, 0);
         }
 
-        public static XmlElement GeneralError(this QueryParser parser, string message, int start, int end)
-        {
-            return KeepOrThrow(parser, 9999, message, start, end);
-        }
+        //public static XmlElement GeneralError(this QueryParser parser, string message, int start, int end)
+        //{
+        //    return KeepOrThrow(parser, 9999, message, start, end);
+        //}
 
-        public static void LookupFieldPatchError()
-        {
-            throw new InvalidOperationException(Errors.LookupFieldPatchError);
-        }
+        //public static void LookupFieldPatchError()
+        //{
+        //    throw new InvalidOperationException(Errors.LookupFieldPatchError);
+        //}
 
-        public static void FatalError(int start, int end)
+        public static void FatalError()
         {
             throw new InvalidOperationException(Errors.FatalError);
         }

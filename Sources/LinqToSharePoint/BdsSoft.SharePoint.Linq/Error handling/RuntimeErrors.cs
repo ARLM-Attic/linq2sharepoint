@@ -17,9 +17,7 @@
 #region Namespace imports
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Globalization;
 
 #endregion
 
@@ -32,27 +30,27 @@ namespace BdsSoft.SharePoint.Linq
     {
         public static Exception MissingFieldMappingAttribute(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.MissingFieldMappingAttribute, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.MissingFieldMappingAttribute, property));
         }
 
         public static Exception ListVersionMismatch()
         {
-            return new InvalidOperationException(String.Format(Errors.ListVersionMismatch));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.ListVersionMismatch));
         }
 
         public static Exception ConnectionExceptionSp(string url, Exception innerException)
         {
-            return new SharePointConnectionException(String.Format(Errors.ConnectionExceptionSp, url), innerException);
+            return new SharePointConnectionException(String.Format(CultureInfo.InvariantCulture, Errors.ConnectionExceptionSp, url), innerException);
         }
 
         public static Exception ConnectionExceptionWs(string url, Exception innerException)
         {
-            return new SharePointConnectionException(String.Format(Errors.ConnectionExceptionWs, url), innerException);
+            return new SharePointConnectionException(String.Format(CultureInfo.InvariantCulture, Errors.ConnectionExceptionWs, url), innerException);
         }
 
         public static Exception InvalidLookupField(string property)
         {
-            return new NotSupportedException(String.Format(Errors.InvalidLookupField, property));
+            return new NotSupportedException(String.Format(CultureInfo.InvariantCulture, Errors.InvalidLookupField, property));
         }
 
         public static Exception LookupFieldPatchError()
@@ -62,27 +60,27 @@ namespace BdsSoft.SharePoint.Linq
 
         public static Exception UnrecognizedMappingType(string fieldType)
         {
-            return new InvalidOperationException(String.Format(Errors.UnrecognizedMappingType, fieldType));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.UnrecognizedMappingType, fieldType));
         }
 
         public static Exception TooManyUnknownChoiceValues(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.TooManyUnknownChoiceValues, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.TooManyUnknownChoiceValues, property));
         }
 
         public static Exception InvalidOtherChoiceFieldMapping(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.InvalidOtherChoiceFieldMapping, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.InvalidOtherChoiceFieldMapping, property));
         }
 
         public static Exception MissingOtherChoiceFieldMapping(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.MissingOtherChoiceFieldMapping, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.MissingOtherChoiceFieldMapping, property));
         }
 
         public static Exception UnsupportedQueryOperator(string queryOperator)
         {
-            return new InvalidOperationException(String.Format(Errors.UnsupportedQueryOperator, queryOperator));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedQueryOperator, queryOperator));
         }
 
         public static Exception EmptySequence()
@@ -117,17 +115,17 @@ namespace BdsSoft.SharePoint.Linq
 
         public static Exception StoragePropertyMissingOnReadOnlyField(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.StoragePropertyMissingOnReadOnlyField, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.StoragePropertyMissingOnReadOnlyField, property));
         }
 
         public static Exception InvalidStoragePropertyFieldReference(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.StoragePropertyMissingOnReadOnlyField, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.StoragePropertyMissingOnReadOnlyField, property));
         }
 
         public static Exception NonReadOnlyFieldWithoutSetter(string property)
         {
-            return new InvalidOperationException(String.Format(Errors.NonReadOnlyFieldWithoutSetter, property));
+            return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.NonReadOnlyFieldWithoutSetter, property));
         }
     }
 }

@@ -14,10 +14,14 @@
  * 0.2.2 - Introduction of EntitySet<T>; replaces lazy loading thunk functionality.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
@@ -25,6 +29,7 @@ namespace BdsSoft.SharePoint.Linq
     /// Set of entity references. Used to enable lazy loading.
     /// </summary>
     /// <typeparam name="T">Type of the referenced entities.</typeparam>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
     public struct EntitySet<T> : IList<T>, ICollection<T>
         where T : class
     {
@@ -73,6 +78,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="onRemove">Action to take when an entity is removed from the set.</param>
         internal EntitySet(SharePointDataContext context, int[] ids, Action<T> onAdd, Action<T> onRemove)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+
+            if (ids == null)
+                throw new ArgumentNullException("ids");
+
             _list = context.GetList<T>();
             _ids = ids;
             _entities = null;
@@ -134,7 +145,7 @@ namespace BdsSoft.SharePoint.Linq
             get
             {
                 if (index < 0)
-                    throw new IndexOutOfRangeException("Collection index should be positive.");
+                    throw new ArgumentException("Collection index should be positive.");
 
                 //
                 // Lazy loading.
@@ -147,7 +158,7 @@ namespace BdsSoft.SharePoint.Linq
             set
             {
                 if (index < 0)
-                    throw new IndexOutOfRangeException("Collection index should be positive.");
+                    throw new ArgumentException("Collection index should be positive.");
 
                 //
                 // Lazy loading.
@@ -171,6 +182,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="entity">The entity to locate in the entity list.</param>
         /// <returns>The zero-based index of the first occurrence of item within the entire entity list, if found; otherwise, -1.</returns>
         /// <remarks>Will trigger deferred loading if the entities are not loaded yet.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public int IndexOf(T entity)
         {
             if (entity == null)
@@ -191,13 +203,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="index">The zero-based index at which item should be inserted.</param>
         /// <param name="entity">The object to insert.</param>
         /// <remarks>Will trigger deferred loading if the entities are not loaded yet.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "1#")]
         public void Insert(int index, T entity)
         {
             if (entity == null)
                 throw new ArgumentNullException("entity");
 
             if (index < 0)
-                throw new IndexOutOfRangeException("Collection index should be positive.");
+                throw new ArgumentException("Collection index should be positive.");
 
             //
             // Lazy loading.
@@ -219,7 +232,7 @@ namespace BdsSoft.SharePoint.Linq
         public void RemoveAt(int index)
         {
             if (index < 0)
-                throw new IndexOutOfRangeException("Collection index should be positive.");
+                throw new ArgumentException("Collection index should be positive.");
 
             //
             // Lazy loading.
@@ -238,6 +251,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="entity">The entity to be added to the end of the entity list.</param>
         /// <remarks>Will trigger deferred loading if the entities are not loaded yet.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public void Add(T entity)
         {
             if (entity == null)
@@ -282,6 +296,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="entity">The entity to locate in the entity list.</param>
         /// <returns>true if entity is found in the entity list; otherwise, false.</returns>
         /// <remarks>Will trigger deferred loading if the entities are not loaded yet.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public bool Contains(T entity)
         {
             if (entity == null)
@@ -308,7 +323,7 @@ namespace BdsSoft.SharePoint.Linq
                 throw new ArgumentNullException("array");
 
             if (arrayIndex < 0 || arrayIndex >= array.Length)
-                throw new IndexOutOfRangeException("Invalid array index specified.");
+                throw new ArgumentException("Invalid array index specified.");
 
             //
             // Lazy loading.
@@ -354,6 +369,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="entity">The entity to remove from the entity list.</param>
         /// <returns>true if entity is successfully removed; otherwise, false. This method also returns false if item was not found in the entity list.</returns>
         /// <remarks>Will trigger deferred loading if the entities are not loaded yet.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public bool Remove(T entity)
         {
             if (entity == null)
@@ -399,6 +415,80 @@ namespace BdsSoft.SharePoint.Linq
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        #endregion
+
+        #region Equals and equality operators
+
+        /// <summary>
+        /// Checks for equality with a given a object instance.
+        /// </summary>
+        /// <param name="obj">Object to check for equality.</param>
+        /// <returns>True if both objects represent the same EntitySet; false otherwise.</returns>
+        public override bool Equals(object obj)
+        {
+            //
+            // Instances compared to null aren't equal.
+            //
+            if (obj == null)
+                return false;
+
+            //
+            // Same reference?
+            //
+            if (object.ReferenceEquals(this, obj))
+                return true;
+
+            //
+            // Can only compare to another EntitySet instance.
+            //
+            if (!(obj is EntitySet<T>))
+                return false;
+            EntitySet<T> e = (EntitySet<T>)obj;
+
+            //
+            // Compare both instances.
+            //
+            return object.ReferenceEquals(e._list, _list)
+                && e._ids == _ids
+                && e._loaded == _loaded;
+        }
+
+        /// <summary>
+        /// Returns the hash code for the EntitySet.
+        /// </summary>
+        /// <returns>Hash code.</returns>
+        public override int GetHashCode()
+        {
+            return _ids.GetHashCode() ^ _loaded.GetHashCode() ^ (_list != null ? _list.GetHashCode() : 0) ^ (_entities != null ? _entities.GetHashCode() : 0);
+        }
+
+        /// <summary>
+        /// Checks for equality between two EntitySets.
+        /// </summary>
+        /// <param name="entitySet1">First EntitySet to compare.</param>
+        /// <param name="entitySet2">Second EntitySet to compare.</param>
+        /// <returns>true if both EntitySets are equal; otherwise, false.</returns>
+        public static bool operator ==(EntitySet<T> entitySet1, EntitySet<T> entitySet2)
+        {
+            if (entitySet1 == null && entitySet2 == null)
+                return true;
+            else if (entitySet1 == null || entitySet2 == null)
+                return false;
+            else
+                return entitySet1.Equals(entitySet2);
+        }
+
+        /// <summary>
+        /// Checks for inequality between two EntitySets.
+        /// </summary>
+        /// <param name="entitySet1">First EntitySet to compare.</param>
+        /// <param name="entitySet2">Second EntitySet to compare.</param>
+        /// <returns>true if both EntitySets are equal; otherwise, false.</returns>
+        public static bool operator !=(EntitySet<T> entitySet1, EntitySet<T> entitySet2)
+        {
+            return !(entitySet1 == entitySet2);
         }
 
         #endregion

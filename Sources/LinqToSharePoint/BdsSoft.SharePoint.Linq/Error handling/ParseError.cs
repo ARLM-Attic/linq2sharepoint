@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 
@@ -71,7 +72,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Prefix the SP identifier to the error code.
                 //
-                return String.Format("SP{0}", _errorCode.ToString().PadLeft(4, '0'));
+                return String.Format(CultureInfo.InvariantCulture, "SP{0}", _errorCode.ToString(CultureInfo.InvariantCulture.NumberFormat).PadLeft(4, '0'));
             }
         }
 
@@ -97,7 +98,7 @@ namespace BdsSoft.SharePoint.Linq
         {
             get
             {
-                return String.Format(Errors.HelpLink, this.ErrorCode);
+                return String.Format(CultureInfo.InvariantCulture, Errors.HelpLink, this.ErrorCode);
             }
         }
 
@@ -111,7 +112,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>Error message prefixed with the error code.</returns>
         public override string ToString()
         {
-            return String.Format("{0}: {1}", this.ErrorCode, this.Message);
+            return String.Format(CultureInfo.InvariantCulture, "{0}: {1}", this.ErrorCode, this.Message);
         }
 
         #endregion
@@ -120,7 +121,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Numbered dictionary collection of parse errors.
     /// </summary>
-    [Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix"), Serializable]
     public sealed class ParseErrorCollection : Dictionary<int, ParseError>, ISerializable
     {
         #region Private members

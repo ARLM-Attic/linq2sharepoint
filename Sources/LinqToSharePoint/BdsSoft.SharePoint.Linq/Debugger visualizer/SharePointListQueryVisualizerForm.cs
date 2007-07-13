@@ -146,7 +146,7 @@ namespace BdsSoft.SharePoint.Linq
             // Locate the ParseError placeholder in the CAML query and mark it.
             //
             string tag = "<ParseError ID=\"" + id + "\" />";
-            int iCaml = txtCaml.Text.IndexOf(tag);
+            int iCaml = txtCaml.Text.IndexOf(tag, StringComparison.Ordinal);
             if (iCaml >= 0)
             {
                 txtCaml.Select(iCaml, tag.Length);
