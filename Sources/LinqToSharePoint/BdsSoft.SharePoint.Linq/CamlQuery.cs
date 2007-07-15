@@ -409,10 +409,13 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Get subquery results.
                             //
-                            foreach (DataRow row in tbl.Rows)
+                            if (tbl != null)
                             {
-                                //fks.Add(row["ows_" + lookup.LookupField]);
-                                ids.Add(int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat));
+                                foreach (DataRow row in tbl.Rows)
+                                {
+                                    //fks.Add(row["ows_" + lookup.LookupField]);
+                                    ids.Add(int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat));
+                                }
                             }
                         }
 
@@ -926,7 +929,13 @@ namespace BdsSoft.SharePoint.Linq
             //
             FieldAttribute field = Helpers.GetFieldAttribute(property);
             if (field == null)
-                throw RuntimeErrors.MissingFieldMappingAttribute(property.Name);
+                return; //partial entity classes could be extended with additional properties
+
+            //
+            // Ignore fill-in choice fields for Choice and MultiChoice fields.
+            //
+            if ((field.FieldType == FieldType.Choice || field.FieldType == FieldType.MultiChoice) && property.PropertyType == typeof(string))
+                return;
 
             //
             // Get the value of the property either using the SharePoint list object or using the current DataRow.
@@ -971,7 +980,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (propertyType.IsSubclassOf(typeof(Enum)))
             {
-                val = AssignResultPropertyAsEnum(property, target, field, val, propertyType);
+                AssignResultPropertyAsEnum(property, target, field, val, propertyType);
             }
             //
             // If the value is of type string, we'll do additional parsing to assign the value to the property.
@@ -1029,7 +1038,9 @@ namespace BdsSoft.SharePoint.Linq
                     // For URL values, a custom Url class has been defined that knows how to parse a SharePoint URL value to a Uri and a friendly name.
                     //
                     case FieldType.URL:
-                        Url url = Url.Parse(valueAsString);
+                        SPFieldUrlValue urlVal = new SPFieldUrlValue(valueAsString);
+                        UrlValue url = new UrlValue(urlVal);
+                        //Url url = Url.Parse(valueAsString);
                         AssignValue(target, property, field, url);
                         break;
                     //
@@ -1046,10 +1057,12 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Structure will be key;#display where key represents the foreign key and display the display field.
                         //
-                        string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
-                        if (fk.Length != 2)
-                            break;
-                        int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
+                        SPFieldLookupValue lookupVal = new SPFieldLookupValue(valueAsString);
+                        int fkey = lookupVal.LookupId;
+                        //string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        //if (fk.Length != 2)
+                        //    break;
+                        //int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
 
                         //
                         // We'll only support lazy loading on entity types.
@@ -1080,13 +1093,15 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Structure will be [key;#display]* where key represents the foreign key and display the display field.
                         //
-                        string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
-                        if (fks.Length % 2 != 0)
-                            break;
-                        List<int> lstFkeys = new List<int>();
-                        for (int i = 0; i < fks.Length; i += 2)
-                            lstFkeys.Add(int.Parse(fks[i], CultureInfo.InvariantCulture.NumberFormat));
-                        int[] fkeys = lstFkeys.ToArray();
+                        SPFieldLookupValueCollection lookupVals = new SPFieldLookupValueCollection(valueAsString);
+                        int[] fkeys = lookupVals.ConvertAll(v => v.LookupId).ToArray();
+                        //string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        //if (fks.Length % 2 != 0)
+                        //    break;
+                        //List<int> lstFkeys = new List<int>();
+                        //for (int i = 0; i < fks.Length; i += 2)
+                        //    lstFkeys.Add(int.Parse(fks[i], CultureInfo.InvariantCulture.NumberFormat));
+                        //int[] fkeys = lstFkeys.ToArray();
 
                         //
                         // We'll only support lazy loading on entity types.
@@ -1119,10 +1134,6 @@ namespace BdsSoft.SharePoint.Linq
             //
             else
             {
-                //if (entity == null)
-                //    property.SetValue(target, val, null);
-                //else
-                //    entity.SetValue(property.Name, val);
                 AssignValue(target, property, field, val);
             }
         }
@@ -1177,8 +1188,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="field">Field attribute of the entity type field to assign to. Used to determine the "other choice" field.</param>
         /// <param name="val">Value to be assigned as an enum with possible "other choice".</param>
         /// <param name="propertyType">Type of the underlying enumeration.</param>
-        /// <returns>Value of the enum corresponding to the val parameter.</returns>
-        private static object AssignResultPropertyAsEnum(PropertyInfo property, object target, FieldAttribute field, object val, Type propertyType)
+        private static void AssignResultPropertyAsEnum(PropertyInfo property, object target, FieldAttribute field, object val, Type propertyType)
         {
             //
             // Find all of the choices of the enum type. A reverse mapping from SharePoint CHOICE names to enum field names is maintained, which will be used to allow Enum.Parse calls further on.
@@ -1208,7 +1218,33 @@ namespace BdsSoft.SharePoint.Linq
             // The value can be converted to a string in case of (Multi)Choice results. Each choice value is separated by ;#, so we'll split the set of choices.
             // From this set of individual choices, we can filter out the known values, which will leave us with a possible fill-in choice.
             //
-            string[] vs = ((string)val).Replace(";#", ",").Trim(',', ' ').Split(',');
+            
+            /*
+            string s = ((string)val);
+            if (s.StartsWith(";#")) //Trim at the begin
+                s = s.Substring(2);
+            if (!s.EndsWith(";#")) //Make sure ;# is at the end
+                s = s + ";#";
+
+            List<string> vs = new List<string>();
+            int pos = 0; //Position to start looking from
+            while (pos < s.Length)
+            {
+                int next = s.IndexOf(";#", pos, StringComparison.Ordinal); //Find next marker position
+                if (next < 0)
+                    break;
+
+                vs.Add(s.Substring(pos, next - pos)); //Get occurrence of choice value
+
+                pos = next + 2;
+            }
+             */
+
+            List<string> vs = new List<string>();
+            SPFieldMultiChoiceValue mcVal = new SPFieldMultiChoiceValue(val as string);
+            for (int i = 0; i < mcVal.Count; i++)
+                vs.Add(mcVal[i]);
+
             HashSet<string> knownVals = new HashSet<string>(vs);
             knownVals.IntersectWith(choices);
 
@@ -1217,8 +1253,8 @@ namespace BdsSoft.SharePoint.Linq
             // The resulting comma-separated string with known choices can be parsed using Enum.Parse to get the final result.
             //
             StringBuilder sb = new StringBuilder();
-            foreach (string s in knownVals)
-                sb.AppendFormat("{0}, ", reverseMapping.ContainsKey(s) ? reverseMapping[s] : s);
+            foreach (string s2 in knownVals)
+                sb.AppendFormat("{0}, ", reverseMapping.ContainsKey(s2) ? reverseMapping[s2] : s2);
 
             string v = sb.ToString().TrimEnd(',', ' ');
             if (v.Length != 0)
@@ -1231,8 +1267,8 @@ namespace BdsSoft.SharePoint.Linq
             // Now a set of remaining values is constructed by taking the original set of values and removing all known values.
             //
             HashSet<string> otherVals = new HashSet<string>(vs);
-            foreach (string s in knownVals)
-                otherVals.Remove(s);
+            foreach (string s2 in knownVals)
+                otherVals.Remove(s2);
 
             //
             // We expect zero or one other value. In the latter case, this will serve as the input for the "other field".
@@ -1272,7 +1308,6 @@ namespace BdsSoft.SharePoint.Linq
                 else
                     throw RuntimeErrors.MissingOtherChoiceFieldMapping(property.Name);
             }
-            return val;
         }
 
         #endregion

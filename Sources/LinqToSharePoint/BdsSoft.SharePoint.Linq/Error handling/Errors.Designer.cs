@@ -331,6 +331,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Only the Url property of Url fields is supported in query predicates..
+        /// </summary>
+        internal static string NonUrlCallOnUrlValue {
+            get {
+                return ResourceManager.GetString("NonUrlCallOnUrlValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Lookup field {0} has a null-valued LookupField: {1}. Did you mean a null-check on the Lookup field instead?.
         /// </summary>
         internal static string NullValuedLookupField {

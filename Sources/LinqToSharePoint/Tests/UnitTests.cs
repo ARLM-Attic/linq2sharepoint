@@ -8,6 +8,8 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+//#define SWAP
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -39,12 +41,21 @@ namespace Tests
             site = new SPSite(url.ToString());
             web = site.RootWeb;
 
+#if SWAP
+            wsContext = new SharePointDataContext(site);
+            wsContext.CheckListVersion = false;
+
+            spContext = new SharePointDataContext(url);
+            spContext.CheckListVersion = false;
+            spContext.Credentials = CredentialCache.DefaultNetworkCredentials;
+#else
             spContext = new SharePointDataContext(site);
             spContext.CheckListVersion = false;
 
             wsContext = new SharePointDataContext(url);
             wsContext.CheckListVersion = false;
             wsContext.Credentials = CredentialCache.DefaultNetworkCredentials;
+#endif
         }
 
         private TestContext testContextInstance;
@@ -924,6 +935,85 @@ namespace Tests
         }
 
         [TestMethod]
+        public void MultiChoiceWithFillIn()
+        {
+            //
+            // Create list.
+            //
+            var lst = Test.CreateList<ChoiceTest3>(site.RootWeb);
+
+            //
+            // Add fields.
+            //
+            lst.Fields.Add("Options", SPFieldType.MultiChoice, true);
+            lst.Update();
+            SPFieldMultiChoice fld = new SPFieldMultiChoice(lst.Fields, "Options");
+            fld.FillInChoice = true;
+            fld.Choices.Add("A");
+            fld.Choices.Add("B");
+            fld.Update();
+            lst.Update();
+
+            //
+            // Add items.
+            //
+            SPListItem item = lst.Items.Add();
+            item["Title"] = "1";
+            item["Options"] = "A";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "2";
+            item["Options"] = "C";
+            item.Update();
+            item = lst.Items.Add();
+            item["Title"] = "3";
+            item["Options"] = "A;#C";
+            item.Update();
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<ChoiceTest3>(spContext);
+
+            //
+            // Queries.
+            //
+            var res1 = (from c in src where c.Options == Options3.A select c).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoiceWithFillIn fields failed (1).");
+            var res2 = (from c in src where c.OptionsOther == "C" select c).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3" && res2.Last().OptionsOther == "C", "Test for MultiChoiceWithFillIn fields failed (2).");
+            var res3 = (from c in src where c.Options == Options3.A && c.OptionsOther == "C" select c).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "3", "Test for MultiChoiceWithFillIn fields failed (3).");
+        }
+
+        [TestMethod]
+        public void ConstantBooleanPredicate()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<People>(spContext);
+
+            //
+            // Query.
+            //
+            int a = 123;
+            var res = (from p in src where a == 123 select p).AsEnumerable();
+            Assert.IsTrue(res.Count() == 1, "Test for ConstantBooleanPredicate failed.");
+        }
+
+        [TestMethod]
         public void LookupSubquery()
         {
             //
@@ -1104,6 +1194,153 @@ namespace Tests
             //
             // TODO: Check for eligible use of Now.
             //
+        }
+
+        [TestMethod]
+        public void DateRangesOverlap()
+        {
+            //
+            // Create list DateRangesOverlapTest.
+            //
+            var lst = Test.Create<DateRangesOverlapTest>(site.RootWeb);
+            
+            //
+            // Add items.
+            //
+            DateRangesOverlapTest t1 = new DateRangesOverlapTest();
+            t1.Title = "Appointment";
+            t1.From = System.DateTime.Now.AddDays(-1);
+            t1.To = System.DateTime.Now.AddDays(1);
+            Test.Add(lst, t1);
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<DateRangesOverlapTest>(spContext);
+
+            //
+            // Query.
+            //
+            var res1 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Now, d.From, d.To) select d).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "Appointment", "DateRangesOverlap test failure (1).");
+            var res2 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Today, d.From, d.To) select d).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Appointment", "DateRangesOverlap test failure (2).");
+        }
+
+        [TestMethod]
+        public void LambdaFree()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<People>(spContext);
+
+            //
+            // Query that tries to capture as much lambda free checks as possible.
+            //
+            int a = 1;
+            int b = 2;
+            object o = a;
+            Func<int, int, int> action = (i, j) => i + j;
+            var res = (from p in src where p.Age == LambdaFreeHelper(action(a, b), a + b, !(a == b), a + b == 3 ? a : b, new { a, b, C = new List<int> { a, b } }, new List<int>() { a, b }, new TimeSpan(a, b, 0), new int[] { a, b }, o is int) select p).AsEnumerable();
+            Assert.IsTrue(res.Count() == 1, "LambdaFree check failed.");
+        }
+
+        double LambdaFreeHelper(params object[] o)
+        {
+            return 24;
+        }
+
+        [TestMethod]
+        public void Pruning()
+        {
+            //
+            // Create list People.
+            //
+            var lst = Test.Create<People>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
+            Test.Add(lst, p1);
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<People>(spContext);
+
+            bool t = true;
+            bool f = false;
+
+            //
+            // Queries.
+            //
+            var res1 = (from p in src where t select p).AsEnumerable();
+            Assert.IsTrue(res1.Count() == 1, "Pruning check failed (1).");
+            var res2 = (from p in src where t && f select p).AsEnumerable();
+            Assert.IsTrue(res2.Count() == 0, "Pruning check failed (2).");
+            var res3 = (from p in src where t || f select p).AsEnumerable();
+            Assert.IsTrue(res3.Count() == 1, "Pruning check failed (3).");
+        }
+
+        //[TestMethod]
+        //public void EntityRef()
+        //{
+        //    EntityRef<People> p = new EntityRef<People>();
+            
+        //}
+
+        [TestMethod]
+        public void Url()
+        {
+            //
+            // Create list UrlTest.
+            //
+            var lst = Test.Create<UrlTest>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            UrlValue url1 = new UrlValue("http://www.bartdesmet.net", "Bart's homepage");
+            UrlValue url2 = new UrlValue("http://www.codeplex.com/LINQtoSharePoint", null);
+            UrlValue url3 = new UrlValue(null, null);
+            UrlTest u1 = new UrlTest() { Title = "Bart", Homepage = url1 };
+            UrlTest u2 = new UrlTest() { Title = "Project", Homepage = url2 };
+            UrlTest u3 = new UrlTest() { Title = "Null", Homepage = url3 };
+            UrlTest u4 = new UrlTest() { Title = "NullToo" };
+            Test.Add(lst, u1);
+            Test.Add(lst, u2);
+            Test.Add(lst, u3);
+            Test.Add(lst, u4);
+
+            //
+            // List source.
+            //
+            var src = new SharePointList<UrlTest>(spContext);
+
+            //
+            // Queries.
+            //
+            var res1 = (from u in src where u.ID == 1 select u.Homepage).First();
+            Assert.IsTrue(res1.Description == "Bart's homepage" && res1.Url == "http://www.bartdesmet.net", "Test for Url failed (1).");
+            var res2 = (from u in src where u.ID == 2 select u.Homepage).First();
+            Assert.IsTrue(res2.Url == "http://www.codeplex.com/LINQtoSharePoint", "Test for Url failed (2).");
+            var res3 = (from u in src where u.ID == 3 select u.Homepage).First();
+            Assert.IsTrue(res3 == null, "Test for Url failed (3).");
+            var res4 = (from u in src where u.ID == 4 select u.Homepage).First();
+            Assert.IsTrue(res4 == null, "Test for Url failed (4).");
         }
 
         [TestMethod]

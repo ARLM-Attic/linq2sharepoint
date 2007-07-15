@@ -149,6 +149,11 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 24, Errors.MultipleEntityReferencesInCondition, start, end);
         }
 
+        public static XmlElement NonUrlCallOnUrlValue(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 25, Errors.NonUrlCallOnUrlValue, start, end);
+        }
+
         public static XmlElement UnsupportedQueryExpression(this QueryParser parser, int start, int end)
         {
             return KeepOrThrow(parser, 99, Errors.UnsupportedQueryExpression, start, end);

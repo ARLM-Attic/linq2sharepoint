@@ -579,10 +579,26 @@ namespace BdsSoft.SharePoint.Linq
             if (o == null || !(o.Member is PropertyInfo))
                 return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
 
+            PropertyInfo property = (PropertyInfo)o.Member;
+
+            //
+            // Check for UrlValue fields.
+            //
+            if (property.DeclaringType == typeof(UrlValue))
+            {
+                if (property.Name != "Url")
+                {
+                    int ppS1 = ppS + o.Expression.ToString().Length + 1;
+                    return /* PARSE ERROR */ this.NonUrlCallOnUrlValue(ppS1, ppS1 + property.Name.Length - 1);
+                }
+
+                property = (PropertyInfo)((MemberExpression)o.Expression).Member;
+            }
+
             //
             // Check for lookup field to propagate lookup query expressions to parent.
             //
-            if (o.Member.DeclaringType != _results.EntityType)
+            if (property.DeclaringType != _results.EntityType)
             {
                 MemberExpression outer = o.Expression as MemberExpression;
                 if (!IsEntityPropertyReference(outer))
@@ -590,8 +606,6 @@ namespace BdsSoft.SharePoint.Linq
 
                 lookup = (PropertyInfo)outer.Member;
             }
-
-            PropertyInfo property = (PropertyInfo)o.Member;
 
             //
             // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
@@ -1091,13 +1105,35 @@ namespace BdsSoft.SharePoint.Linq
             right = CheckForNullableType(right, out rightIsNullableHasValue);
 
             //
+            // Is entity property reference?
+            //
+            bool ieprl = IsEntityPropertyReference(left);
+            bool ieprr = IsEntityPropertyReference(right);
+
+            //
+            // Detect UrlValue member calls.
+            //
+            if (!ieprl)
+            {
+                XmlElement res = CheckForUrlValueUrl(ref left, out ieprl, ppS, ppE);
+                if (res != null) //PARSE ERROR
+                    return res;
+            }
+            if (!ieprr)
+            {
+                XmlElement res = CheckForUrlValueUrl(ref right, out ieprr, ppS, ppE);
+                if (res != null) //PARSE ERROR
+                    return res;
+            }
+
+            //
             // If the left operand is a member expression (pointing to an entity property), we'll assume "normal ordering".
             // CAML queries always check the field 'f' against a value 'v' in the order f op v where 'op' is the operator.
             //
             bool correctOrder;
-            if (IsEntityPropertyReference(left))
+            if (ieprl)
                 correctOrder = true;
-            else if (IsEntityPropertyReference(right))
+            else if (ieprr)
                 correctOrder = false;
             else
             {
@@ -1105,7 +1141,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Check for references to entity properties. If none are found, the expression can be evaluated right away.
                 //
                 HashSet<PropertyInfo> eProps = new HashSet<PropertyInfo>();
-                FindEntityProperties(condition, predicateParameter);
+                FindEntityProperties(condition, predicateParameter, eProps);
                 if (eProps.Count == 0)
                 {
                     object o = Expression.Lambda(condition).Compile().DynamicInvoke();
@@ -1265,6 +1301,12 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
+            // Special treatment for UrlValues.
+            //
+            if (value is UrlValue)
+                value = ((UrlValue)value).Url;
+
+            //
             // Special treatment for detected date values.
             //
             if (dateValue != null)
@@ -1408,6 +1450,25 @@ namespace BdsSoft.SharePoint.Linq
             //
             c.AppendChild(GetFieldRef(entityProperty));
             return c;
+        }
+
+        private XmlElement CheckForUrlValueUrl(ref Expression e, out bool found, int ppS, int ppE)
+        {
+            found = false;
+
+            MemberExpression m = e as MemberExpression;
+            if (m != null && m.Member.DeclaringType == typeof(UrlValue) && IsEntityPropertyReference(m.Expression))
+            {
+                if (m.Member.Name != "Url")
+                {
+                    int ppS1 = ppS + m.Expression.ToString().Length + 1;
+                    return /* PARSE ERROR */ this.NonUrlCallOnUrlValue(ppS1, ppS1 + m.Member.Name.Length - 1);
+                }
+
+                e = m.Expression;
+                found = true;
+            }
+            return null;
         }
 
         /// <summary>
@@ -1711,7 +1772,7 @@ namespace BdsSoft.SharePoint.Linq
             // Create the set with entity properties used in projection and populate it.
             //
             _results.ProjectionProperties = new HashSet<PropertyInfo>();
-            FindEntityProperties(projection.Body, projection.Parameters[0]);
+            FindEntityProperties(projection.Body, projection.Parameters[0], _results.ProjectionProperties);
 
             //
             // Populate the ViewFields element with FieldRef elements pointing to the properties used in the projection.
@@ -1863,6 +1924,13 @@ namespace BdsSoft.SharePoint.Linq
                 return EnsureLambdaFree(me.Expression, parameter, ppS, ppE);
             }
             //
+            // Constants are lambda-free by definition.
+            //
+            else if (e is ConstantExpression)
+            {
+                return true;
+            }
+            //
             // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
             //
             else if ((pe = e as ParameterExpression) != null)
@@ -1953,9 +2021,9 @@ namespace BdsSoft.SharePoint.Linq
                 {
                     MemberBinding b = memberBindings.Dequeue();
 
-                    MemberAssignment ma = (MemberAssignment)b;
-                    MemberListBinding mlb = (MemberListBinding)b;
-                    MemberMemberBinding mmb = (MemberMemberBinding)b;
+                    MemberAssignment ma = b as MemberAssignment;
+                    MemberListBinding mlb = b as MemberListBinding;
+                    MemberMemberBinding mmb = b as MemberMemberBinding;
 
                     if (ma != null)
                         res = res && EnsureLambdaFree(ma.Expression, parameter, ppS, ppE);
@@ -1976,10 +2044,11 @@ namespace BdsSoft.SharePoint.Linq
             //
             else if ((mce = e as MethodCallExpression) != null)
             {
-                if (mce.Object != null)
-                    return EnsureLambdaFree(mce.Object, parameter, ppS, ppE);
-
                 bool res = true;
+
+                if (mce.Object != null)
+                    res = res && EnsureLambdaFree(mce.Object, parameter, ppS, ppE);
+
                 foreach (Expression ex in mce.Arguments)
                     res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
                 return res;
@@ -2010,13 +2079,6 @@ namespace BdsSoft.SharePoint.Linq
             else if ((tbe = e as TypeBinaryExpression) != null)
             {
                 return EnsureLambdaFree(tbe.Expression, parameter, ppS, ppE);
-            }
-            //
-            // Constants are lambda-free by definition.
-            //
-            else if (e is ConstantExpression)
-            {
-                return true;
             }
             //
             // Unknown construct (CHECK).
@@ -2058,7 +2120,8 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="e">Expression to search for references to entity properties.</param>
         /// <param name="parameter">Lambda parameter used by the expression. Used to detect references to the entity type itself.</param>
-        private void FindEntityProperties(Expression e, ParameterExpression parameter)
+        /// <param name="output">Output set to store results in.</param>
+        private void FindEntityProperties(Expression e, ParameterExpression parameter, HashSet<PropertyInfo> output)
         {
             #region Local variables
 
@@ -2100,7 +2163,13 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 PropertyInfo prop = me.Member as PropertyInfo;
                 if (prop != null && me.Member.DeclaringType == _results.EntityType && Helpers.GetFieldAttribute(prop) != null)
-                    _results.ProjectionProperties.Add(prop);
+                    output.Add(prop);
+
+                //
+                // Recursion.
+                //
+                if (me.Expression != parameter)
+                    FindEntityProperties(me.Expression, parameter, output);
             }
             //
             // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
@@ -2113,65 +2182,65 @@ namespace BdsSoft.SharePoint.Linq
                 if (pe == parameter)
                     foreach (PropertyInfo prop in _results.EntityType.GetProperties())
                         if (Helpers.GetFieldAttribute(prop) != null)
-                            _results.ProjectionProperties.Add(prop);
+                            output.Add(prop);
             }
             //
             // b.Method(b.Left, b.Right)
             //
             else if ((be = e as BinaryExpression) != null)
             {
-                FindEntityProperties(be.Left, parameter);
-                FindEntityProperties(be.Right, parameter);
+                FindEntityProperties(be.Left, parameter, output);
+                FindEntityProperties(be.Right, parameter, output);
             }
             //
             // u.Method(u.Operand)
             //
             else if ((ue = e as UnaryExpression) != null)
             {
-                FindEntityProperties(ue.Operand, parameter);
+                FindEntityProperties(ue.Operand, parameter, output);
             }
             //
             // (c.Test ? c.IfTrue : c.IfFalse)
             //
             else if ((ce = e as ConditionalExpression) != null)
             {
-                FindEntityProperties(ce.IfFalse, parameter);
-                FindEntityProperties(ce.IfTrue, parameter);
-                FindEntityProperties(ce.Test, parameter);
+                FindEntityProperties(ce.IfFalse, parameter, output);
+                FindEntityProperties(ce.IfTrue, parameter, output);
+                FindEntityProperties(ce.Test, parameter, output);
             }
             //
             // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
             //
             else if ((ie = e as InvocationExpression) != null)
             {
-                FindEntityProperties(ie.Expression, parameter);
+                FindEntityProperties(ie.Expression, parameter, output);
                 foreach (Expression ex in ie.Arguments)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             //
             // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
             //
             else if ((le = e as LambdaExpression) != null)
             {
-                FindEntityProperties(le.Body, parameter);
+                FindEntityProperties(le.Body, parameter, output);
                 foreach (Expression ex in le.Parameters)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             //
             // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
             //
             else if ((lie = e as ListInitExpression) != null)
             {
-                FindEntityProperties(lie.NewExpression, parameter);
+                FindEntityProperties(lie.NewExpression, parameter, output);
                 foreach (Expression ex in lie.Expressions)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             //
             // Member initialization expression requires recursive processing of MemberBinding objects.
             //
             else if ((mie = e as MemberInitExpression) != null)
             {
-                FindEntityProperties(mie.NewExpression, parameter);
+                FindEntityProperties(mie.NewExpression, parameter, output);
 
                 //
                 // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
@@ -2192,10 +2261,10 @@ namespace BdsSoft.SharePoint.Linq
                     MemberBinding b = memberBindings.Dequeue();
 
                     if ((ma = b as MemberAssignment) != null)
-                        FindEntityProperties(ma.Expression, parameter);
+                        FindEntityProperties(ma.Expression, parameter, output);
                     else if ((mlb = b as MemberListBinding) != null)
                         foreach (Expression ex in mlb.Expressions)
-                            FindEntityProperties(ex, parameter);
+                            FindEntityProperties(ex, parameter, output);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //
@@ -2210,9 +2279,9 @@ namespace BdsSoft.SharePoint.Linq
             else if ((mce = e as MethodCallExpression) != null)
             {
                 if (mce.Object != null)
-                    FindEntityProperties(mce.Object, parameter);
+                    FindEntityProperties(mce.Object, parameter, output);
                 foreach (Expression ex in mce.Arguments)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             //
             // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
@@ -2220,7 +2289,7 @@ namespace BdsSoft.SharePoint.Linq
             else if ((ne = e as NewExpression) != null)
             {
                 foreach (Expression ex in ne.Arguments)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             //
             // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
@@ -2228,11 +2297,11 @@ namespace BdsSoft.SharePoint.Linq
             else if ((nae = e as NewArrayExpression) != null)
             {
                 foreach (Expression ex in nae.Expressions)
-                    FindEntityProperties(ex, parameter);
+                    FindEntityProperties(ex, parameter, output);
             }
             else if ((tbe = e as TypeBinaryExpression) != null)
             {
-                FindEntityProperties(tbe.Expression, parameter);
+                FindEntityProperties(tbe.Expression, parameter, output);
             }
         }
 

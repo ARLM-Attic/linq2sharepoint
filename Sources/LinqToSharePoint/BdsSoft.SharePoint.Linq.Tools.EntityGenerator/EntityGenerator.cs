@@ -425,7 +425,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         //
                         // Generate additional helper property if needed.
                         //
-                        if (field.FillInChoiceEnabled)
+                        if (field.FillInChoiceEnabled && (field.FieldType == FieldType.Choice || field.FieldType == FieldType.MultiChoice))
                         {
                             //
                             // Fill-in choice field is of type Text. Create FieldAttribute accordingly.
@@ -436,7 +436,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                                 new CodeAttributeArgument(
                                     new CodeFieldReferenceExpression(
                                         new CodeTypeReferenceExpression(typeof(FieldType)),
-                                        "Text"
+                                        Enum.GetName(typeof(FieldType), field.FieldType)
                                     )
                                 )
                             );

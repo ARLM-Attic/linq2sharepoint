@@ -16,6 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
+using Microsoft.SharePoint;
+using System.Diagnostics;
 
 #endregion
 
@@ -25,48 +27,47 @@ namespace BdsSoft.SharePoint.Linq
     /// Represents a URL used in a SharePoint list. Extends a Uri with a friendly name that indicates the title of the URL.
     /// </summary>
     [Serializable]
-    public class Url : Uri
+    public sealed class UrlValue : ISerializable
     {
-        #region Constructors
+        #region Private members
 
         /// <summary>
-        /// Internal constructor for a Url field.
+        /// Internal storage of the URL's field value.
         /// </summary>
-        /// <param name="url">Url.</param>
-        /// <param name="friendlyName">Friendly name for the Url.</param>
-        internal Url(string url, string friendlyName)
-            : base(url)
-        {
-            FriendlyName = friendlyName;
-        }
+        private SPFieldUrlValue _urlValue;
 
         #endregion
 
-        #region Factory methods
+        #region Constructors
 
         /// <summary>
-        /// Parses a SharePoint Url field.
+        /// Creates a new Url instance based on a given SPFieldUrlValue.
         /// </summary>
-        /// <param name="s">SharePoint Url field value.</param>
-        /// <returns>Url object representing the specified field value.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "s")]
-        public static Url Parse(string s)
+        /// <param name="urlValue">SPFieldUrlValue instance representing the URL and description.</param>
+        internal UrlValue(SPFieldUrlValue urlValue)
         {
-            if (s == null)
-                throw new ArgumentNullException("s");
+            Debug.Assert(urlValue != null);
 
-            //
-            // Split the specified URL string. The first part contains the URI, the second part the friendly name.
-            //
-            string[] ss = s.Split(',');
-            if (ss.Length != 2)
-                throw new ArgumentException(Errors.InvalidUrlParseArgument, "s");
+            _urlValue = urlValue;
+        }
 
-            //
-            // Create Url object and return.
-            //
-            Url url = new Url(ss[0], ss[1]);
-            return url;
+        /// <summary>
+        /// Creates a new Url instance based on a given URI and a description.
+        /// </summary>
+        /// <param name="url">URL to refer to.</param>
+        /// <param name="description">Description for the URL.</param>
+        public UrlValue(string url, string description)
+        {
+            _urlValue = new SPFieldUrlValue();
+
+            if (url != null)
+            {
+                if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                    throw new Exception(); //EXTODO
+
+                _urlValue.Url = url;
+                _urlValue.Description = description;
+            }
         }
 
         #endregion
@@ -74,12 +75,19 @@ namespace BdsSoft.SharePoint.Linq
         #region Properties
 
         /// <summary>
-        /// Gets or sets the friendly name for the URL.
+        /// Gets the Url's description.
         /// </summary>
-        public string FriendlyName
+        public string Description
         {
-            get;
-            set;
+            get { return _urlValue.Description; }
+        }
+
+        /// <summary>
+        /// Gets the Url being referred to.
+        /// </summary>
+        public string Url
+        {
+            get { return _urlValue.Url; }
         }
 
         #endregion
@@ -87,75 +95,38 @@ namespace BdsSoft.SharePoint.Linq
         #region Methods
 
         /// <summary>
-        /// Returns the hash code for the URL.
+        /// Gets a hash code for the Url instance.
         /// </summary>
-        /// <returns>Hash code.</returns>
+        /// <returns></returns>
         public override int GetHashCode()
         {
-            return ((Uri)this).GetHashCode() ^ FriendlyName.GetHashCode();
+            return _urlValue.GetHashCode();
         }
 
         /// <summary>
-        /// Checks for equality with a given a Url instance.
+        /// Checks whether the given object is equal to the Url instance.
         /// </summary>
-        /// <param name="obj">Object to check for equality.</param>
-        /// <returns>True if both objects represent the same URL; false otherwise.</returns>
+        /// <param name="obj">Object to be compared to the current instance.</param>
+        /// <returns>true if the objects are equal; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
-            //
-            // Instances compared to null aren't equal.
-            //
-            if (obj == null)
-                return false;
+            UrlValue u = obj as UrlValue;
 
-            //
-            // Same reference?
-            //
-            if (object.ReferenceEquals(this, obj))
-                return true;
-
-            //
-            // Can only compare to a Url instance.
-            //
-            Url u = obj as Url;
             if (u == null)
                 return false;
-
-            //
-            // Same friendly name and same Uri required.
-            //
-            return (FriendlyName == u.FriendlyName) && ((Uri)this == (Uri)obj);
-        }
-
-        #endregion
-
-        #region Operators
-
-        /// <summary>
-        /// Checks for equality between a Url and a string-representation of a URL. Used for LINQ queries that compare a URL field with a string containing the URL's address.
-        /// </summary>
-        /// <param name="url">Url to check.</param>
-        /// <param name="address">URL address string representation to check.</param>
-        /// <returns>true if the Url and the string refer to the same URL; otherwise, false.</returns>
-        public static bool operator ==(Url url, string address)
-        {
-            if (url == null && address == null)
+            else if (object.ReferenceEquals(this, u))
                 return true;
-            else if (url == null || address == null)
-                return false;
             else
-                return url.AbsoluteUri == address;
+                return u.Description == _urlValue.Description && u.Url == _urlValue.Url;
         }
 
         /// <summary>
-        /// Checks for inequality between a Url and a string-representation of a URL. Used for LINQ queries that compare a URL field with a string containing the URL's address.
+        /// Gets a friendly string representation of the URL including the friendly name.
         /// </summary>
-        /// <param name="url">Url to check.</param>
-        /// <param name="address">URL address string representation to check.</param>
-        /// <returns>true if the Url and the string don't refer to the same URL; otherwise, false.</returns>
-        public static bool operator !=(Url url, string address)
+        /// <returns></returns>
+        public override string ToString()
         {
-            return !(url == address);
+            return _urlValue.ToString();
         }
 
         #endregion
@@ -167,9 +138,9 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="info">An instance of the SerializationInfo class containing the information required to serialize the new Url instance.</param>
         /// <param name="context">An instance of the StreamingContext class containing the source of the serialized stream associated with the new Uri instance.</param>
-        protected Url(SerializationInfo info, StreamingContext context) : base(info, context)
+        private UrlValue(SerializationInfo info, StreamingContext context)
         {
-            FriendlyName = (string)info.GetValue("FriendlyName", typeof(string));
+            _urlValue = (SPFieldUrlValue)info.GetValue("UrlValue", typeof(SPFieldUrlValue));
         }
 
         /// <summary>
@@ -178,10 +149,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="info">The SerializationInfo to populate with data.</param>
         /// <param name="context">The destination for this serialization.</param>
         [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
-        public new virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("FriendlyName", FriendlyName);
-            base.GetObjectData(info, context);
+            info.AddValue("UrlValue", _urlValue);
         }
 
         #endregion

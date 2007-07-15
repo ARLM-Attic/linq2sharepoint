@@ -235,6 +235,10 @@
     <value>Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule.</value>
     <comment>SP0020</comment>
   </data>
+  <data name="NonUrlCallOnUrlValue" xml:space="preserve">
+    <value>Only the Url property of Url fields is supported in query predicates.</value>
+    <comment>SP0025</comment>
+  </data>
   <data name="NullValuedLookupField" xml:space="preserve">
     <value>The Lookup field {0} has a null-valued LookupField: {1}. Did you mean a null-check on the Lookup field instead?</value>
     <comment>SP0023</comment>

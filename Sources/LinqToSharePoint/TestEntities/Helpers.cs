@@ -73,7 +73,22 @@ namespace Tests
             {
                 FieldAttribute fa = GetFieldAttribute(prop);
                 if (fa != null && !fa.PrimaryKey && !fa.ReadOnly)
-                    item[fa.Field] = prop.GetValue(e, null);
+                {
+                    object o = prop.GetValue(e, null);
+                    if (o == null)
+                        continue;
+
+                    if (fa.FieldType == FieldType.URL)
+                    {
+                        UrlValue uVal = (UrlValue)o;
+                        SPFieldUrlValue val = new SPFieldUrlValue();
+                        val.Url = uVal.Url;
+                        val.Description = uVal.Description;
+                        item[fa.Field] = val;
+                    }
+                    else
+                        item[fa.Field] = o;
+                }
             }
 
             item.Update();

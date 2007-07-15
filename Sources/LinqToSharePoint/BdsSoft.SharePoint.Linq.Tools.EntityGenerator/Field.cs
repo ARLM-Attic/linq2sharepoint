@@ -279,11 +279,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     field.RuntimeType = typeof(int);
                     break;
                 //
-                // URL == Url (helper object from LINQ to SharePoint)
+                // URL == UrlValue (helper object from LINQ to SharePoint)
                 //
                 case "URL":
                     field.FieldType = FieldType.URL;
-                    field.RuntimeType = typeof(Url);
+                    field.RuntimeType = typeof(UrlValue);
                     break;
                 //
                 // Choice and MultiChoice are mapped on helper enums, (optionally) together with a helper string field for fill-in choices.

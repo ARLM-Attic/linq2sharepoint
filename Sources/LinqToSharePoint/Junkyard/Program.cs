@@ -22,6 +22,24 @@ namespace Junkyard
         static void Main(string[] args)
         {
             SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
+
+            var lst = new SharePointList<UrlTest>(ctx);
+            UrlValue url = new UrlValue("http://www.bartdesmet.net", "Bart's homepage");
+            //var res = from u in lst where u.Homepage.Url != url.Url select u; //OK
+            //var res = from u in lst where u.Homepage == url select u; //OK (just compare by Url value)
+            //var res = from u in lst where u.Homepage == new UrlValue(null, null) select u; //OK
+            //var res = from u in lst where u.Homepage == null select u; //OK
+            //var res = from u in lst where u.Homepage.Url.Equals(url.Url) select u; //OK
+            //var res = from u in lst where u.Homepage.Url.Contains(url.Url) select u; //OK
+            //var res = from u in lst where u.Homepage.Url.StartsWith(url.Url) select u; //OK
+
+            //var res = from u in lst where u.Homepage.Description.Equals(url.Url) select u;
+            var res = from u in lst where u.Homepage.Description == "Test" select u;
+            SharePointListQueryVisualizer.TestShowVisualizer(res);
+
+            string s = "";
+
+            /*
             int fkey = 1;
 
             Type t = typeof(EntityRef<>).MakeGenericType(typeof(Junk));
@@ -31,8 +49,8 @@ namespace Junkyard
             {
             }
             Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { ctx, fkey }, null);
+            */
 
-            string s = "";
             /*
             var src = new SharePointDataContext(new Uri("http://wss3demo"));
             src.CheckListVersion = false;
@@ -235,6 +253,152 @@ namespace Junkyard
             //    Console.WriteLine("Start: {0} - End: {1} - Complete: {2}", t.StartDate, t.DueDate, t.Complete);
             //}
              */
+        }
+    }
+
+    /// <summary>
+    /// UrlTest
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("UrlTest", Id = "a1ff3460-b7d2-47cd-a986-e51b15f90dfd", Version = 1, Path = "/Lists/UrlTest")]
+    public partial class UrlTest : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private string _Title;
+
+        private global::BdsSoft.SharePoint.Linq.UrlValue _Homepage;
+
+        private int _ID;
+
+        private string _ContentType;
+
+        private global::System.Nullable<System.DateTime> _Modified;
+
+        private global::System.Nullable<System.DateTime> _Created;
+
+        private string _Version;
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Homepage
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Homepage", global::BdsSoft.SharePoint.Linq.FieldType.URL, Id = "f188c0ac-fc72-4a79-b10c-82f35f23caa5", Storage = "_Homepage")]
+        public global::BdsSoft.SharePoint.Linq.UrlValue Homepage
+        {
+            get
+            {
+                return this._Homepage;
+            }
+            set
+            {
+                if ((this._Homepage != value))
+                {
+                    this.OnPropertyChanging("Homepage");
+                    this._Homepage = value;
+                    this.OnPropertyChanged("Homepage");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 
