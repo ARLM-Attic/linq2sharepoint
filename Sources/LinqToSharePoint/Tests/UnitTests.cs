@@ -805,8 +805,8 @@ namespace Tests
         private List<Context<T>> GetContexts<T>() where T : class
         {
             return new List<Context<T>>() { 
-                       new Context<T>() { Name = "SP", List = new SharePointList<T>(GetSpContext()) },
-                       new Context<T>() { Name = "WS", List = new SharePointList<T>(GetWsContext()) }
+                       new Context<T>() { Name = "[SP]", List = new SharePointList<T>(GetSpContext()) },
+                       new Context<T>() { Name = "[WS]", List = new SharePointList<T>(GetWsContext()) }
                    };
         }
 
@@ -1400,6 +1400,34 @@ namespace Tests
             //
             var res = TestHelpersVb.Helpers.StrCmp(site).AsEnumerable();
             Assert.IsTrue(res.Count() == 1 && res.First().FirstName == "Bart", "Visual Basic string compare parse failure in query predicate.");
+        }
+
+        [TestMethod]
+        public void RowLimit()
+        {
+            //
+            // Create list RowLimit.
+            //
+            var lst = Test.Create<RowLimit>(site.RootWeb);
+
+            //
+            // Add items.
+            //
+            for (int i = 0; i < 120; i++)
+            {
+                Test.Add(lst, new RowLimit() { Title = "Test " + (i + 1) });
+            }
+
+            //
+            // Test default query.
+            //
+            foreach (var ctx in GetContexts<RowLimit>())
+            {
+                var src = ctx.List;
+                var res = (from p in src select p).AsEnumerable();
+
+                Assert.IsTrue(res.Count() == 120, "Query did not return enough results " + ctx.Name);
+            }
         }
 
         private static void AssertWsEqualsSp<T>(IQueryable<T> ws, IQueryable<T> sp, Expression<Func<T, bool>> predicate, string message)

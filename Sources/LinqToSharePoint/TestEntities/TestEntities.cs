@@ -1545,4 +1545,127 @@ namespace Tests
             }
         }
     }
+
+    /// <summary>
+    /// RowLimit
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("RowLimit", Id = "6029c877-df21-4157-8340-a7d21d6bb47e", Version = 0, Path = "/Lists/RowLimit")]
+    public partial class RowLimit : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private int _ID;
+
+        private string _ContentType;
+
+        private string _Title;
+
+        private global::System.Nullable<System.DateTime> _Modified;
+
+        private global::System.Nullable<System.DateTime> _Created;
+
+        private string _Version;
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
 }

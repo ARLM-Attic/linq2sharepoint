@@ -229,5 +229,14 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         #endregion
+
+        public XmlElement Paging(string nextPage)
+        {
+            XmlElement paging = _doc.CreateElement("Paging");
+            XmlAttribute licpna = _doc.CreateAttribute("ListItemCollectionPositionNext");
+            licpna.Value = nextPage;
+            paging.Attributes.Append(licpna);
+            return paging;
+        }
     }
 }

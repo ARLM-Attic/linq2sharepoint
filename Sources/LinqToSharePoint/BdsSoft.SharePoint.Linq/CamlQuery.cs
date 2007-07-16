@@ -709,11 +709,6 @@ namespace BdsSoft.SharePoint.Linq
                 query.AppendChild(_results.Order);
 
             //
-            // Set query options.
-            //
-            XmlNode queryOptions = _factory.CreateElement("QueryOptions");
-
-            //
             // Perform logging of the gathered information.
             //
             DoLogging(_wsList, _results.Where, _results.Order, _results.Projection);
@@ -729,27 +724,66 @@ namespace BdsSoft.SharePoint.Linq
                     yield break;
             }
 
-            XmlNode res;
-            try
-            {
-                res = _results.Context._wsProxy.GetListItems(_wsList, null, query, _results.Projection, _results.Top == null ? null : top.ToString(), queryOptions, null);
-            }
-            catch (SoapException ex)
-            {
-                throw RuntimeErrors.ConnectionExceptionWs(_results.Context._wsProxy.Url, ex);
-            }
-
             //
             // Store results in a DataSet for easy iteration.
             // TODO: the DataSet approach could be replaced by raw XML parsing.
             //
-            DataSet ds = new DataSet();
-            ds.ReadXml(new StringReader(res.OuterXml));
-            DataTable tbl = ds.Tables["row"];
+            DataSet results = new DataSet();
+
+            //
+            // Get data; server-side result paging could occur.
+            //
+            XmlNode res;
+            string nextPage = null;
+            bool page = false;
+            do
+            {
+                //
+                // Set query options.
+                //
+                XmlNode queryOptions = _factory.CreateElement("QueryOptions");
+                if (nextPage != null)
+                {
+                    XmlElement paging = _factory.Paging(nextPage);
+                    queryOptions.AppendChild(paging);
+                }
+
+                //
+                // Make web service call.
+                //
+                try
+                {
+                    res = _results.Context._wsProxy.GetListItems(_wsList, null, query, _results.Projection, _results.Top == null ? null : top.ToString(), queryOptions, null);
+                }
+                catch (SoapException ex)
+                {
+                    throw RuntimeErrors.ConnectionExceptionWs(_results.Context._wsProxy.Url, ex);
+                }
+
+                //
+                // Merge results.
+                //
+                DataSet ds = new DataSet();
+                ds.ReadXml(new StringReader(res.OuterXml));
+                results.Merge(ds);
+
+                //
+                // Avoid paging when a row limit has been set (Take query operator).
+                //
+                if (_results.Top != null && results.Tables["row"].Rows.Count >= _results.Top)
+                    break;
+
+                //
+                // Check for paging.
+                //
+                nextPage = res["rs:data"].GetAttribute("ListItemCollectionPositionNext");
+                page = !string.IsNullOrEmpty(nextPage);
+            } while (page);
 
             //
             // Make sure results are available. If not, return nothing.
             //
+            DataTable tbl = results.Tables["row"];
             if (tbl == null)
                 yield break;
 
@@ -1218,7 +1252,7 @@ namespace BdsSoft.SharePoint.Linq
             // The value can be converted to a string in case of (Multi)Choice results. Each choice value is separated by ;#, so we'll split the set of choices.
             // From this set of individual choices, we can filter out the known values, which will leave us with a possible fill-in choice.
             //
-            
+
             /*
             string s = ((string)val);
             if (s.StartsWith(";#")) //Trim at the begin
