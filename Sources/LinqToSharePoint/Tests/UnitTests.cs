@@ -8,7 +8,7 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
-//#define SWAP
+#region Namespace imports
 
 using System;
 using System.Text;
@@ -22,6 +22,8 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Net;
 
+#endregion
+
 namespace Tests
 {
     /// <summary>
@@ -33,29 +35,26 @@ namespace Tests
         private SPSite site;
         private SPWeb web;
         private Uri url = new Uri("http://wss3demo");
-        private SharePointDataContext spContext;
-        private SharePointDataContext wsContext;
 
         public UnitTests()
         {
             site = new SPSite(url.ToString());
             web = site.RootWeb;
+        }
 
-#if SWAP
-            wsContext = new SharePointDataContext(site);
-            wsContext.CheckListVersion = false;
+        private SharePointDataContext GetSpContext()
+        {
+            SharePointDataContext ctx = new SharePointDataContext(site);
+            ctx.CheckListVersion = false;
+            return ctx;
+        }
 
-            spContext = new SharePointDataContext(url);
-            spContext.CheckListVersion = false;
-            spContext.Credentials = CredentialCache.DefaultNetworkCredentials;
-#else
-            spContext = new SharePointDataContext(site);
-            spContext.CheckListVersion = false;
-
-            wsContext = new SharePointDataContext(url);
-            wsContext.CheckListVersion = false;
-            wsContext.Credentials = CredentialCache.DefaultNetworkCredentials;
-#endif
+        private SharePointDataContext GetWsContext()
+        {
+            SharePointDataContext ctx = new SharePointDataContext(url);
+            ctx.CheckListVersion = false;
+            ctx.Credentials = CredentialCache.DefaultNetworkCredentials;
+            return ctx;
         }
 
         private TestContext testContextInstance;
@@ -109,10 +108,13 @@ namespace Tests
             //
             // Empty list test.
             //
-            var src = new SharePointList<People>(spContext);
-            var res1 = (from p in src select p).AsEnumerable();
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+                var res = (from p in src select p).AsEnumerable();
 
-            Assert.IsTrue(res1.Count() == 0, "Query on empty list did return results.");
+                Assert.IsTrue(res.Count() == 0, "Query on empty list did return results " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -132,10 +134,13 @@ namespace Tests
             //
             // Test default query.
             //
-            var src = new SharePointList<People>(spContext);
-            var res1 = (from p in src select p).AsEnumerable();
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+                var res = (from p in src select p).AsEnumerable();
 
-            Assert.IsTrue(res1.Count() == 1, "Query did not return results.");
+                Assert.IsTrue(res.Count() == 1, "Query did not return results " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -157,10 +162,13 @@ namespace Tests
             //
             // Test default query.
             //
-            var src = new SharePointList<People>(spContext);
-            var res1 = (from p in src orderby p.FirstName select p).First();
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+                var res = (from p in src orderby p.FirstName select p).First();
 
-            Assert.IsTrue(res1 != null && res1.FirstName == "Bart", "Wrong result; source contains an item.");
+                Assert.IsTrue(res != null && res.FirstName == "Bart", "Wrong result; source contains an item " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -182,10 +190,13 @@ namespace Tests
             //
             // Test default query.
             //
-            var src = new SharePointList<People>(spContext);
-            var res1 = (from p in src where p.Age == 25 select p).FirstOrDefault();
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+                var res = (from p in src where p.Age == 25 select p).FirstOrDefault();
 
-            Assert.IsTrue(res1 == null, "Query should return null.");
+                Assert.IsTrue(res == null, "Query should return null " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -205,9 +216,13 @@ namespace Tests
             //
             // Get entity by id.
             //
-            var src = new SharePointList<People>(spContext);
-            People _p1 = src.GetEntityById(1);
-            Assert.IsTrue(_p1.FirstName == p1.FirstName && _p1.LastName == p1.LastName && _p1.Age == p1.Age && _p1.IsMember == p1.IsMember && _p1.ShortBiography == p1.ShortBiography, "Invalid entity returned by GetEntityById method");
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+
+                People _p1 = src.GetEntityById(1);
+                Assert.IsTrue(_p1.FirstName == p1.FirstName && _p1.LastName == p1.LastName && _p1.Age == p1.Age && _p1.IsMember == p1.IsMember && _p1.ShortBiography == p1.ShortBiography, "Invalid entity returned by GetEntityById method " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -227,14 +242,17 @@ namespace Tests
             //
             // Get entity twice.
             //
-            var src = new SharePointList<People>(spContext);
-            var res1 = (from p in src where p.Age == 24 select p).First();
-            var res2 = (from p in src where p.IsMember select p).First();
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+                var res1 = (from p in src where p.Age == 24 select p).First();
+                var res2 = (from p in src where p.IsMember select p).First();
 
-            //
-            // Should refer to the same object.
-            //
-            Assert.IsTrue(object.ReferenceEquals(res1, res2), "Entity identity check failed (EnsureEntityIdentity).");
+                //
+                // Should refer to the same object.
+                //
+                Assert.IsTrue(object.ReferenceEquals(res1, res2), "Entity identity check failed (EnsureEntityIdentity) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -256,25 +274,25 @@ namespace Tests
             //
             // List source.
             //
-            var src = new SharePointList<People>(spContext);
+            //var src = new SharePointList<People>(spContext);
 
             //
             // Using ==
             //
-            AssertWhere(src, p => p.FirstName == "Bart", 1, "Equality check failed (==)");
-            AssertWhere(src, p => p.FirstName != "Bart", 1, "Inequality check failed (!=)");
+            AssertWhere<People>(p => p.FirstName == "Bart", 1, "Equality check failed (==)");
+            AssertWhere<People>(p => p.FirstName != "Bart", 1, "Inequality check failed (!=)");
 
             //
             // Using .Equals
             //
-            AssertWhere(src, p => p.FirstName.Equals("Bart"), 1, "Equality check failed (.Equals)");
-            AssertWhere(src, p => !p.FirstName.Equals("Bart"), 1, "Inequality check failed (!.Equals)");
+            AssertWhere<People>(p => p.FirstName.Equals("Bart"), 1, "Equality check failed (.Equals)");
+            AssertWhere<People>(p => !p.FirstName.Equals("Bart"), 1, "Inequality check failed (!.Equals)");
 
             //
             // Using == inverse order
             //
-            AssertWhere(src, p => "Bart" == p.FirstName, 1, "Equality check failed (== inverse order)");
-            AssertWhere(src, p => "Bart" != p.FirstName, 1, "Inquality check failed (!= inverse order)");
+            AssertWhere<People>(p => "Bart" == p.FirstName, 1, "Equality check failed (== inverse order)");
+            AssertWhere<People>(p => "Bart" != p.FirstName, 1, "Inquality check failed (!= inverse order)");
 
             //
             // Using .Equals inverse order (NOT SUPPORTED)
@@ -284,22 +302,22 @@ namespace Tests
             //
             // Using == with .ToString
             //
-            AssertWhere(src, p => p.FirstName.ToString() == "Bart".ToString(), 1, "Equality check failed (== with .ToString)");
+            AssertWhere<People>(p => p.FirstName.ToString() == "Bart".ToString(), 1, "Equality check failed (== with .ToString)");
 
             //
             // Using .Equals with .ToString
             //
-            AssertWhere(src, p => p.FirstName.ToString().Equals("Bart".ToString()), 1, "Equality check failed (.Equals with .ToString)");
+            AssertWhere<People>(p => p.FirstName.ToString().Equals("Bart".ToString()), 1, "Equality check failed (.Equals with .ToString)");
 
             //
             // Using == with .ToString
             //
-            AssertWhere(src, p => p.FirstName.ToString() == "Bart".ToString(), 1, "Equality check failed (== with .ToString inverse order)");
+            AssertWhere<People>(p => p.FirstName.ToString() == "Bart".ToString(), 1, "Equality check failed (== with .ToString inverse order)");
 
             //
             // Using .Equals with .ToString
             //
-            //AssertWhere(src, p => p.FirstName.ToString().Equals("Bart".ToString()), 1, "Equality check failed (.Equals with .ToString inverse order)");
+            AssertWhere<People>(p => p.FirstName.ToString().Equals("Bart".ToString()), 1, "Equality check failed (.Equals with .ToString inverse order)");
         }
 
         [TestMethod]
@@ -319,41 +337,36 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Gt
             //
-            AssertWhere(src, p => p.Age > 50, 1, "Invalid Gt result");
-            AssertWhere(src, p => 50 < p.Age, 1, "Invalid Gt result (inverse)");
-            AssertWhere(src, p => !(p.Age <= 50), 1, "Invalid Gt result (negated)");
-            AssertWhere(src, p => !(50 >= p.Age), 1, "Invalid Gt result (negated) (inverse)");
+            AssertWhere<People>(p => p.Age > 50, 1, "Invalid Gt result");
+            AssertWhere<People>(p => 50 < p.Age, 1, "Invalid Gt result (inverse)");
+            AssertWhere<People>(p => !(p.Age <= 50), 1, "Invalid Gt result (negated)");
+            AssertWhere<People>(p => !(50 >= p.Age), 1, "Invalid Gt result (negated) (inverse)");
 
             //
             // Geq
             //
-            AssertWhere(src, p => p.Age >= 52, 1, "Invalid Geq result");
-            AssertWhere(src, p => 52 <= p.Age, 1, "Invalid Geq result (inverse)");
-            AssertWhere(src, p => !(p.Age < 52), 1, "Invalid Geq result (negated)");
-            AssertWhere(src, p => !(52 > p.Age), 1, "Invalid Geq result (negated) (inverse)");
+            AssertWhere<People>(p => p.Age >= 52, 1, "Invalid Geq result");
+            AssertWhere<People>(p => 52 <= p.Age, 1, "Invalid Geq result (inverse)");
+            AssertWhere<People>(p => !(p.Age < 52), 1, "Invalid Geq result (negated)");
+            AssertWhere<People>(p => !(52 > p.Age), 1, "Invalid Geq result (negated) (inverse)");
 
             //
             // Lt
             //
-            AssertWhere(src, p => p.Age < 25, 1, "Invalid Lt result");
-            AssertWhere(src, p => 25 > p.Age, 1, "Invalid Lt result (inverse)");
-            AssertWhere(src, p => !(p.Age >= 25), 1, "Invalid Lt result (negated)");
-            AssertWhere(src, p => !(25 <= p.Age), 1, "Invalid Lt result (negated) (inverse)");
+            AssertWhere<People>(p => p.Age < 25, 1, "Invalid Lt result");
+            AssertWhere<People>(p => 25 > p.Age, 1, "Invalid Lt result (inverse)");
+            AssertWhere<People>(p => !(p.Age >= 25), 1, "Invalid Lt result (negated)");
+            AssertWhere<People>(p => !(25 <= p.Age), 1, "Invalid Lt result (negated) (inverse)");
 
             //
             // Leq
             //
-            AssertWhere(src, p => p.Age <= 24, 1, "Invalid Leq result");
-            AssertWhere(src, p => 24 >= p.Age, 1, "Invalid Leq result (inverse)");
-            AssertWhere(src, p => !(p.Age > 24), 1, "Invalid Leq result (negated)");
-            AssertWhere(src, p => !(24 < p.Age), 1, "Invalid Leq result (negated) (inverse)");
+            AssertWhere<People>(p => p.Age <= 24, 1, "Invalid Leq result");
+            AssertWhere<People>(p => 24 >= p.Age, 1, "Invalid Leq result (inverse)");
+            AssertWhere<People>(p => !(p.Age > 24), 1, "Invalid Leq result (negated)");
+            AssertWhere<People>(p => !(24 < p.Age), 1, "Invalid Leq result (negated) (inverse)");
         }
 
         [TestMethod]
@@ -373,15 +386,10 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Test queries.
             //
-            AssertWhere(src, p => p.IsMember, 1, "Invalid result for Boolean check (true)");
-            AssertWhere(src, p => !p.IsMember, 1, "Invalid result for Boolean check (false)");
+            AssertWhere<People>(p => p.IsMember, 1, "Invalid result for Boolean check (true)");
+            AssertWhere<People>(p => !p.IsMember, 1, "Invalid result for Boolean check (false)");
         }
 
         [TestMethod]
@@ -403,20 +411,15 @@ namespace Tests
             Test.Add(lst, p3);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Test queries.
             //
-            AssertWhere(src, p => p.SecondAge.HasValue, 1, "Invalid result for nullable query (1)");
-            AssertWhere(src, p => !p.SecondAge.HasValue, 2, "Invalid result for nullable query (2)");
-            AssertWhere(src, p => p.SecondAge != null, 1, "Invalid result for nullable query (3)");
-            AssertWhere(src, p => p.SecondAge == null, 2, "Invalid result for nullable query (4)");
-            AssertWhere(src, p => p.SecondAge == 24, 1, "Invalid result for nullable query (5)");
-            AssertWhere(src, p => p.SecondAge.Value == 24, 1, "Invalid result for nullable query (6)");
-            AssertWhere(src, p => p.SecondAge >= 25, 0, "Invalid result for nullable query (7)");
+            AssertWhere<People>(p => p.SecondAge.HasValue, 1, "Invalid result for nullable query (1)");
+            AssertWhere<People>(p => !p.SecondAge.HasValue, 2, "Invalid result for nullable query (2)");
+            AssertWhere<People>(p => p.SecondAge != null, 1, "Invalid result for nullable query (3)");
+            AssertWhere<People>(p => p.SecondAge == null, 2, "Invalid result for nullable query (4)");
+            AssertWhere<People>(p => p.SecondAge == 24, 1, "Invalid result for nullable query (5)");
+            AssertWhere<People>(p => p.SecondAge.Value == 24, 1, "Invalid result for nullable query (6)");
+            AssertWhere<People>(p => p.SecondAge >= 25, 0, "Invalid result for nullable query (7)");
         }
 
         [TestMethod]
@@ -436,24 +439,19 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // StartsWith empty string.
             //
-            AssertWhere(src, p => p.LastName.StartsWith(""), 2, "StartsWith with empty string failed");
+            AssertWhere<People>(p => p.LastName.StartsWith(""), 2, "StartsWith with empty string failed");
 
             //
             // StartsWith with valid parameter.
             //
-            AssertWhere(src, p => p.LastName.StartsWith("De"), 1, "StartsWith with valid parameter failed");
+            AssertWhere<People>(p => p.LastName.StartsWith("De"), 1, "StartsWith with valid parameter failed");
 
             //
             // StartsWith without results.
             //
-            AssertWhere(src, p => p.FirstName.StartsWith("C"), 0, "Empty StartsWith failed");
+            AssertWhere<People>(p => p.FirstName.StartsWith("C"), 0, "Empty StartsWith failed");
         }
 
         [TestMethod]
@@ -473,24 +471,19 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Contains empty string.
             //
-            AssertWhere(src, p => p.ShortBiography.Contains(""), 2, "Contains with empty string failed");
+            AssertWhere<People>(p => p.ShortBiography.Contains(""), 2, "Contains with empty string failed");
 
             //
             // Contains with valid parameter.
             //
-            AssertWhere(src, p => p.ShortBiography.Contains("Corp"), 1, "Contains with valid parameter failed");
+            AssertWhere<People>(p => p.ShortBiography.Contains("Corp"), 1, "Contains with valid parameter failed");
 
             //
             // Contains without results.
             //
-            AssertWhere(src, p => p.ShortBiography.Contains("azerty"), 0, "Empty Contains failed");
+            AssertWhere<People>(p => p.ShortBiography.Contains("azerty"), 0, "Empty Contains failed");
         }
 
         [TestMethod]
@@ -510,33 +503,36 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Test queries.
             //
-            AssertWhere(src, p => p.FirstName == null, 1, "Invalid IsNull result");
-            //AssertWhere(src, p => p.FirstName.Equals(null), 1, "Invalid IsNull result (.Equals)");
-            AssertWhere(src, p => null == p.FirstName, 1, "Invalid IsNull result (inverse)");
+            AssertWhere<People>(p => p.FirstName == null, 1, "Invalid IsNull result");
+            AssertWhere<People>(p => null == p.FirstName, 1, "Invalid IsNull result (inverse)");
 
-            AssertWhere(src, p => p.FirstName != null, 1, "Invalid IsNotNull result");
-            //AssertWhere(src, p => !p.FirstName.Equals(null), 1, "Invalid IsNotNull result (.Equals)");
-            AssertWhere(src, p => null != p.FirstName, 1, "Invalid IsNotNull result (inverse)");
+            AssertWhere<People>(p => p.FirstName != null, 1, "Invalid IsNotNull result");
+            AssertWhere<People>(p => null != p.FirstName, 1, "Invalid IsNotNull result (inverse)");
 
-            AssertWhere(src, p => !(p.FirstName == null), 1, "Invalid IsNotNull result 2");
-            AssertWhere(src, p => !(null == p.FirstName), 1, "Invalid IsNotNull result 2 (inverse)");
+            AssertWhere<People>(p => !(p.FirstName == null), 1, "Invalid IsNotNull result 2");
+            AssertWhere<People>(p => !(null == p.FirstName), 1, "Invalid IsNotNull result 2 (inverse)");
+
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
+
+                var res1 = (from p in src where p.FirstName.Equals(null) select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().ID == 1, "Invalid IsNull result (.Equals) " + ctx.Name);
+                var res2 = (from p in src where !p.FirstName.Equals(null) select p).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1 && res2.First().ID == 2, "Invalid IsNotNull result (.Equals) " + ctx.Name);
+            }
 
             //
             // Use of variable.
             //
             string s = null;
-            AssertWhere(src, p => p.FirstName == s, 1, "Invalid IsNull result (variable)");
-            AssertWhere(src, p => s == p.FirstName, 1, "Invalid IsNull result (variable) (inverse)");
+            AssertWhere<People>(p => p.FirstName == s, 1, "Invalid IsNull result (variable)");
+            AssertWhere<People>(p => s == p.FirstName, 1, "Invalid IsNull result (variable) (inverse)");
 
-            AssertWhere(src, p => p.FirstName != s, 1, "Invalid IsNotNull result (variable)");
-            AssertWhere(src, p => s != p.FirstName, 1, "Invalid IsNotNull result (variable) (inverse)");
+            AssertWhere<People>(p => p.FirstName != s, 1, "Invalid IsNotNull result (variable)");
+            AssertWhere<People>(p => s != p.FirstName, 1, "Invalid IsNotNull result (variable) (inverse)");
         }
 
         [TestMethod]
@@ -556,15 +552,10 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Projections.
             //
-            AssertProject(src, p => p.Age, new double[] { 24, 52 }, "Integer projection failure");
-            AssertProject(src, p => p.FirstName + " " + p.LastName, new string[] { "Bart De Smet", "Bill Gates" }, "String projection failure");
+            AssertProject<People, double>(p => p.Age, new double[] { 24, 52 }, "Integer projection failure");
+            AssertProject<People, string>(p => p.FirstName + " " + p.LastName, new string[] { "Bart De Smet", "Bill Gates" }, "String projection failure");
         }
 
         [TestMethod]
@@ -583,29 +574,29 @@ namespace Tests
             Test.Add(lst, p1);
             Test.Add(lst, p2);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
 
-            //
-            // Complex projection. Should trigger recursive parsing of the projection expression to find view fields.
-            //
-            var res = (from p in src
-                       where p.Age == 24
-                       select new
-                              {
-                                  p.FirstName,
-                                  Ages = new double[] { p.Age },
-                                  Ages2 = new List<double>() { p.Age },
-                                  DoubleAge = p.Age * 2,
-                                  Member = p.IsMember ? p.IsMember : p.IsMember,
-                                  NoMember = !p.IsMember,
-                                  NameLower = (p.FirstName + " " + p.LastName).ToLower(),
-                                  LastName = new String(p.LastName.ToCharArray()),
-                                  CharactersInBio = Helper(p.ShortBiography)
-                              }).AsEnumerable().First();
-            Assert.IsTrue(res.FirstName == "Bart" && res.Ages[0] == 24 && res.Ages2[0] == 24 && res.DoubleAge == 48 && res.Member == true && res.NoMember == false && res.NameLower == "bart de smet" && res.LastName == "De Smet" && res.CharactersInBio == 15);
+                //
+                // Complex projection. Should trigger recursive parsing of the projection expression to find view fields.
+                //
+                var res = (from p in src
+                           where p.Age == 24
+                           select new
+                                  {
+                                      p.FirstName,
+                                      Ages = new double[] { p.Age },
+                                      Ages2 = new List<double>() { p.Age },
+                                      DoubleAge = p.Age * 2,
+                                      Member = p.IsMember ? p.IsMember : p.IsMember,
+                                      NoMember = !p.IsMember,
+                                      NameLower = (p.FirstName + " " + p.LastName).ToLower(),
+                                      LastName = new String(p.LastName.ToCharArray()),
+                                      CharactersInBio = Helper(p.ShortBiography)
+                                  }).AsEnumerable().First();
+                Assert.IsTrue(res.FirstName == "Bart" && res.Ages[0] == 24 && res.Ages2[0] == 24 && res.DoubleAge == 48 && res.Member == true && res.NoMember == false && res.NameLower == "bart de smet" && res.LastName == "De Smet" && res.CharactersInBio == 15);
+            }
         }
 
         private int Helper(string s)
@@ -630,19 +621,11 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Take operation.
             //
-            var res1 = (from p in src select p).Take(1).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1, "Take failed (1).");
-            var res2 = (from p in src select p).Take(0).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 0, "Take failed (2).");
-            var res3 = (from p in src select p).Take(3).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 2, "Take failed (3).");
+            AssertTake<People>(1, 1, "Take failed (1).");
+            AssertTake<People>(0, 0, "Take failed (2).");
+            AssertTake<People>(3, 2, "Take failed (3).");
         }
 
         [TestMethod]
@@ -667,28 +650,28 @@ namespace Tests
             Test.Add(lst, p4);
             Test.Add(lst, p5);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
 
-            //
-            // Ascending.
-            //
-            var res1 = (from p in src orderby p.FirstName select p).AsEnumerable().ToArray();
-            Assert.IsTrue(res1.First().FirstName == "Anders" && res1.Last().FirstName == "Ray", "Ascending order failed");
+                //
+                // Ascending.
+                //
+                var res1 = (from p in src orderby p.FirstName select p).AsEnumerable().ToArray();
+                Assert.IsTrue(res1.First().FirstName == "Anders" && res1.Last().FirstName == "Ray", "Ascending order failed " + ctx.Name);
 
-            //
-            // Descending.
-            //
-            var res2 = (from p in src orderby p.LastName descending select p).AsEnumerable().ToArray();
-            Assert.IsTrue(res2.First().LastName == "Simpson" && res2.Last().LastName == "De Smet", "Descending order failed");
+                //
+                // Descending.
+                //
+                var res2 = (from p in src orderby p.LastName descending select p).AsEnumerable().ToArray();
+                Assert.IsTrue(res2.First().LastName == "Simpson" && res2.Last().LastName == "De Smet", "Descending order failed " + ctx.Name);
 
-            //
-            // Multiple.
-            //
-            var res3 = (from p in src orderby p.Age ascending, p.FirstName descending select p).AsEnumerable().ToArray();
-            Assert.IsTrue(res3.First().LastName == "Simpson" && res3.Last().LastName == "Gates", "OrderBy/ThenBy failed");
+                //
+                // Multiple.
+                //
+                var res3 = (from p in src orderby p.Age ascending, p.FirstName descending select p).AsEnumerable().ToArray();
+                Assert.IsTrue(res3.First().LastName == "Simpson" && res3.Last().LastName == "Gates", "OrderBy/ThenBy failed " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -714,35 +697,30 @@ namespace Tests
             Test.Add(lst, p5);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // And.
             //
-            AssertWhere(src, p => p.FirstName == "Bart" && p.Age >= 24, 1, "And failed (1).");
-            AssertWhere(src, p => p.ShortBiography.Contains("Microsoft") && p.Age == 52, 2, "And failed (2).");
-            AssertWhere(src, p => p.FirstName.StartsWith("B") && p.IsMember && p.ShortBiography.Contains("founder"), 1, "And failed (3).");
+            AssertWhere<People>(p => p.FirstName == "Bart" && p.Age >= 24, 1, "And failed (1).");
+            AssertWhere<People>(p => p.ShortBiography.Contains("Microsoft") && p.Age == 52, 2, "And failed (2).");
+            AssertWhere<People>(p => p.FirstName.StartsWith("B") && p.IsMember && p.ShortBiography.Contains("founder"), 1, "And failed (3).");
 
             //
             // Or.
             //
-            AssertWhere(src, p => p.Age == 24 || p.Age == 52, 3, "Or failed (1).");
-            AssertWhere(src, p => p.Age == 52 || p.FirstName == "Bart", 4, "Or failed (2).");
-            AssertWhere(src, p => p.Age >= 40 || p.Age <= 20 || p.Age == 24, 5, "Or failed (3).");
+            AssertWhere<People>(p => p.Age == 24 || p.Age == 52, 3, "Or failed (1).");
+            AssertWhere<People>(p => p.Age == 52 || p.FirstName == "Bart", 4, "Or failed (2).");
+            AssertWhere<People>(p => p.Age >= 40 || p.Age <= 20 || p.Age == 24, 5, "Or failed (3).");
 
             //
             // Mixed.
             //
-            AssertWhere(src, p => p.FirstName.StartsWith("B") && (p.Age == 24 || p.Age == 52), 2, "And/Or failed (1).");
-            AssertWhere(src, p => p.FirstName.StartsWith("B") || (p.FirstName == "Anders" && p.Age >= 40), 4, "And/Or failed (2).");
+            AssertWhere<People>(p => p.FirstName.StartsWith("B") && (p.Age == 24 || p.Age == 52), 2, "And/Or failed (1).");
+            AssertWhere<People>(p => p.FirstName.StartsWith("B") || (p.FirstName == "Anders" && p.Age >= 40), 4, "And/Or failed (2).");
 
             //
             // De Morgan.
             //
-            AssertWhere(src, p => !(p.FirstName == "Bart" && p.Age <= 24), 3, "De Morgan failed (1).");
-            AssertWhere(src, p => !(p.FirstName == "Bill" || p.LastName == "De Smet"), 3, "De Morgan failed (2).");
+            AssertWhere<People>(p => !(p.FirstName == "Bart" && p.Age <= 24), 3, "De Morgan failed (1).");
+            AssertWhere<People>(p => !(p.FirstName == "Bill" || p.LastName == "De Smet"), 3, "De Morgan failed (2).");
         }
 
         [TestMethod]
@@ -768,19 +746,14 @@ namespace Tests
             Test.Add(lst, p5);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Optimize.
             //
-            AssertWhere(src, p => 1 == 1, 5, "Boolean optimization failed (1).");
-            AssertWhere(src, p => 1 == 0, 0, "Boolean optimization failed (2).");
-            AssertWhere(src, p => p.FirstName == "Bart" && 1 == 1, 2, "Boolean optimization failed (3).");
-            AssertWhere(src, p => p.FirstName == "Bart" && 1 == 0, 0, "Boolean optimization failed (4).");
-            AssertWhere(src, p => p.FirstName == "Bart" || 1 == 1, 5, "Boolean optimization failed (5).");
-            AssertWhere(src, p => p.FirstName == "Bart" || 1 == 0, 2, "Boolean optimization failed (6).");
+            AssertWhere<People>(p => 1 == 1, 5, "Boolean optimization failed (1).");
+            AssertWhere<People>(p => 1 == 0, 0, "Boolean optimization failed (2).");
+            AssertWhere<People>(p => p.FirstName == "Bart" && 1 == 1, 2, "Boolean optimization failed (3).");
+            AssertWhere<People>(p => p.FirstName == "Bart" && 1 == 0, 0, "Boolean optimization failed (4).");
+            AssertWhere<People>(p => p.FirstName == "Bart" || 1 == 1, 5, "Boolean optimization failed (5).");
+            AssertWhere<People>(p => p.FirstName == "Bart" || 1 == 0, 2, "Boolean optimization failed (6).");
         }
 
         [TestMethod]
@@ -799,31 +772,48 @@ namespace Tests
             Test.Add(lst, p1);
             Test.Add(lst, p2);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
+            foreach (var ctx in GetContexts<People>())
+            {
+                //
+                // List source.
+                //
+                var src = ctx.List;
 
-            //
-            // Multipe where clauses.
-            //
-            var res1 = (from p in src where p.Age >= 24 where p.FirstName == "Bart" select p).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1 && res1.First().FirstName == "Bart", "Invalid result for multiple where clauses (1).");
+                //
+                // Multipe where clauses.
+                //
+                var res1 = (from p in src where p.Age >= 24 where p.FirstName == "Bart" select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().FirstName == "Bart", "Invalid result for multiple where clauses (1) " + ctx.Name + ".");
 
-            var res2 = (from p in src where p.FirstName == "Bart" where p.Age >= 24 select p).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 1 && res2.First().FirstName == "Bart", "Invalid result for multiple where clauses (2).");
+                var res2 = (from p in src where p.FirstName == "Bart" where p.Age >= 24 select p).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1 && res2.First().FirstName == "Bart", "Invalid result for multiple where clauses (2) " + ctx.Name + ".");
 
-            var res3 = (from p in src where 1 == 1 where p.FirstName == "Bart" select p).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 1 && res3.First().FirstName == "Bart", "Invalid result for multiple where clauses (3).");
+                var res3 = (from p in src where 1 == 1 where p.FirstName == "Bart" select p).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 1 && res3.First().FirstName == "Bart", "Invalid result for multiple where clauses (3) " + ctx.Name + ".");
 
-            var res4 = (from p in src where p.FirstName == "Bart" where 1 == 1 select p).AsEnumerable();
-            Assert.IsTrue(res4.Count() == 1 && res4.First().FirstName == "Bart", "Invalid result for multiple where clauses (4).");
+                var res4 = (from p in src where p.FirstName == "Bart" where 1 == 1 select p).AsEnumerable();
+                Assert.IsTrue(res4.Count() == 1 && res4.First().FirstName == "Bart", "Invalid result for multiple where clauses (4) " + ctx.Name + ".");
 
-            var res5 = (from p in src where 1 == 0 where p.FirstName == "Bart" select p).AsEnumerable();
-            Assert.IsTrue(res5.Count() == 0, "Invalid result for multiple where clauses (5).");
+                var res5 = (from p in src where 1 == 0 where p.FirstName == "Bart" select p).AsEnumerable();
+                Assert.IsTrue(res5.Count() == 0, "Invalid result for multiple where clauses (5) " + ctx.Name + ".");
 
-            var res6 = (from p in src where p.FirstName == "Bart" where 1 == 0 select p).AsEnumerable();
-            Assert.IsTrue(res6.Count() == 0, "Invalid result for multiple where clauses (6).");
+                var res6 = (from p in src where p.FirstName == "Bart" where 1 == 0 select p).AsEnumerable();
+                Assert.IsTrue(res6.Count() == 0, "Invalid result for multiple where clauses (6) " + ctx.Name + ".");
+            }
+        }
+
+        private List<Context<T>> GetContexts<T>() where T : class
+        {
+            return new List<Context<T>>() { 
+                       new Context<T>() { Name = "SP", List = new SharePointList<T>(GetSpContext()) },
+                       new Context<T>() { Name = "WS", List = new SharePointList<T>(GetWsContext()) }
+                   };
+        }
+
+        class Context<T> where T : class
+        {
+            public SharePointList<T> List { get; set; }
+            public string Name { get; set; }
         }
 
         [TestMethod]
@@ -858,20 +848,20 @@ namespace Tests
             item["Options"] = "C & D";
             item.Update();
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<ChoiceTest>(spContext);
+            foreach (var ctx in GetContexts<ChoiceTest>())
+            {
+                var src = ctx.List;
 
-            //
-            // Queries.
-            //
-            var res1 = (from c in src where c.Options == Options.A select c).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "1", "Test for Choice fields failed (1).");
-            var res2 = (from c in src where c.Options == Options.CD select c).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "2", "Test for Choice fields failed (2).");
-            var res3 = (from c in src where c.Options == Options.A || c.Options == Options.CD select c).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 2, "Test for Choice fields failed (3).");
+                //
+                // Queries.
+                //
+                var res1 = (from c in src where c.Options == Options.A select c).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "1", "Test for Choice fields failed (1) " + ctx.Name);
+                var res2 = (from c in src where c.Options == Options.CD select c).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "2", "Test for Choice fields failed (2) " + ctx.Name);
+                var res3 = (from c in src where c.Options == Options.A || c.Options == Options.CD select c).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 2, "Test for Choice fields failed (3) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -914,24 +904,24 @@ namespace Tests
             item["Options"] = "B";
             item.Update();
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<ChoiceTest2>(spContext);
+            foreach (var ctx in GetContexts<ChoiceTest2>())
+            {
+                var src = ctx.List;
 
-            //
-            // Queries.
-            //
-            var res1 = (from c in src where c.Options == Options2.A select c).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoice fields failed (1).");
-            var res2 = (from c in src where c.Options == Options2.CD select c).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3", "Test for MultiChoice fields failed (2).");
-            var res3 = (from c in src where c.Options == (Options2.A | Options2.B) select c).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 0, "Test for MultiChoice fields failed (3).");
-            var res4 = (from c in src where c.Options == Options2.A || c.Options == Options2.B select c).AsEnumerable();
-            Assert.IsTrue(res4.Count() == 3, "Test for MultiChoice fields failed (4).");
-            var res5 = (from c in src where c.Options != Options2.A select c).AsEnumerable();
-            Assert.IsTrue(res5.Count() == 2, "Test for MultiChoice fields failed (5).");
+                //
+                // Queries.
+                //
+                var res1 = (from c in src where c.Options == Options2.A select c).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoice fields failed (1) " + ctx.Name);
+                var res2 = (from c in src where c.Options == Options2.CD select c).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3", "Test for MultiChoice fields failed (2) " + ctx.Name);
+                var res3 = (from c in src where c.Options == (Options2.A | Options2.B) select c).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 0, "Test for MultiChoice fields failed (3) " + ctx.Name);
+                var res4 = (from c in src where c.Options == Options2.A || c.Options == Options2.B select c).AsEnumerable();
+                Assert.IsTrue(res4.Count() == 3, "Test for MultiChoice fields failed (4) " + ctx.Name);
+                var res5 = (from c in src where c.Options != Options2.A select c).AsEnumerable();
+                Assert.IsTrue(res5.Count() == 2, "Test for MultiChoice fields failed (5) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -970,20 +960,20 @@ namespace Tests
             item["Options"] = "A;#C";
             item.Update();
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<ChoiceTest3>(spContext);
+            foreach (var ctx in GetContexts<ChoiceTest3>())
+            {
+                var src = ctx.List;
 
-            //
-            // Queries.
-            //
-            var res1 = (from c in src where c.Options == Options3.A select c).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoiceWithFillIn fields failed (1).");
-            var res2 = (from c in src where c.OptionsOther == "C" select c).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3" && res2.Last().OptionsOther == "C", "Test for MultiChoiceWithFillIn fields failed (2).");
-            var res3 = (from c in src where c.Options == Options3.A && c.OptionsOther == "C" select c).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "3", "Test for MultiChoiceWithFillIn fields failed (3).");
+                //
+                // Queries.
+                //
+                var res1 = (from c in src where c.Options == Options3.A select c).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 2 && res1.First().Title == "1" && res1.Last().Title == "3", "Test for MultiChoiceWithFillIn fields failed (1) " + ctx.Name);
+                var res2 = (from c in src where c.OptionsOther == "C" select c).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "2" && res2.Last().Title == "3" && res2.Last().OptionsOther == "C", "Test for MultiChoiceWithFillIn fields failed (2) " + ctx.Name);
+                var res3 = (from c in src where c.Options == Options3.A && c.OptionsOther == "C" select c).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "3", "Test for MultiChoiceWithFillIn fields failed (3) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -1001,9 +991,9 @@ namespace Tests
             Test.Add(lst, p1);
 
             //
-            // List source.
+            // List source (context doesn't matter).
             //
-            var src = new SharePointList<People>(spContext);
+            var src = new SharePointList<People>(GetSpContext());
 
             //
             // Query.
@@ -1022,22 +1012,22 @@ namespace Tests
             SPList child, parent;
             GetLookupLists(out child, out parent);
 
-            //
-            // Parent source.
-            //
-            var src = new SharePointList<LookupParent>(spContext);
+            foreach (var ctx in GetContexts<LookupParent>())
+            {
+                var src = ctx.List;
 
-            //
-            // Subqueries.
-            //
-            var res1 = (from p in src where p.Child.Number >= 2 select p).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 4 && res1.First().Title == "Parent 21" && res1.Last().Title == "Parent 32", "LookupSubquery test failed (1).");
-            var res2 = (from p in src where p.Child.Number < 3 && p.Child.Title.Contains("ld 2") && p.Title.Contains("22") select p).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Parent 22", "LookupSubquery test failed (2).");
-            var res3 = (from p in src where p.Title.Contains("22") && p.Child.Number < 3 && p.Child.Title.Contains("ld 2") select p).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "Parent 22", "LookupSubquery test failed (3).");
-            var res4 = (from p in src where p.Child.Number == 5 select p).AsEnumerable();
-            Assert.IsTrue(res4.Count() == 0, "LookupSubquery test failed (4).");
+                //
+                // Subqueries.
+                //
+                var res1 = (from p in src where p.Child.Number >= 2 select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 4 && res1.First().Title == "Parent 21" && res1.Last().Title == "Parent 32", "LookupSubquery test failed (1) " + ctx.Name);
+                var res2 = (from p in src where p.Child.Number < 3 && p.Child.Title.Contains("ld 2") && p.Title.Contains("22") select p).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Parent 22", "LookupSubquery test failed (2) " + ctx.Name);
+                var res3 = (from p in src where p.Title.Contains("22") && p.Child.Number < 3 && p.Child.Title.Contains("ld 2") select p).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 1 && res3.First().Title == "Parent 22", "LookupSubquery test failed (3) " + ctx.Name);
+                var res4 = (from p in src where p.Child.Number == 5 select p).AsEnumerable();
+                Assert.IsTrue(res4.Count() == 0, "LookupSubquery test failed (4) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -1049,22 +1039,44 @@ namespace Tests
             SPList child, parent;
             GetLookupLists(out child, out parent);
 
-            //
-            // Sources.
-            //
-            var parents = new SharePointList<LookupParent>(spContext);
-            var children = new SharePointList<LookupChild>(spContext);
+            {
+                //
+                // Sources.
+                //
+                var ctx = GetSpContext();
+                var parents = new SharePointList<LookupParent>(ctx);
+                var children = new SharePointList<LookupChild>(ctx);
 
-            //
-            // Get child item.
-            //
-            var c1 = (from c in children where c.Number == 1 select c).First();
-            
-            //
-            // Get parent items.
-            //
-            var res = (from p in parents where p.Child == c1 select p).AsEnumerable();
-            Assert.IsTrue(res.Count() == 2 && res.First().Title == "Parent 11" && res.Last().Title == "Parent 12", "LookupSubquery2 test failed.");
+                //
+                // Get child item.
+                //
+                var c1 = (from c in children where c.Number == 1 select c).First();
+
+                //
+                // Get parent items.
+                //
+                var res = (from p in parents where p.Child == c1 select p).AsEnumerable();
+                Assert.IsTrue(res.Count() == 2 && res.First().Title == "Parent 11" && res.Last().Title == "Parent 12", "LookupSubquery2 test failed (SP).");
+            }
+            {
+                //
+                // Sources.
+                //
+                var ctx = GetWsContext();
+                var parents = new SharePointList<LookupParent>(ctx);
+                var children = new SharePointList<LookupChild>(ctx);
+
+                //
+                // Get child item.
+                //
+                var c1 = (from c in children where c.Number == 1 select c).First();
+
+                //
+                // Get parent items.
+                //
+                var res = (from p in parents where p.Child == c1 select p).AsEnumerable();
+                Assert.IsTrue(res.Count() == 2 && res.First().Title == "Parent 11" && res.Last().Title == "Parent 12", "LookupSubquery2 test failed (WS).");
+            }
         }
 
         [TestMethod]
@@ -1076,16 +1088,16 @@ namespace Tests
             SPList child, parent;
             GetLookupLists(out child, out parent);
 
-            //
-            // Parent source.
-            //
-            var src = new SharePointList<LookupParent>(spContext);
+            foreach (var ctx in GetContexts<LookupParent>())
+            {
+                var src = ctx.List;
 
-            //
-            // Subqueries.
-            //
-            var res1 = (from p in src where p.Title == "Parent 22" select p).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1 && res1.First().Child.ID == 2, "LookupLazyLoad test failed (1).");
+                //
+                // Subqueries.
+                //
+                var res1 = (from p in src where p.Title == "Parent 22" select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().Child.ID == 2, "LookupLazyLoad test failed (1) " + ctx.Name);
+            }
         }
 
         private void GetLookupLists(out SPList child, out SPList parent)
@@ -1173,23 +1185,23 @@ namespace Tests
             Test.Add(lst, t4);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<DateTimeTest>(spContext);
-
-            //
             // Queries.
             //
-            var res1 = (from t in src where t.DateTime == now select t).AsEnumerable(); //KNOWN ISSUE with Eq check on hh:MM:ss (2032)
-            Assert.IsTrue(res1.Count() == 2, "DateTime test failure (1).");
-            var res2 = (from t in src where t.DateTime > System.DateTime.Today select t).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 1, "DateTime test failure (2).");
-            var res3 = (from t in src where t.DateTime < System.DateTime.Today select t).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 1, "DateTime test failure (3).");
-            var res4 = (from t in src where t.DateTime == System.DateTime.Today select t).AsEnumerable();
-            Assert.IsTrue(res4.Count() == 2, "DateTime test failure (4).");
-            var res5 = (from t in src where t.DateTime <= System.DateTime.Today select t).AsEnumerable();
-            Assert.IsTrue(res5.Count() == 3, "DateTime test failure (5).");
+            foreach (var ctx in GetContexts<DateTimeTest>())
+            {
+                var src = ctx.List;
+
+                var res1 = (from t in src where t.DateTime == now select t).AsEnumerable(); //KNOWN ISSUE with Eq check on hh:MM:ss (2032)
+                Assert.IsTrue(res1.Count() == 2, "DateTime test failure (1) " + ctx.Name);
+                var res2 = (from t in src where t.DateTime > System.DateTime.Today select t).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1, "DateTime test failure (2) " + ctx.Name);
+                var res3 = (from t in src where t.DateTime < System.DateTime.Today select t).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 1, "DateTime test failure (3) " + ctx.Name);
+                var res4 = (from t in src where t.DateTime == System.DateTime.Today select t).AsEnumerable();
+                Assert.IsTrue(res4.Count() == 2, "DateTime test failure (4) " + ctx.Name);
+                var res5 = (from t in src where t.DateTime <= System.DateTime.Today select t).AsEnumerable();
+                Assert.IsTrue(res5.Count() == 3, "DateTime test failure (5) " + ctx.Name);
+            }
 
             //
             // TODO: Check for eligible use of Now.
@@ -1203,7 +1215,7 @@ namespace Tests
             // Create list DateRangesOverlapTest.
             //
             var lst = Test.Create<DateRangesOverlapTest>(site.RootWeb);
-            
+
             //
             // Add items.
             //
@@ -1213,18 +1225,18 @@ namespace Tests
             t1.To = System.DateTime.Now.AddDays(1);
             Test.Add(lst, t1);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<DateRangesOverlapTest>(spContext);
+            foreach (var ctx in GetContexts<DateRangesOverlapTest>())
+            {
+                var src = ctx.List;
 
-            //
-            // Query.
-            //
-            var res1 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Now, d.From, d.To) select d).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "Appointment", "DateRangesOverlap test failure (1).");
-            var res2 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Today, d.From, d.To) select d).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Appointment", "DateRangesOverlap test failure (2).");
+                //
+                // Query.
+                //
+                var res1 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Now, d.From, d.To) select d).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "Appointment", "DateRangesOverlap test failure (1) " + ctx.Name);
+                var res2 = (from d in src where CamlMethods.DateRangesOverlap(CamlMethods.Today, d.From, d.To) select d).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 1 && res2.First().Title == "Appointment", "DateRangesOverlap test failure (2) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -1242,9 +1254,9 @@ namespace Tests
             Test.Add(lst, p1);
 
             //
-            // List source.
+            // List source (doesn't matter for the LambdaFree check).
             //
-            var src = new SharePointList<People>(spContext);
+            var src = new SharePointList<People>(GetSpContext());
 
             //
             // Query that tries to capture as much lambda free checks as possible.
@@ -1276,31 +1288,32 @@ namespace Tests
             People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
             Test.Add(lst, p1);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
+            foreach (var ctx in GetContexts<People>())
+            {
+                var src = ctx.List;
 
-            bool t = true;
-            bool f = false;
+                bool t = true;
+                bool f = false;
 
-            //
-            // Queries.
-            //
-            var res1 = (from p in src where t select p).AsEnumerable();
-            Assert.IsTrue(res1.Count() == 1, "Pruning check failed (1).");
-            var res2 = (from p in src where t && f select p).AsEnumerable();
-            Assert.IsTrue(res2.Count() == 0, "Pruning check failed (2).");
-            var res3 = (from p in src where t || f select p).AsEnumerable();
-            Assert.IsTrue(res3.Count() == 1, "Pruning check failed (3).");
+                //
+                // Queries.
+                //
+                var res1 = (from p in src where t select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1, "Pruning check failed (1) " + ctx.Name);
+                var res2 = (from p in src where t && f select p).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 0, "Pruning check failed (2) " + ctx.Name);
+                var res3 = (from p in src where t || f select p).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 1, "Pruning check failed (3) " + ctx.Name);
+            }
         }
 
-        //[TestMethod]
-        //public void EntityRef()
-        //{
-        //    EntityRef<People> p = new EntityRef<People>();
-            
-        //}
+        /*
+        [TestMethod]
+        public void EntityRef()
+        {
+            EntityRef<People> p = new EntityRef<People>();
+        }
+         */
 
         [TestMethod]
         public void Url()
@@ -1325,52 +1338,22 @@ namespace Tests
             Test.Add(lst, u3);
             Test.Add(lst, u4);
 
-            //
-            // List source.
-            //
-            var src = new SharePointList<UrlTest>(spContext);
+            foreach (var ctx in GetContexts<UrlTest>())
+            {
+                var src = ctx.List;
 
-            //
-            // Queries.
-            //
-            var res1 = (from u in src where u.ID == 1 select u.Homepage).First();
-            Assert.IsTrue(res1.Description == "Bart's homepage" && res1.Url == "http://www.bartdesmet.net", "Test for Url failed (1).");
-            var res2 = (from u in src where u.ID == 2 select u.Homepage).First();
-            Assert.IsTrue(res2.Url == "http://www.codeplex.com/LINQtoSharePoint", "Test for Url failed (2).");
-            var res3 = (from u in src where u.ID == 3 select u.Homepage).First();
-            Assert.IsTrue(res3 == null, "Test for Url failed (3).");
-            var res4 = (from u in src where u.ID == 4 select u.Homepage).First();
-            Assert.IsTrue(res4 == null, "Test for Url failed (4).");
-        }
-
-        [TestMethod]
-        public void TestWsAndSp()
-        {
-            /*
-             * Temporary test to check ws results against sp results.
-             */
-
-            //
-            // Create list People.
-            //
-            var lst = Test.Create<People>(site.RootWeb);
-
-            //
-            // Add items.
-            //
-            People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
-            Test.Add(lst, p1);
-
-            //
-            // Sources.
-            //
-            var sp = new SharePointList<People>(spContext);
-            var ws = new SharePointList<People>(wsContext);
-            
-            //
-            // Test.
-            //
-            AssertWsEqualsSp<People>(ws, sp, p => p.FirstName.StartsWith("B"), "WS and SP data source did not return the same results.");
+                //
+                // Queries.
+                //
+                var res1 = (from u in src where u.ID == 1 select u.Homepage).First();
+                Assert.IsTrue(res1.Description == "Bart's homepage" && res1.Url == "http://www.bartdesmet.net", "Test for Url failed (1) " + ctx.Name);
+                var res2 = (from u in src where u.ID == 2 select u.Homepage).First();
+                Assert.IsTrue(res2.Url == "http://www.codeplex.com/LINQtoSharePoint", "Test for Url failed (2) " + ctx.Name);
+                var res3 = (from u in src where u.ID == 3 select u.Homepage).First();
+                Assert.IsTrue(res3 == null, "Test for Url failed (3) " + ctx.Name);
+                var res4 = (from u in src where u.ID == 4 select u.Homepage).First();
+                Assert.IsTrue(res4 == null, "Test for Url failed (4) " + ctx.Name);
+            }
         }
 
         [TestMethod]
@@ -1446,11 +1429,6 @@ namespace Tests
             Test.Add(lst, p2);
 
             //
-            // List source.
-            //
-            var src = new SharePointList<People>(spContext);
-
-            //
             // Test.
             //
             //var res = (from p in src select p.Age).First(); //24.0
@@ -1465,16 +1443,48 @@ namespace Tests
              */
         }
 
-        private static void AssertWhere<T>(IQueryable<T> src, Expression<Func<T, bool>> predicate, int expectedCount, string message)
+        private void AssertWhere<T>(Expression<Func<T, bool>> predicate, int expectedCount, string message) where T : class
         {
-            IEnumerable<T> res = src.Where<T>(predicate).Select(e => e).AsEnumerable();
-            Assert.IsTrue(res.Count() == expectedCount && res.All(predicate.Compile()), message);
+            var sp = new SharePointList<T>(GetSpContext());
+            var ws = new SharePointList<T>(GetWsContext());
+
+            Func<T, bool> pred = predicate.Compile();
+
+            {
+                IEnumerable<T> res = sp.Where<T>(predicate).Select(e => e).AsEnumerable();
+                Assert.IsTrue(res.Count() == expectedCount && res.All(pred), message);
+            }
+            {
+                IEnumerable<T> res = ws.Where<T>(predicate).Select(e => e).AsEnumerable();
+                Assert.IsTrue(res.Count() == expectedCount && res.All(pred), message);
+            }
         }
 
-        private static void AssertProject<T, R>(IQueryable<T> src, Expression<Func<T, R>> selector, IEnumerable<R> results, string message)
+        private void AssertTake<T>(int take, int expectedCount, string message) where T : class
         {
-            IEnumerable<R> res = src.Select(selector).AsEnumerable();
-            Assert.IsTrue(res.SequenceEqual(results));
+            var sp = new SharePointList<T>(GetSpContext());
+            var ws = new SharePointList<T>(GetWsContext());
+
+            var res1 = (from p in sp select p).Take(take).AsEnumerable();
+            Assert.IsTrue(res1.Count() == expectedCount, message);
+
+            var res2 = (from p in ws select p).Take(take).AsEnumerable();
+            Assert.IsTrue(res2.Count() == expectedCount, message);
+        }
+
+        private void AssertProject<T, R>(Expression<Func<T, R>> selector, IEnumerable<R> results, string message) where T : class
+        {
+            var sp = new SharePointList<T>(GetSpContext());
+            var ws = new SharePointList<T>(GetWsContext());
+
+            {
+                IEnumerable<R> res = sp.Select(selector).AsEnumerable();
+                Assert.IsTrue(res.SequenceEqual(results));
+            }
+            {
+                IEnumerable<R> res = ws.Select(selector).AsEnumerable();
+                Assert.IsTrue(res.SequenceEqual(results));
+            }
         }
 
         #region Scratch pad
