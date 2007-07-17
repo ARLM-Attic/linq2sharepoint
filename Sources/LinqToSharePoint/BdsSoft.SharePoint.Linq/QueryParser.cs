@@ -710,7 +710,7 @@ namespace BdsSoft.SharePoint.Linq
             // LookupMulti fields support the Contains method call.
             //
             else if (mce.Method.DeclaringType.IsGenericType
-                     && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                     && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(EntitySet<>)
                      && mce.Object != null
                      && mce.Arguments.Count > 0
                      && mce.Method.Name == "Contains")

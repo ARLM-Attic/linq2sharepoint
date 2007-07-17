@@ -768,6 +768,12 @@ namespace BdsSoft.SharePoint.Linq
                 results.Merge(ds);
 
                 //
+                // If no results found, break.
+                //
+                if (ds.Tables["row"] == null)
+                    break;
+
+                //
                 // Avoid paging when a row limit has been set (Take query operator).
                 //
                 if (_results.Top != null && results.Tables["row"].Rows.Count >= _results.Top)
@@ -1003,6 +1009,13 @@ namespace BdsSoft.SharePoint.Linq
                 return;
 
             //
+            // Special treatment for SPFieldLookupValueCollection.
+            //
+            SPFieldLookupValueCollection flval;
+            if ((flval = val as SPFieldLookupValueCollection) != null)
+                val = flval.ToString();
+
+            //
             // Get the property type in order to do subsequent value parsing. If the type is Nullable<X>, return typeof(X).
             //
             Type propertyType = property.PropertyType;
@@ -1074,7 +1087,6 @@ namespace BdsSoft.SharePoint.Linq
                     case FieldType.URL:
                         SPFieldUrlValue urlVal = new SPFieldUrlValue(valueAsString);
                         UrlValue url = new UrlValue(urlVal);
-                        //Url url = Url.Parse(valueAsString);
                         AssignValue(target, property, field, url);
                         break;
                     //
@@ -1093,15 +1105,10 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         SPFieldLookupValue lookupVal = new SPFieldLookupValue(valueAsString);
                         int fkey = lookupVal.LookupId;
-                        //string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
-                        //if (fk.Length != 2)
-                        //    break;
-                        //int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
 
                         //
                         // We'll only support lazy loading on entity types.
                         //
-                        //if (entity == null)
                         if (Helpers.GetListAttribute(target.GetType(), false) == null)
                             throw RuntimeErrors.InvalidLookupField(property.Name);
                         else
@@ -1129,18 +1136,10 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         SPFieldLookupValueCollection lookupVals = new SPFieldLookupValueCollection(valueAsString);
                         int[] fkeys = lookupVals.ConvertAll(v => v.LookupId).ToArray();
-                        //string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
-                        //if (fks.Length % 2 != 0)
-                        //    break;
-                        //List<int> lstFkeys = new List<int>();
-                        //for (int i = 0; i < fks.Length; i += 2)
-                        //    lstFkeys.Add(int.Parse(fks[i], CultureInfo.InvariantCulture.NumberFormat));
-                        //int[] fkeys = lstFkeys.ToArray();
 
                         //
                         // We'll only support lazy loading on entity types.
                         //
-                        //if (entity == null)
                         if (Helpers.GetListAttribute(target.GetType(), false) == null)
                             throw RuntimeErrors.InvalidLookupField(property.Name);
                         else
@@ -1148,7 +1147,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             // Create EntitySef<T>. TODO: hook up event handlers for Add and Remove actions.
                             //
-                            Type t = typeof(EntitySet<>).MakeGenericType(property.PropertyType);
+                            Type t = property.PropertyType;
                             object entitySet = Activator.CreateInstance(t, BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { _results.Context, fkeys, null, null }, null);
                             AssignValue(target, property, field, entitySet);
 

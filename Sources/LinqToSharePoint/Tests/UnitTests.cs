@@ -1164,6 +1164,111 @@ namespace Tests
         }
 
         [TestMethod]
+        public void LookupMulti()
+        {
+            //
+            // Get lists with sample data.
+            //
+            SPList child, parent;
+            GetLookupMultiLists(out child, out parent);
+
+            foreach (var ctx in GetContexts<LookupMultiParent>())
+            {
+                var src = ctx.List;
+
+                var children = new SharePointList<LookupChild>(ctx.List.Context);
+
+                //
+                // Queries.
+                //
+                var child1 = (from c in children where c.Number == 1 select c).AsEnumerable().First();
+                var res1 = (from p in src where p.Childs.Contains(child1) select p).AsEnumerable();
+                Assert.IsTrue(res1.Count() == 1 && res1.First().Title == "Parent 1" , "LookupMulti test failed (1) " + ctx.Name);
+
+                var child2 = children.GetEntityById(2);
+                var res2 = (from p in src where p.Childs.Contains(child2) select p).AsEnumerable();
+                Assert.IsTrue(res2.Count() == 2 && res2.First().Title == "Parent 1" && res2.Last().Title == "Parent 2", "LookupMulti test failed (2) " + ctx.Name);
+
+                var res3 = (from p in src where p.Childs.Contains((from c in children where c.Number == 3 select c).First()) select p).AsEnumerable();
+                Assert.IsTrue(res3.Count() == 3, "LookupMulti test failed (3) " + ctx.Name);
+
+                var child4 = children.GetEntityById(4);
+                var res4 = (from p in src where p.Childs.Contains(child4) select p).AsEnumerable();
+                Assert.IsTrue(res4.Count() == 0, "LookupMulti test failed (4) " + ctx.Name);
+            }
+        }
+
+        private void GetLookupMultiLists(out SPList child, out SPList parent)
+        {
+            //
+            // Child list.
+            //
+            child = Test.Create<LookupChild>(site.RootWeb);
+
+            //
+            // Parent list.
+            //
+            parent = Test.CreateList<LookupMultiParent>(site.RootWeb);
+            parent.Fields.AddLookup("Childs", child.ID, false);
+            parent.Update();
+            SPFieldLookup lookup = new SPFieldLookup(parent.Fields, "Childs");
+            lookup.LookupField = "Title";
+            lookup.AllowMultipleValues = true;
+            lookup.Update();
+            parent.Update();
+
+            //
+            // Add child items.
+            //
+            SPListItem c = child.Items.Add();
+            c["Title"] = "Child 1";
+            c["Number"] = 1;
+            c.Update();
+            c = child.Items.Add();
+            c["Title"] = "Child 2";
+            c["Number"] = 2;
+            c.Update();
+            c = child.Items.Add();
+            c["Title"] = "Child 3";
+            c["Number"] = 3;
+            c.Update();
+            c = child.Items.Add();
+            c["Title"] = "Child 4";
+            c["Number"] = 4;
+            c.Update();
+
+            //
+            // Add parent items.
+            //
+            SPListItem p;
+            SPFieldLookupValueCollection val;
+
+            val = new SPFieldLookupValueCollection();
+            val.Add(new SPFieldLookupValue(1, "Child 1"));
+            val.Add(new SPFieldLookupValue(2, "Child 2"));
+            val.Add(new SPFieldLookupValue(3, "Child 3"));
+            p = parent.Items.Add();
+            p["Title"] = "Parent 1";
+            p["Childs"] = val;
+            p.Update();
+
+            val = new SPFieldLookupValueCollection();
+            val.Add(new SPFieldLookupValue(2, "Child 2"));
+            val.Add(new SPFieldLookupValue(3, "Child 3"));
+            p = parent.Items.Add();
+            p["Title"] = "Parent 2";
+            p["Childs"] = val;
+            p.Update();
+
+            val = new SPFieldLookupValueCollection();
+            val.Add(new SPFieldLookupValue(3, "Child 3"));
+            p = parent.Items.Add();
+            p["Title"] = "Parent 3";
+            p["Childs"] = val;
+            p.Update();
+        }
+
+        [TestMethod]
         public void DateTime()
         {
             //
