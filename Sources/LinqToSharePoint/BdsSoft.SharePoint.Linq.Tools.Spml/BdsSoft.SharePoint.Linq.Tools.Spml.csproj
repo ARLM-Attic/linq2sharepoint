@@ -144,6 +144,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Item packages\LINQtoSharePointCS.zip" />
+    <Content Include="Item packages\LINQtoSharePointVB.zip" />
     <None Include="Resources\sharepoint1.bmp" />
   </ItemGroup>
   <PropertyGroup>
