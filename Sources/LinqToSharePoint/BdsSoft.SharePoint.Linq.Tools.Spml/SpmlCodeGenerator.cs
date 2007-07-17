@@ -64,6 +64,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             // Ensure reference to BdsSoft.SharePoint.Linq is present in the project.
             //
             this.GetVSProject().References.Add("BdsSoft.SharePoint.Linq");
+            this.GetVSProject().References.Add("Microsoft.SharePoint, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71E9BCE111E9429C");
 
             if (this.CodeGeneratorProgress != null)
                 this.CodeGeneratorProgress.Progress(5, 100);

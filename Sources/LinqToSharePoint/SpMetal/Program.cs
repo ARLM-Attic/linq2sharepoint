@@ -87,7 +87,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Set up event handlers for status information.
             //
-            SetupEventHandlers(gen);
+            //SetupEventHandlers(gen);
 
             //
             // Generate code in the appropriate language.
@@ -112,12 +112,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Write to output file.
             //
-            Console.Write("Writing file {0}... ", a.File);
+            //Console.Write("Writing file {0}... ", a.File);
 
             using (StreamWriter sw = File.CreateText(a.File))
             {
                 sw.WriteLine(code.ToString());
-                Console.WriteLine("Done");
+                //Console.WriteLine("Done");
             }
         }
 

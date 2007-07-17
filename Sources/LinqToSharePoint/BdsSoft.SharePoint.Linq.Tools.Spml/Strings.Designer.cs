@@ -68,5 +68,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml {
                 return ResourceManager.GetString("GetDefaultExtensionFailed", resourceCulture);
             }
         }
+        
+        internal static System.Drawing.Bitmap sharepoint {
+            get {
+                object obj = ResourceManager.GetObject("sharepoint", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }
