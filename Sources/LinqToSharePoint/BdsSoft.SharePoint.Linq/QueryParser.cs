@@ -440,117 +440,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 if (mce.Method.Name == "DateRangesOverlap")
                 {
-                    //
-                    // Negation isn't supported.
-                    //
-                    if (!isPositive)
-                        return /* PARSE ERROR */ this.CantNegate("DateRangesOverlap", ppS, ppE);
-
-                    //
-                    // Get value argument.
-                    //
-                    Expression valEx = mce.Arguments[0];
-
-                    bool? isNullableHasValue;
-                    valEx = CheckForNullableType(valEx, out isNullableHasValue);
-
-                    //
-                    // Value argument shouldn't be an entity property reference.
-                    //
-                    if (IsEntityPropertyReference(valEx))
-                    {
-                        //
-                        // Find value argument location in parent expression.
-                        //
-                        int ppSD1 = ppS + "DateRangesOverlap(".Length;
-                        int ppED1 = ppSD1 + mce.Arguments[0].ToString().Length - 1;
-
-                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidValueArgument(ppSD1, ppED1);
-                    }
-
-                    //
-                    // Get value element.
-                    //
-                    XmlElement value = GetDateValue(valEx);
-
-                    //
-                    // Field references.
-                    //
-                    NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
-                    if (fields == null || fields.Expressions.Count == 0)
-                    {
-                        //
-                        // Find fields argument location in parent expression.
-                        //
-                        int ppSD2 = ppS + predicate.ToString().IndexOf(fields.ToString(), StringComparison.Ordinal);
-                        int ppED2 = ppE - 1;
-
-                        return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD2, ppED2);
-                    }
-
-                    List<XmlElement> fieldRefs = new List<XmlElement>();
-
-                    int ppSD = ppS + "DateRangesOverlap(".Length + mce.Arguments[0].ToString().Length + ", new [] {".Length;
-                    int ppED = ppE - 2;
-
-                    //
-                    // Find all field expressions.
-                    //
-                    foreach (Expression fieldEx in fields.Expressions)
-                    {
-                        //
-                        // Clean-up the field expression.
-                        //
-                        Expression fEx = fieldEx;
-                        while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
-                            fEx = ((UnaryExpression)fEx).Operand;
-
-                        //fEx = DropToString(fEx, ref ppSD, ref ppED);
-                        fEx = CheckForNullableType(fEx, out isNullableHasValue);
-
-                        if (!IsEntityPropertyReference(fEx))
-                            return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
-
-                        MemberExpression mex = fEx as MemberExpression;
-                        if (mex == null || !(mex.Member is PropertyInfo))
-                            return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
-
-                        //
-                        // Lookup properties are supported only if all property references are of the same lookup type.
-                        //
-                        if (mex.Member.DeclaringType != _results.EntityType)
-                        {
-                            MemberExpression outer = mex.Expression as MemberExpression;
-                            if (!IsEntityPropertyReference(outer))
-                                return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
-
-                            PropertyInfo lookup1 = (PropertyInfo)outer.Member;
-
-                            //
-                            // We've already found field references; check that all of these refer to the same entity type.
-                            //
-                            if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
-                                return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
-                            else
-                                lookup = lookup1;
-                        }
-
-                        //
-                        // Add field reference element.
-                        //
-                        fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
-
-                        ppSD += fieldEx.ToString().Length + ", ".Length;
-                    }
-
-                    //
-                    // Construct and return DateRangesOverlap element.
-                    //
-                    XmlElement dro = _factory.DateRangesOverlap();
-                    dro.AppendChild(value);
-                    foreach (XmlElement fieldRef in fieldRefs)
-                        dro.AppendChild(fieldRef);
-                    return dro;
+                    return ParseDateRangesOverlap(predicate, isPositive, mce, ref lookup, ppS, ppE);
                 }
             }
 
@@ -768,6 +658,131 @@ namespace BdsSoft.SharePoint.Linq
 
                 return /* PARSE ERROR */ this.UnsupportedMethodCall(mce.Method.Name, ppSS, ppE);
             }
+        }
+
+        /// <summary>
+        /// Parses a DateRangesOverlap call on CamlMethods.
+        /// </summary>
+        /// <param name="predicate">Predicate to parse.</param>
+        /// <param name="isPositive">Indicates whether the predicate should be evaluated as a positive condition or not; serves boolean negation using De Morgan's law.</param>
+        /// <param name="mce">Method call expression to parse.</param>
+        /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
+        /// <param name="ppS">Start position for parser error tracking.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
+        /// <returns>Output XML element representing the parsed DateRangesOverlap expression in CAML syntax.</returns>
+        private XmlElement ParseDateRangesOverlap(Expression predicate, bool isPositive, MethodCallExpression mce, ref PropertyInfo lookup, int ppS, int ppE)
+        {
+            //
+            // Negation isn't supported.
+            //
+            if (!isPositive)
+                return /* PARSE ERROR */ this.CantNegate("DateRangesOverlap", ppS, ppE);
+
+            //
+            // Get value argument.
+            //
+            Expression valEx = mce.Arguments[0];
+
+            bool? isNullableHasValue;
+            valEx = CheckForNullableType(valEx, out isNullableHasValue);
+
+            //
+            // Value argument shouldn't be an entity property reference.
+            //
+            if (IsEntityPropertyReference(valEx))
+            {
+                //
+                // Find value argument location in parent expression.
+                //
+                int ppSD1 = ppS + "DateRangesOverlap(".Length;
+                int ppED1 = ppSD1 + mce.Arguments[0].ToString().Length - 1;
+
+                return /* PARSE ERROR */ this.DateRangesOverlapInvalidValueArgument(ppSD1, ppED1);
+            }
+
+            //
+            // Get value element.
+            //
+            XmlElement value = GetDateValue(valEx);
+
+            //
+            // Field references.
+            //
+            NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
+            if (fields == null || fields.Expressions.Count == 0)
+            {
+                //
+                // Find fields argument location in parent expression.
+                //
+                int ppSD2 = ppS + predicate.ToString().IndexOf(fields.ToString(), StringComparison.Ordinal);
+                int ppED2 = ppE - 1;
+
+                return /* PARSE ERROR */ this.DateRangesOverlapMissingFieldReferences(ppSD2, ppED2);
+            }
+
+            List<XmlElement> fieldRefs = new List<XmlElement>();
+
+            int ppSD = ppS + "DateRangesOverlap(".Length + mce.Arguments[0].ToString().Length + ", new [] {".Length;
+            int ppED = ppE - 2;
+
+            //
+            // Find all field expressions.
+            //
+            foreach (Expression fieldEx in fields.Expressions)
+            {
+                //
+                // Clean-up the field expression.
+                //
+                Expression fEx = fieldEx;
+                while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
+                    fEx = ((UnaryExpression)fEx).Operand;
+
+                //fEx = DropToString(fEx, ref ppSD, ref ppED);
+                fEx = CheckForNullableType(fEx, out isNullableHasValue);
+
+                if (!IsEntityPropertyReference(fEx))
+                    return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
+
+                MemberExpression mex = fEx as MemberExpression;
+                if (mex == null || !(mex.Member is PropertyInfo))
+                    return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
+
+                //
+                // Lookup properties are supported only if all property references are of the same lookup type.
+                //
+                if (mex.Member.DeclaringType != _results.EntityType)
+                {
+                    MemberExpression outer = mex.Expression as MemberExpression;
+                    if (!IsEntityPropertyReference(outer))
+                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
+
+                    PropertyInfo lookup1 = (PropertyInfo)outer.Member;
+
+                    //
+                    // We've already found field references; check that all of these refer to the same entity type.
+                    //
+                    if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
+                        return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
+                    else
+                        lookup = lookup1;
+                }
+
+                //
+                // Add field reference element.
+                //
+                fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
+
+                ppSD += fieldEx.ToString().Length + ", ".Length;
+            }
+
+            //
+            // Construct and return DateRangesOverlap element.
+            //
+            XmlElement dro = _factory.DateRangesOverlap();
+            dro.AppendChild(value);
+            foreach (XmlElement fieldRef in fieldRefs)
+                dro.AppendChild(fieldRef);
+            return dro;
         }
 
         /// <summary>
@@ -1115,13 +1130,13 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (!ieprl)
             {
-                XmlElement res = CheckForUrlValueUrl(ref left, out ieprl, ppS, ppE);
+                XmlElement res = CheckForUrlValueUrl(ref left, out ieprl, ppS);
                 if (res != null) //PARSE ERROR
                     return res;
             }
             if (!ieprr)
             {
-                XmlElement res = CheckForUrlValueUrl(ref right, out ieprr, ppS, ppE);
+                XmlElement res = CheckForUrlValueUrl(ref right, out ieprr, ppS);
                 if (res != null) //PARSE ERROR
                     return res;
             }
@@ -1303,8 +1318,9 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Special treatment for UrlValues.
             //
-            if (value is UrlValue)
-                value = ((UrlValue)value).Url;
+            UrlValue urlVal = value as UrlValue;
+            if (urlVal != null)
+                value = urlVal.Url;
 
             //
             // Special treatment for detected date values.
@@ -1452,7 +1468,7 @@ namespace BdsSoft.SharePoint.Linq
             return c;
         }
 
-        private XmlElement CheckForUrlValueUrl(ref Expression e, out bool found, int ppS, int ppE)
+        private XmlElement CheckForUrlValueUrl(ref Expression e, out bool found, int ppS)
         {
             found = false;
 

@@ -729,6 +729,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             }
 
             //
+            // Read-only fields should have the default value assigned to avoid compile-time warnings.
+            //
+            if (readOnly && args.Language == Language.CSharp)
+                field.InitExpression = new CodeDefaultValueExpression(field.Type);
+
+            //
             // Return the property definition.
             //
             return prop;

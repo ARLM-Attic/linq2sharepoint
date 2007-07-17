@@ -127,5 +127,15 @@ namespace BdsSoft.SharePoint.Linq
         {
             return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.NonReadOnlyFieldWithoutSetter, property));
         }
+
+        public static Exception DuplicateSharePointListObject()
+        {
+            return new InvalidOperationException(Errors.DuplicateSharePointListObject);
+        }
+
+        public static Exception InvalidUriSpecified()
+        {
+            return new ArgumentException(Errors.InvalidUriSpecified);
+        }
     }
 }

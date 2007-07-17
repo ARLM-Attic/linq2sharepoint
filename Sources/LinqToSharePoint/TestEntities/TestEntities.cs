@@ -37,15 +37,15 @@ namespace Tests
 
         private global::System.Nullable<double> _SecondAge;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -299,15 +299,15 @@ namespace Tests
 
         private Options _Options;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -457,15 +457,15 @@ namespace Tests
 
         private Options2 _Options;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -603,15 +603,15 @@ namespace Tests
 
         private double _Number;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -749,15 +749,15 @@ namespace Tests
 
         private global::BdsSoft.SharePoint.Linq.EntityRef<LookupChild> _Child;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -895,15 +895,15 @@ namespace Tests
 
         private global::BdsSoft.SharePoint.Linq.EntitySet<LookupChild> _Childs;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -1038,15 +1038,15 @@ namespace Tests
 
         private global::System.DateTime _DateTime;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -1216,15 +1216,15 @@ namespace Tests
 
         private string _OptionsOther;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -1385,15 +1385,15 @@ namespace Tests
 
         private global::System.Nullable<System.DateTime> _To;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -1552,15 +1552,15 @@ namespace Tests
 
         private global::BdsSoft.SharePoint.Linq.UrlValue _Homepage;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title
@@ -1694,17 +1694,17 @@ namespace Tests
     public partial class RowLimit : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
     {
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
         private string _Title;
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// ID

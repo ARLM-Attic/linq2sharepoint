@@ -56,6 +56,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="url">URL to refer to.</param>
         /// <param name="description">Description for the URL.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "0#")]
         public UrlValue(string url, string description)
         {
             _urlValue = new SPFieldUrlValue();
@@ -63,7 +64,7 @@ namespace BdsSoft.SharePoint.Linq
             if (url != null)
             {
                 if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-                    throw new Exception(); //EXTODO
+                    throw RuntimeErrors.InvalidUriSpecified();
 
                 _urlValue.Url = url;
                 _urlValue.Description = description;
@@ -85,6 +86,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Gets the Url being referred to.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1056:UriPropertiesShouldNotBeStrings")]
         public string Url
         {
             get { return _urlValue.Url; }

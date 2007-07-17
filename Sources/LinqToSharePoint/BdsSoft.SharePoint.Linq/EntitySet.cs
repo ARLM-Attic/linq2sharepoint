@@ -126,9 +126,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="source"></param>
         public void Assign(IEnumerable<T> source)
         {
-            //
-            // TODO
-            //
+            _entities = new List<T>(source); //TODO
         }
 
         #endregion

@@ -124,6 +124,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot register two SharePointList objects for the same entity type..
+        /// </summary>
+        internal static string DuplicateSharePointListObject {
+            get {
+                return ResourceManager.GetString("DuplicateSharePointListObject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Query did not return any results..
         /// </summary>
         internal static string EmptySequence {
@@ -201,6 +210,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string InvalidStoragePropertyFieldReference {
             get {
                 return ResourceManager.GetString("InvalidStoragePropertyFieldReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid Uri specified..
+        /// </summary>
+        internal static string InvalidUriSpecified {
+            get {
+                return ResourceManager.GetString("InvalidUriSpecified", resourceCulture);
             }
         }
         

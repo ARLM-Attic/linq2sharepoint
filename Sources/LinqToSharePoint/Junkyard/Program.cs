@@ -267,15 +267,15 @@ namespace Junkyard
 
         private global::BdsSoft.SharePoint.Linq.UrlValue _Homepage;
 
-        private int _ID;
+        private int _ID = default(int);
 
-        private string _ContentType;
+        private string _ContentType = default(string);
 
-        private global::System.Nullable<System.DateTime> _Modified;
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
 
-        private global::System.Nullable<System.DateTime> _Created;
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
 
-        private string _Version;
+        private string _Version = default(string);
 
         /// <summary>
         /// Title

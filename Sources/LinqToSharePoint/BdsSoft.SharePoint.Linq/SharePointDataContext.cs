@@ -290,7 +290,7 @@ namespace BdsSoft.SharePoint.Linq
             // The context can only hold one SharePointList<T> object for each type T.
             //
             if (_lists.ContainsKey(t))
-                throw new Exception("Cannot register two SharePointList objects for the same entity type."); //TODO
+                throw RuntimeErrors.DuplicateSharePointListObject();
 
             _lists.Add(t, list);
         }
