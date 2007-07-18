@@ -24,7 +24,8 @@ namespace Tests
 {
     public class SharePointListEntityTest
     {
-        public SharePointListEntityTest() : base()
+        public SharePointListEntityTest()
+            : base()
         {
         }
 
@@ -67,6 +68,11 @@ namespace Tests
                 }
             }
             return hash;
+        }
+
+        public static void Add(SelfDestructingList lst, object e)
+        {
+            Add(lst.List, e);
         }
 
         public static void Add(SPList lst, object e)
@@ -119,7 +125,7 @@ namespace Tests
             return lst;
         }
 
-        public static SPList Create<T>(SPWeb web) where T : new()
+        public static SelfDestructingList Create<T>(SPWeb web) where T : new()
         {
             SPList lst = CreateList<T>(web);
 
@@ -136,8 +142,8 @@ namespace Tests
                     lst.Views[0].ViewFields.Add(lst.Fields[fa.Field]);
                 }
             }
-            
-            return lst;
+
+            return new SelfDestructingList() { List = lst };
         }
 
         private static ListAttribute GetListAttribute(Type t)
@@ -171,5 +177,15 @@ namespace Tests
         public string Name { get; set; }
         public SPFieldType Type { get; set; }
         public bool Required { get; set; }
+    }
+
+    public class SelfDestructingList : IDisposable
+    {
+        public SPList List { get; set; }
+
+        public void Dispose()
+        {
+            List.Delete();
+        }
     }
 }
