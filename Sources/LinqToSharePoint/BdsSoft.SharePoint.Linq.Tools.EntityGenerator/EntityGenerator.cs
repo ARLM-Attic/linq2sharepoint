@@ -238,7 +238,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 // Create documentation comment.
                 //
                 ep.Comments.Add(new CodeCommentStatement("<summary>", true));
-                ep.Comments.Add(new CodeCommentStatement(entity + " list."));
+                ep.Comments.Add(new CodeCommentStatement(entity + " list.", true));
                 ep.Comments.Add(new CodeCommentStatement("</summary>", true));
             }
 
