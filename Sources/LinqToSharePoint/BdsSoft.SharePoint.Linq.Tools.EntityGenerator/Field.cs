@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.CodeDom;
+using System.ComponentModel;
 
 #endregion
 
@@ -29,51 +30,89 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Field identifier.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Field identifier.")]
         public Guid Id { get; set; }
 
         /// <summary>
         /// Field name.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("Field name.")]
+        [ParenthesizePropertyName(true)]
         public string Name { get; set; }
 
         /// <summary>
         /// Field display name.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("Field name.")]
         public string DisplayName { get; set; }
 
         /// <summary>
         /// Field description.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("Field description.")]
         public string Description { get; set; }
 
         /// <summary>
         /// Textual representation of the SharePoint field type.
         /// </summary>
+        [Browsable(false)]
         public string SharePointType { get; set; }
 
         /// <summary>
         /// Indicates whether the field is hidden or not.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Indicates whether the field is hidden or not.")]
         public bool IsHidden { get; set; }
 
         /// <summary>
         /// Indicates whether the field is read-only or not.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Indicates whether the field is read-only or not.")]
         public bool IsReadOnly { get; set; }
 
         /// <summary>
         /// Indicates whether the field acts as a primary key or not.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Indicates whether the field acts as a primary key or not.")]
         public bool IsPrimaryKey { get; set; }
 
         /// <summary>
         /// Indicates whether the field is a calculated field or not.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Indicates whether the field is a calculated field or not.")]
         public bool IsCalculated { get; set; }
 
         /// <summary>
         /// Indicates whether the field is required or not.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Indicates whether the field is required or not.")]
         public bool IsRequired { get; set; }
 
         /// <summary>
@@ -82,34 +121,55 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// e.g. when using Lookup or Choice fields. In such a case, it's up to the entity mapper to cook up
         /// the appropriate types at a later stage.
         /// </summary>
+        [Browsable(false)]
         public Type RuntimeType { get; set; }
 
         /// <summary>
         /// Field type used by LINQ to SharePoint.
         /// </summary>
         /// <seealso cref="SharePointType"/>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("Field type used by LINQ to SharePoint.")]
         public FieldType FieldType { get; set; }
 
         /// <summary>
         /// For Lookup and LookupMulti fields only. Contains the list used for the lookup.
         /// </summary>
         /// <seealso cref="LookupField"/>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Lookup")]
+        [Description("Contains the list used for the lookup.")]
         public string LookupList { get; set; }
 
         /// <summary>
         /// For Lookup and LookupMulti fields only. Contains the field in the LookupList used for the lookup.
         /// </summary>
         /// <seealso cref="LookupList"/>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Lookup")]
+        [Description("Contains the field in the LookupList used for the lookup.")]
         public string LookupField { get; set; }
 
         /// <summary>
         /// For Choice and MultiChoice fields only. Indicates whether or not a fill-in choice is enabled for this field.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Choices")]
+        [Description("Indicates whether or not a fill-in choice is enabled for this field.")]
         public bool FillInChoiceEnabled { get; set; }
 
         /// <summary>
-        /// 
+        /// List of choices for Choice and MultiChoice fields.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Choices")]
+        [Description("List of choices for Choice and MultiChoice fields.")]
         public List<string> Choices { get; set; }
 
         /// <summary>

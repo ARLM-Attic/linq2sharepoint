@@ -596,7 +596,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Generate name for enum.
             //
-            string name = GetTypeName(field.Name);
+            string name = GetTypeName(XmlConvert.DecodeName(field.Name));
 
             //
             // Multi-choice values are mapped onto flag enums. A variable is kept for the flag value which should be a power of two.

@@ -37,6 +37,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             steps = new List<Control>() {
                         new Welcome(context),
                         new Connect(context),
+                        new ExportLists(context),
                         new Finish(context)
                     };
             SetupEvents();
@@ -54,7 +55,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 step.StateChanged +=
                     delegate(object sender, EventArgs e)
                     {
-                        btnNext.Enabled = ((IWizardStep)sender).CanNext;
+                        bool next = ((IWizardStep)sender).CanNext;
+                        btnNext.Enabled = next;
+                        if (next)
+                        {
+                            this.AcceptButton.NotifyDefault(false);
+                            this.AcceptButton = btnNext;
+                            this.AcceptButton.NotifyDefault(true);
+                            btnNext.Focus();
+                        }
                     };
                 step.Working +=
                     delegate(object sender, EventArgs e)
@@ -111,7 +120,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
             else if (step == steps.Count - 1)
             {
-                btnPrev.Enabled = false;
+                btnPrev.Enabled = true;
                 btnFinish.Enabled = true;
                 btnCancel.Enabled = false;
 
@@ -128,7 +137,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            //this.DialogResult = DialogResult.Cancel;
+            if (progress.Visible)
+                current.Cancel();
+            else
+                this.DialogResult = DialogResult.Cancel;
         }
 
         private void btnFinish_Click(object sender, EventArgs e)

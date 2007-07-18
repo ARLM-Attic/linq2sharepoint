@@ -11,5 +11,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         event EventHandler StateChanged;
         event EventHandler Working;
         event EventHandler WorkCompleted;
+        void Cancel();
     }
 }

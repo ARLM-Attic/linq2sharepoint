@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.Net;
 using System.Xml;
 using System.Web.Services.Protocols;
+using System.Diagnostics;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
@@ -26,7 +27,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void Connect_Load(object sender, EventArgs e)
         {
-
+            txtUrl.Focus();
+            txtUrl.Select(txtUrl.Text.Length, 0);
+            Form f = this.ParentForm;
+            f.AcceptButton.NotifyDefault(false);
+            f.AcceptButton = btnTest;
+            f.AcceptButton.NotifyDefault(true);
         }
 
         public string Title
@@ -99,6 +105,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void txtPassword_Validating(object sender, CancelEventArgs e)
         {
+            /*
             if (string.IsNullOrEmpty(txtPassword.Text))
             {
                 e.Cancel = true;
@@ -106,10 +113,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
             else
                 errors.SetError(txtPassword, "");
+             */
         }
 
         private void txtDomain_Validating(object sender, CancelEventArgs e)
         {
+            /*
             if (string.IsNullOrEmpty(txtDomain.Text))
             {
                 e.Cancel = true;
@@ -117,14 +126,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
             else
                 errors.SetError(txtDomain, "");
+             */
         }
 
         private void bgConnect_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Error == null)
             {
-                context.Connection = (Connection)e.Result;
-
                 _next = true;
                 if (StateChanged != null)
                     StateChanged(this, new EventArgs());
@@ -143,16 +151,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         {
             ConnectionParameters parameters = (ConnectionParameters)e.Argument;
 
-            WebServices.Lists lists = new WebServices.Lists();
-            lists.Url = parameters.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
-
-            if (!parameters.CustomAuthentication)
-                lists.Credentials = CredentialCache.DefaultNetworkCredentials;
-            else
-                lists.Credentials = new NetworkCredential(parameters.User, parameters.Password, parameters.Domain);
-
-            XmlNode result = lists.GetListCollection();
-            e.Result = new Connection() { ListsProxy = lists, Parameters = parameters };
+            context.ConnectionParameters = parameters;
+            Helpers.GetLists(context);
         }
 
         private void txtUrl_TextChanged(object sender, EventArgs e)
@@ -201,6 +201,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         {
             txtUrl.SelectAll();
         }
+
+        public void Cancel()
+        {
+            if (bgConnect.IsBusy && !bgConnect.CancellationPending)
+                bgConnect.CancelAsync();
+        }
+
+        private void txtUrl_Validated(object sender, EventArgs e)
+        {
+            //errors.SetError(txtUrl, "");
+        }
+
+        private void txtUser_Validated(object sender, EventArgs e)
+        {
+            //errors.SetError(txtUser, "");
+        }
     }
 
     public class ConnectionParameters
@@ -210,6 +226,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         public string User { get; set; }
         public string Password { get; set; }
         public string Domain { get; set; }
+
+        public string ToSpml()
+        {
+            XmlDataDocument doc = new XmlDataDocument();
+            XmlElement conn = doc.CreateElement("Connection");
+
+            XmlAttribute url = doc.CreateAttribute("Url");
+            url.Value = Url;
+            conn.Attributes.Append(url);
+
+            if (CustomAuthentication)
+            {
+                XmlAttribute user = doc.CreateAttribute("User");
+                user.Value = User ?? "";
+                conn.Attributes.Append(user);
+
+                XmlAttribute password = doc.CreateAttribute("Password");
+                password.Value = Password ?? "";
+                conn.Attributes.Append(password);
+
+                XmlAttribute domain = doc.CreateAttribute("Domain");
+                domain.Value = Domain ?? "";
+                conn.Attributes.Append(domain);
+            }
+
+            return conn.OuterXml;
+        }
     }
 
     public class Connection

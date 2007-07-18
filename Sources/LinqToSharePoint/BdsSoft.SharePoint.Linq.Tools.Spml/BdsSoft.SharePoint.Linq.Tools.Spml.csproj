@@ -96,12 +96,19 @@
     </Compile>
     <Compile Include="Context.cs" />
     <Compile Include="CreateSpmlWizard.cs" />
+    <Compile Include="ExportLists.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ExportLists.Designer.cs">
+      <DependentUpon>ExportLists.cs</DependentUpon>
+    </Compile>
     <Compile Include="Finish.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Finish.Designer.cs">
       <DependentUpon>Finish.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers.cs" />
     <Compile Include="InstallProgress.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -158,6 +165,14 @@
     <EmbeddedResource Include="Connect.resx">
       <SubType>Designer</SubType>
       <DependentUpon>Connect.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ExportLists.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ExportLists.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Finish.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>Finish.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="InstallProgress.resx">
       <SubType>Designer</SubType>

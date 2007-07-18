@@ -17,6 +17,7 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
@@ -35,7 +36,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void Finish_Load(object sender, EventArgs e)
         {
-
+            StringBuilder sb = new StringBuilder();
+            foreach (List list in context.Selection.Lists)
+            {
+                sb.AppendLine("Generate entity for list " + list.Name);
+            }
+            txtSummary.Text = sb.ToString();
+            txtSummary.Select(0, 0);
         }
 
         public string Title
@@ -51,5 +58,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         public event EventHandler StateChanged;
         public event EventHandler Working;
         public event EventHandler WorkCompleted;
+
+        public void Cancel()
+        {
+        }
     }
 }

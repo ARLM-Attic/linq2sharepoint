@@ -82,13 +82,32 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Get fields.
             //
             list.Fields = new List<Field>();
-            foreach (XmlNode c in listDefinition["Fields"].ChildNodes)
-                list.Fields.Add(Field.FromCaml(c));
+            if (listDefinition["Fields"] != null)
+            {
+                foreach (XmlNode c in listDefinition["Fields"].ChildNodes)
+                    list.Fields.Add(Field.FromCaml(c));
+            }
 
             //
             // Return list definition object.
             //
             return list;
+        }
+
+        /// <summary>
+        /// Generates the SPML representation for the List element.
+        /// </summary>
+        /// <returns>SPML XML element.</returns>
+        public string ToSpml()
+        {
+            XmlDocument doc = new XmlDocument();
+            XmlElement list = doc.CreateElement("List");
+            list.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
+            list.Attributes.Append(doc.CreateAttribute("Name")).Value = this.Name;
+            list.Attributes.Append(doc.CreateAttribute("Description")).Value = this.Description;
+            list.Attributes.Append(doc.CreateAttribute("Version")).Value = this.Version.ToString();
+            list.Attributes.Append(doc.CreateAttribute("Path")).Value = this.Path;
+            return list.OuterXml;
         }
     }
 }

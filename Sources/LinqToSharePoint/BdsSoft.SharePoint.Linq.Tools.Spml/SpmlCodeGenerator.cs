@@ -84,12 +84,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             List<string> lists = new List<string>();
             foreach (XmlNode list in root["Lists"].ChildNodes)
                 lists.Add(list.Attributes["Name"].InnerText);
+            XmlElement conn = root["Connection"];
 
             //
             // Generate code if lists were specified (needs to be replaced in the future by an export-all-lists option in case no lists are specified).
             //
             if (lists.Count > 0)
             {
+                //
+                // Set arguments.
+                //
                 EG.EntityGeneratorArgs args = new EG.EntityGeneratorArgs();
                 args.Namespace = this.FileNameSpace;
 
@@ -105,6 +109,32 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 args.Url = url;
 
+                //
+                // Connection info.
+                //
+                if (conn != null)
+                {
+                    XmlAttribute url2 = conn.Attributes["Url"];
+                    XmlAttribute user = conn.Attributes["User"];
+                    XmlAttribute password = conn.Attributes["Password"];
+                    XmlAttribute domain = conn.Attributes["Domain"];
+
+                    if (url2 != null)
+                        args.Url = url2.Value;
+
+                    if (user != null)
+                    {
+                        args.User = user.Value;
+                        if (password != null)
+                            args.Password = password.Value;
+                        if (domain != null)
+                            args.Domain = domain.Value;
+                    }
+                }
+
+                //
+                // Hook up event handlers.
+                //
                 EG.EntityGenerator gen = new EG.EntityGenerator(args);
                 gen.Connecting += delegate(object sender, EG.ConnectingEventArgs e)
                     {

@@ -41,6 +41,7 @@
             this.contents = new System.Windows.Forms.Panel();
             this.progress = new System.Windows.Forms.ProgressBar();
             this.line1 = new BdsSoft.SharePoint.Linq.Tools.Spml.Line();
+            this.label1 = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
@@ -52,6 +53,7 @@
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.BackColor = System.Drawing.Color.White;
+            this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.pictureBox1);
             this.panel1.Controls.Add(this.lblTitle);
             this.panel1.Location = new System.Drawing.Point(-1, 0);
@@ -103,6 +105,7 @@
             // btnFinish
             // 
             this.btnFinish.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnFinish.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnFinish.Location = new System.Drawing.Point(265, 0);
             this.btnFinish.Name = "btnFinish";
             this.btnFinish.Size = new System.Drawing.Size(75, 23);
@@ -125,6 +128,7 @@
             // btnPrev
             // 
             this.btnPrev.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPrev.CausesValidation = false;
             this.btnPrev.Enabled = false;
             this.btnPrev.Location = new System.Drawing.Point(103, 0);
             this.btnPrev.Name = "btnPrev";
@@ -138,7 +142,6 @@
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.CausesValidation = false;
-            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.Location = new System.Drawing.Point(378, 14);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
@@ -179,11 +182,25 @@
             this.line1.TabIndex = 3;
             this.line1.Text = "line1";
             // 
+            // label1
+            // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.Color.Red;
+            this.label1.Location = new System.Drawing.Point(404, 14);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(57, 16);
+            this.label1.TabIndex = 2;
+            this.label1.Text = "ALPHA";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // Wizard
             // 
             this.AcceptButton = this.btnNext;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(472, 413);
             this.Controls.Add(this.progress);
@@ -224,5 +241,6 @@
         private Line line1;
         private System.Windows.Forms.Panel buttons;
         private System.Windows.Forms.ProgressBar progress;
+        private System.Windows.Forms.Label label1;
     }
 }
