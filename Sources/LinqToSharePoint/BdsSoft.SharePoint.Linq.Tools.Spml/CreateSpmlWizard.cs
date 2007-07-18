@@ -1,9 +1,23 @@
-﻿using System;
+﻿/*
+ * LINQ to SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+#region Namespace imports
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.VisualStudio.TemplateWizard;
 using System.Windows.Forms;
 using EnvDTE;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {

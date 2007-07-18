@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -16,10 +16,14 @@
  *         Refactoring of argument parsing to Args class.
  */
 
+#region Namespace imports
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
 {

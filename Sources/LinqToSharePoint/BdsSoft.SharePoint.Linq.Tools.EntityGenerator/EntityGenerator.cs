@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -17,6 +17,8 @@
  * 0.2.2 - New entity model
  */
 
+#region Namespace imports
+
 using System;
 using System.CodeDom;
 using System.ComponentModel;
@@ -26,6 +28,8 @@ using System.Net;
 using System.Text;
 using System.Xml;
 using Microsoft.SharePoint;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {
@@ -198,6 +202,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             omCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
             omCtor.Comments.Add(new CodeCommentStatement("<param name=\"site\">SharePoint site object.</param>", true));
             ctx.Members.Add(omCtor);
+
+            CodeConstructor customCtor = new CodeConstructor();
+            customCtor.Attributes = MemberAttributes.Public;
+            customCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
+            customCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference(typeof(Uri), CodeTypeReferenceOptions.GlobalReference), new CodePrimitiveExpression(args.Url)));
+            customCtor.Comments.Add(new CodeCommentStatement("<summary>", true));
+            customCtor.Comments.Add(new CodeCommentStatement("Connect to the " + args.Url + " SharePoint site using the SharePoint web services.", true));
+            customCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
+            ctx.Members.Add(customCtor);
 
             //
             // Add entity properties.

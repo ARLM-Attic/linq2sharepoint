@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -7,6 +7,8 @@
  * 
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
+
+#region Namespace imports
 
 using System;
 using System.Collections.Generic;
@@ -16,9 +18,11 @@ using BdsSoft.SharePoint.Linq;
 using Microsoft.SharePoint;
 using System.Reflection;
 
+#endregion
+
 namespace Tests
 {
-    public class SharePointListEntityTest// : SharePointListEntity
+    public class SharePointListEntityTest
     {
         public SharePointListEntityTest() : base()
         {
@@ -94,7 +98,7 @@ namespace Tests
             item.Update();
         }
 
-        public static SPList CreateList<T>(SPWeb web) //where T : SharePointListEntityTest
+        public static SPList CreateList<T>(SPWeb web)
         {
             ListAttribute la = GetListAttribute(typeof(T));
 
@@ -115,7 +119,7 @@ namespace Tests
             return lst;
         }
 
-        public static SPList Create<T>(SPWeb web) where T : new() //where T : SharePointListEntityTest, new()
+        public static SPList Create<T>(SPWeb web) where T : new()
         {
             SPList lst = CreateList<T>(web);
 

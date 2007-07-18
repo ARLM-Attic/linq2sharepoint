@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -12,11 +12,15 @@
  * Based on the Microsoft Visual Studio 2008 SDK sample for Single File Generators.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.VisualStudio.Shell;
 using System.Globalization;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {

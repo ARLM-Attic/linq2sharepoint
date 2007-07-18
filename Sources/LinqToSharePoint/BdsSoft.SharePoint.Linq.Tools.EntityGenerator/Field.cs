@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -8,12 +8,16 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
 using System.CodeDom;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {

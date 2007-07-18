@@ -1,5 +1,5 @@
 ﻿''
-'' LINQ-to-SharePoint
+'' LINQ to SharePoint
 '' http://www.codeplex.com/LINQtoSharePoint
 '' 
 '' Copyright Bart De Smet (C) 2007

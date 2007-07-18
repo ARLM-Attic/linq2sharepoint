@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -15,6 +15,8 @@
  * 0.2.2 - Added language tracking to provide to the entity generator
  */
 
+#region Namespace imports
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,6 +30,8 @@ using System.IO;
 using System.Xml;
 using EnvDTE;
 using System.Diagnostics;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
@@ -81,62 +85,70 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             foreach (XmlNode list in root["Lists"].ChildNodes)
                 lists.Add(list.Attributes["Name"].InnerText);
 
-            EG.EntityGeneratorArgs args = new EG.EntityGeneratorArgs();
-            args.Namespace = this.FileNameSpace;
-            
-            string lang = GetProject().CodeModel.Language;
-            Debug.Assert(lang == CodeModelLanguageConstants.vsCMLanguageCSharp || lang == CodeModelLanguageConstants.vsCMLanguageVB);
+            //
+            // Generate code if lists were specified (needs to be replaced in the future by an export-all-lists option in case no lists are specified).
+            //
+            if (lists.Count > 0)
+            {
+                EG.EntityGeneratorArgs args = new EG.EntityGeneratorArgs();
+                args.Namespace = this.FileNameSpace;
 
-            if (lang == CodeModelLanguageConstants.vsCMLanguageCSharp)
-                args.Language = EG.Language.CSharp;
-            else if (lang == CodeModelLanguageConstants.vsCMLanguageVB)
-                args.Language = EG.Language.VB;
+                string lang = GetProject().CodeModel.Language;
+                Debug.Assert(lang == CodeModelLanguageConstants.vsCMLanguageCSharp || lang == CodeModelLanguageConstants.vsCMLanguageVB);
+
+                if (lang == CodeModelLanguageConstants.vsCMLanguageCSharp)
+                    args.Language = EG.Language.CSharp;
+                else if (lang == CodeModelLanguageConstants.vsCMLanguageVB)
+                    args.Language = EG.Language.VB;
+                else
+                    throw new NotSupportedException("Specified language not supported.");
+
+                args.Url = url;
+
+                EG.EntityGenerator gen = new EG.EntityGenerator(args);
+                gen.Connecting += delegate(object sender, EG.ConnectingEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(10, 100);
+                    };
+                gen.Connected += delegate(object sender, EG.ConnectedEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(15, 100);
+                    };
+
+                uint progress = 20;
+                uint step = (100 - progress) / (4 * (uint)lists.Count);
+
+                gen.ExportingSchema += delegate(object sender, EG.ExportingSchemaEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(progress, 100);
+                        progress += step;
+                    };
+                gen.ExportedSchema += delegate(object sender, EG.ExportedSchemaEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(progress, 100);
+                        progress += step;
+                    };
+                gen.LoadingSchema += delegate(object sender, EG.LoadingSchemaEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(progress, 100);
+                        progress += step;
+                    };
+                gen.LoadedSchema += delegate(object sender, EG.LoadedSchemaEventArgs e)
+                    {
+                        if (this.CodeGeneratorProgress != null)
+                            this.CodeGeneratorProgress.Progress(progress, 100);
+                        progress += step;
+                    };
+
+                return GenerateCode(name, lists, gen);
+            }
             else
-                throw new NotSupportedException("Specified language not supported.");
-
-            args.Url = url;
-
-            EG.EntityGenerator gen = new EG.EntityGenerator(args);
-            gen.Connecting += delegate(object sender, EG.ConnectingEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(10, 100);
-                };
-            gen.Connected += delegate(object sender, EG.ConnectedEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(15, 100);
-                };
-
-            uint progress = 20;
-            uint step = (100 - progress) / (4 * (uint)lists.Count);
-
-            gen.ExportingSchema += delegate(object sender, EG.ExportingSchemaEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(progress, 100);
-                    progress += step;
-                };
-            gen.ExportedSchema += delegate(object sender, EG.ExportedSchemaEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(progress, 100);
-                    progress += step;
-                };
-            gen.LoadingSchema += delegate(object sender, EG.LoadingSchemaEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(progress, 100);
-                    progress += step;
-                };
-            gen.LoadedSchema += delegate(object sender, EG.LoadedSchemaEventArgs e)
-                {
-                    if (this.CodeGeneratorProgress != null)
-                        this.CodeGeneratorProgress.Progress(progress, 100);
-                    progress += step;
-                };
-
-            return GenerateCode(name, lists, gen);
+                return new byte[] { };
         }
 
         private byte[] GenerateCode(string contextName, List<string> lists, EG.EntityGenerator gen)

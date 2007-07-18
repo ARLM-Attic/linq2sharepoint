@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -15,10 +15,14 @@
  * 0.2.2 - New entity model
  */
 
+#region Namespace imports
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 {

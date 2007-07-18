@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -185,7 +185,7 @@ namespace BdsSoft.SharePoint.Linq
                         SetResultRestriction(1);
                         break;
                     //
-                    // Currently we don't support additional query operators in LINQ-to-SharePoint.
+                    // Currently we don't support additional query operators in LINQ to SharePoint.
                     //
                     default:
                         this.UnsupportedQueryOperator(mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE); /* PARSE ERROR */
@@ -1429,7 +1429,7 @@ namespace BdsSoft.SharePoint.Linq
                             // NOTE: This translation causes a semantic mismatch between SharePoint and C#. A condition like "e.X == MC.A | MC.B | MC.C"
                             //       has an absolute equality characteristic in C# while CAML has a more relaxed evaluation where e.X == MC.A means that
                             //       option A should be set on field X, while it doesn't say anything about possible other values being present.
-                            //       In LINQ-to-SharePoint, e.X == MC.A | MC.B | MC.C means that choices A, B and C should be set, but not necessarily
+                            //       In LINQ to SharePoint, e.X == MC.A | MC.B | MC.C means that choices A, B and C should be set, but not necessarily
                             //       exclusively; that is, other choices may be set and the MC.A | MC.B | MC.C represents a subset of the actual value.
                             //
                             c = null;

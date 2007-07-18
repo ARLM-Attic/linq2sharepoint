@@ -1,5 +1,5 @@
 ﻿/*
- * LINQ-to-SharePoint
+ * LINQ to SharePoint
  * http://www.codeplex.com/LINQtoSharePoint
  * 
  * Copyright Bart De Smet (C) 2007
@@ -182,6 +182,14 @@ namespace BdsSoft.SharePoint.Linq
                 else
                     return VoidResult<T>();
             }
+
+            //
+            // Logging gathered query information.
+            //
+            if (_results.Context._site != null)
+                DoLogging(_list.Title, _results.Where, _results.Order, _results.Projection);
+            else
+                DoLogging(_wsList, _results.Where, _results.Order, _results.Projection);
 
             //
             // Perform query via the SharePoint Object Model or via SharePoint web services.
@@ -659,11 +667,6 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
-            // Perform logging of the gathered information.
-            //
-            DoLogging(_list.Title, _results.Where, _results.Order, _results.Projection);
-
-            //
             // Execute the query via the SPList object.
             //
             SPListItemCollection items;
@@ -707,11 +710,6 @@ namespace BdsSoft.SharePoint.Linq
                 query.AppendChild(this._results.Where);
             if (_results.Order != null)
                 query.AppendChild(_results.Order);
-
-            //
-            // Perform logging of the gathered information.
-            //
-            DoLogging(_wsList, _results.Where, _results.Order, _results.Projection);
 
             //
             // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
