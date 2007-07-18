@@ -42,5 +42,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         {
             get { return "Entity mapping generation completed"; }
         }
+
+        public bool CanNext
+        {
+            get { return false; }
+        }
+
+        public event EventHandler StateChanged;
     }
 }

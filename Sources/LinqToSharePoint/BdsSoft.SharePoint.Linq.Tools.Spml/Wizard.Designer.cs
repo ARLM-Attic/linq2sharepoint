@@ -28,16 +28,17 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Wizard));
             this.panel1 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.lblTitle = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.line1 = new BdsSoft.SharePoint.Linq.Tools.Spml.Line();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnFinish = new System.Windows.Forms.Button();
             this.btnNext = new System.Windows.Forms.Button();
             this.btnPrev = new System.Windows.Forms.Button();
             this.contents = new System.Windows.Forms.Panel();
+            this.line1 = new BdsSoft.SharePoint.Linq.Tools.Spml.Line();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
@@ -52,7 +53,7 @@
             this.panel1.Controls.Add(this.lblTitle);
             this.panel1.Location = new System.Drawing.Point(-1, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(445, 42);
+            this.panel1.Size = new System.Drawing.Size(475, 42);
             this.panel1.TabIndex = 0;
             // 
             // pictureBox1
@@ -76,31 +77,23 @@
             // 
             // panel2
             // 
-            this.panel2.Controls.Add(this.line1);
+            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.panel2.Controls.Add(this.btnCancel);
             this.panel2.Controls.Add(this.btnFinish);
             this.panel2.Controls.Add(this.btnNext);
             this.panel2.Controls.Add(this.btnPrev);
-            this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 274);
+            this.panel2.Location = new System.Drawing.Point(3, 364);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(442, 49);
+            this.panel2.Size = new System.Drawing.Size(457, 49);
             this.panel2.TabIndex = 5;
-            // 
-            // line1
-            // 
-            this.line1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.line1.Location = new System.Drawing.Point(0, 0);
-            this.line1.Name = "line1";
-            this.line1.Size = new System.Drawing.Size(442, 10);
-            this.line1.TabIndex = 9;
-            this.line1.Text = "line1";
             // 
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.CausesValidation = false;
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(356, 14);
+            this.btnCancel.Location = new System.Drawing.Point(378, 14);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
             this.btnCancel.TabIndex = 8;
@@ -111,7 +104,7 @@
             // btnFinish
             // 
             this.btnFinish.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnFinish.Location = new System.Drawing.Point(272, 14);
+            this.btnFinish.Location = new System.Drawing.Point(294, 14);
             this.btnFinish.Name = "btnFinish";
             this.btnFinish.Size = new System.Drawing.Size(75, 23);
             this.btnFinish.TabIndex = 7;
@@ -122,7 +115,7 @@
             // btnNext
             // 
             this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnNext.Location = new System.Drawing.Point(188, 14);
+            this.btnNext.Location = new System.Drawing.Point(210, 14);
             this.btnNext.Name = "btnNext";
             this.btnNext.Size = new System.Drawing.Size(75, 23);
             this.btnNext.TabIndex = 6;
@@ -134,7 +127,7 @@
             // 
             this.btnPrev.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnPrev.Enabled = false;
-            this.btnPrev.Location = new System.Drawing.Point(110, 14);
+            this.btnPrev.Location = new System.Drawing.Point(132, 14);
             this.btnPrev.Name = "btnPrev";
             this.btnPrev.Size = new System.Drawing.Size(75, 23);
             this.btnPrev.TabIndex = 5;
@@ -147,10 +140,21 @@
             this.contents.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.contents.AutoScroll = true;
             this.contents.Location = new System.Drawing.Point(3, 49);
             this.contents.Name = "contents";
-            this.contents.Size = new System.Drawing.Size(439, 219);
+            this.contents.Size = new System.Drawing.Size(469, 309);
             this.contents.TabIndex = 6;
+            // 
+            // line1
+            // 
+            this.line1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.line1.Location = new System.Drawing.Point(-1, 362);
+            this.line1.Name = "line1";
+            this.line1.Size = new System.Drawing.Size(475, 10);
+            this.line1.TabIndex = 10;
+            this.line1.Text = "line1";
             // 
             // Wizard
             // 
@@ -158,18 +162,21 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(442, 323);
+            this.ClientSize = new System.Drawing.Size(472, 413);
+            this.Controls.Add(this.line1);
             this.Controls.Add(this.contents);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(450, 350);
+            this.MinimumSize = new System.Drawing.Size(480, 440);
             this.Name = "Wizard";
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "LINQ to SharePoint Entity Wizard";
             this.Load += new System.EventHandler(this.Wizard_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Wizard_FormClosing);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
@@ -188,7 +195,7 @@
         private System.Windows.Forms.Button btnFinish;
         private System.Windows.Forms.Button btnNext;
         private System.Windows.Forms.Button btnPrev;
-        private Line line1;
         private System.Windows.Forms.Panel contents;
+        private Line line1;
     }
 }

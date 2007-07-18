@@ -7,5 +7,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     interface IWizardStep
     {
         string Title { get; }
+        bool CanNext { get; }
+        event EventHandler StateChanged;
     }
 }

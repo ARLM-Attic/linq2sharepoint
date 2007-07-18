@@ -28,12 +28,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private List<Control> steps;
         private Context context;
         private int step;
+        private IWizardStep current;
+        private bool noCancel = false;
 
         public Wizard()
         {
             context = new Context();
             steps = new List<Control>() {
                         new Welcome(context),
+                        new Connect(context),
                         new Finish(context)
                     };
 
@@ -43,46 +46,73 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             Step();
         }
 
+        public Context Context
+        {
+            get
+            {
+                return context;
+            }
+        }
+
         private void Step()
         {
+            //
+            // Get rid of old step.
+            //
+            contents.Controls.Clear();
+
+            //
+            // Get next step.
+            //
+            Control c = steps[step];
+            c.Dock = DockStyle.Fill;
+            contents.Controls.Add(c);
+
+            IWizardStep s = c as IWizardStep;
+            Debug.Assert(s != null);
+            current = s;
+
+            lblTitle.Text = s.Title;
+
+            //
+            // Event handler.
+            //
+            current.StateChanged +=
+                delegate(object sender, EventArgs e)
+                {
+                    btnNext.Enabled = ((IWizardStep)sender).CanNext;
+                };
+
+            //
+            // Enable/disable buttons.
+            //
+            btnNext.Enabled = current.CanNext;
             if (step == 0)
             {
                 btnPrev.Enabled = false;
-                btnNext.Enabled = true;
                 btnFinish.Enabled = false;
                 btnCancel.Enabled = true;
             }
             else if (step == steps.Count - 1)
             {
                 btnPrev.Enabled = false;
-                btnNext.Enabled = false;
                 btnFinish.Enabled = true;
                 btnCancel.Enabled = false;
 
                 this.AcceptButton = btnFinish;
+                noCancel = true;
             }
             else
             {
                 btnPrev.Enabled = true;
-                btnNext.Enabled = true;
                 btnFinish.Enabled = false;
                 btnCancel.Enabled = true;
             }
-
-            Control c = steps[step];
-            c.Dock = DockStyle.Fill;
-
-            IWizardStep s = c as IWizardStep;
-            if (s != null)
-                lblTitle.Text = s.Title;
-
-            contents.Controls.Clear();
-            contents.Controls.Add(c);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.Cancel;
+            //this.DialogResult = DialogResult.Cancel;
         }
 
         private void btnFinish_Click(object sender, EventArgs e)
@@ -107,6 +137,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             Debug.Assert(step > 0);
             step--;
             Step();
+        }
+
+        private void Wizard_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            e.Cancel = !ConfirmClose();
+        }
+
+        private bool ConfirmClose()
+        {
+            if (noCancel)
+                return true;
+            else
+                return MessageBox.Show("Are you sure you want to cancel the wizard?", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes;
         }
     }
 }

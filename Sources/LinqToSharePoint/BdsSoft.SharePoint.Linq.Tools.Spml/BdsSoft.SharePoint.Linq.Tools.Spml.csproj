@@ -86,6 +86,12 @@
     <Compile Include="BaseCodeGenerator.cs" />
     <Compile Include="BaseCodeGeneratorWithSite.cs" />
     <Compile Include="CodeGeneratorRegistrationAttribute.cs" />
+    <Compile Include="Connect.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connect.Designer.cs">
+      <DependentUpon>Connect.cs</DependentUpon>
+    </Compile>
     <Compile Include="Context.cs" />
     <Compile Include="CreateSpmlWizard.cs" />
     <Compile Include="Finish.cs">
@@ -137,6 +143,10 @@
     <None Include="key.snk" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Connect.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>Connect.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="InstallProgress.resx">
       <SubType>Designer</SubType>
       <DependentUpon>InstallProgress.cs</DependentUpon>
@@ -164,6 +174,7 @@
   <ItemGroup>
     <Content Include="Item packages\LINQtoSharePointCS.zip" />
     <Content Include="Item packages\LINQtoSharePointVB.zip" />
+    <Content Include="LINQtoSharePoint.ico" />
     <None Include="Resources\sharepoint1.bmp" />
   </ItemGroup>
   <PropertyGroup>
@@ -188,4 +199,7 @@
     <VisualStudio>
     </VisualStudio>
   </ProjectExtensions>
+  <PropertyGroup>
+    <PostBuildEvent>"$(ProgramFiles)\Microsoft Visual Studio 8\SDK\v2.0\Bin\gacutil.exe" /if "$(TargetPath)"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

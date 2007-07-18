@@ -58,6 +58,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 Wizard start = new Wizard();
                 DialogResult res = start.ShowDialog(window);
                 _ok = res == DialogResult.OK;
+
+                if (_ok)
+                {
+                    replacementsDictionary.Add("$WssUrl$", start.Context.WssUrl);
+                }
             }
         }
 
