@@ -9,5 +9,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         string Title { get; }
         bool CanNext { get; }
         event EventHandler StateChanged;
+        event EventHandler Working;
+        event EventHandler WorkCompleted;
     }
 }

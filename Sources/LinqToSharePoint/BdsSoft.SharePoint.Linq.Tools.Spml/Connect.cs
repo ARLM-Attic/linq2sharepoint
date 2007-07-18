@@ -5,6 +5,9 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using System.Net;
+using System.Xml;
+using System.Web.Services.Protocols;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
@@ -37,23 +40,24 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         }
 
         public event EventHandler StateChanged;
+        public event EventHandler Working;
+        public event EventHandler WorkCompleted;
 
         private void btnTest_Click(object sender, EventArgs e)
         {
             if (this.ValidateChildren(ValidationConstraints.Enabled | ValidationConstraints.Selectable))
             {
-                context.WssUrl = txtUrl.Text;
-                if (radCustom.Checked)
-                {
-                    context.WssUser = txtUser.Text;
-                    context.WssPassword = txtPassword.Text;
-                    context.WssDomain = txtDomain.Text;
-                }
+                panel.Enabled = false;
+                if (Working != null)
+                    Working(this, new EventArgs());
 
-                _next = true;
+                string url = txtUrl.Text;
+                string user = txtUser.Text;
+                string password = txtPassword.Text;
+                string domain = txtDomain.Text;
 
-                if (StateChanged != null)
-                    StateChanged(this, new EventArgs());
+                ConnectionParameters conn = new ConnectionParameters() { Url = url, User = user, Password = password, Domain = domain, CustomAuthentication = radCustom.Checked };
+                bgConnect.RunWorkerAsync(conn);
             }
         }
 
@@ -67,6 +71,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 errors.SetError(txtPassword, "");
                 errors.SetError(txtDomain, "");
             }
+
+            Reset();
         }
 
         private void txtUrl_Validating(object sender, CancelEventArgs e)
@@ -112,5 +118,103 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             else
                 errors.SetError(txtDomain, "");
         }
+
+        private void bgConnect_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error == null)
+            {
+                context.Connection = (Connection)e.Result;
+
+                _next = true;
+                if (StateChanged != null)
+                    StateChanged(this, new EventArgs());
+            }
+            else
+            {
+                lblError.Visible = false;
+            }
+
+            panel.Enabled = true;
+            if (WorkCompleted != null)
+                WorkCompleted(this, new EventArgs());
+        }
+
+        private void bgConnect_DoWork(object sender, DoWorkEventArgs e)
+        {
+            ConnectionParameters parameters = (ConnectionParameters)e.Argument;
+
+            WebServices.Lists lists = new WebServices.Lists();
+            lists.Url = parameters.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
+
+            if (!parameters.CustomAuthentication)
+                lists.Credentials = CredentialCache.DefaultNetworkCredentials;
+            else
+                lists.Credentials = new NetworkCredential(parameters.User, parameters.Password, parameters.Domain);
+
+            XmlNode result = lists.GetListCollection();
+            e.Result = new Connection() { ListsProxy = lists, Parameters = parameters };
+        }
+
+        private void txtUrl_TextChanged(object sender, EventArgs e)
+        {
+            Reset();
+        }
+
+        private void txtUser_TextChanged(object sender, EventArgs e)
+        {
+            Reset();
+        }
+
+        private void txtPassword_TextChanged(object sender, EventArgs e)
+        {
+            Reset();
+        }
+
+        private void txtDomain_TextChanged(object sender, EventArgs e)
+        {
+            Reset();
+        }
+
+        private void Reset()
+        {
+            _next = false;
+            if (StateChanged != null)
+                StateChanged(this, new EventArgs());
+        }
+
+        private void txtPassword_Enter(object sender, EventArgs e)
+        {
+            txtPassword.SelectAll();
+        }
+
+        private void txtUser_Enter(object sender, EventArgs e)
+        {
+            txtUser.SelectAll();
+        }
+
+        private void txtDomain_Enter(object sender, EventArgs e)
+        {
+            txtDomain.SelectAll();
+        }
+
+        private void txtUrl_Enter(object sender, EventArgs e)
+        {
+            txtUrl.SelectAll();
+        }
+    }
+
+    public class ConnectionParameters
+    {
+        public string Url { get; set; }
+        public bool CustomAuthentication { get; set; }
+        public string User { get; set; }
+        public string Password { get; set; }
+        public string Domain { get; set; }
+    }
+
+    public class Connection
+    {
+        public WebServices.Lists ListsProxy { get; set; }
+        public ConnectionParameters Parameters { get; set; }
     }
 }

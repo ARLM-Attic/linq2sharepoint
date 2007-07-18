@@ -31,23 +31,27 @@
             this.components = new System.ComponentModel.Container();
             this.label3 = new System.Windows.Forms.Label();
             this.btnTest = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
+            this.errors = new System.Windows.Forms.ErrorProvider(this.components);
             this.txtUrl = new System.Windows.Forms.TextBox();
+            this.txtUser = new System.Windows.Forms.TextBox();
+            this.txtPassword = new System.Windows.Forms.TextBox();
+            this.txtDomain = new System.Windows.Forms.TextBox();
+            this.bgConnect = new System.ComponentModel.BackgroundWorker();
+            this.panel = new System.Windows.Forms.Panel();
+            this.lblError = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.panelCustom = new System.Windows.Forms.Panel();
-            this.txtDomain = new System.Windows.Forms.TextBox();
-            this.txtPassword = new System.Windows.Forms.TextBox();
-            this.txtUser = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.radCustom = new System.Windows.Forms.RadioButton();
             this.radNetwork = new System.Windows.Forms.RadioButton();
-            this.errors = new System.Windows.Forms.ErrorProvider(this.components);
+            ((System.ComponentModel.ISupportInitialize)(this.errors)).BeginInit();
+            this.panel.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.panelCustom.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.errors)).BeginInit();
             this.SuspendLayout();
             // 
             // label3
@@ -64,7 +68,7 @@
             // btnTest
             // 
             this.btnTest.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnTest.Location = new System.Drawing.Point(300, 255);
+            this.btnTest.Location = new System.Drawing.Point(291, 210);
             this.btnTest.Name = "btnTest";
             this.btnTest.Size = new System.Drawing.Size(100, 23);
             this.btnTest.TabIndex = 11;
@@ -72,30 +76,108 @@
             this.btnTest.UseVisualStyleBackColor = true;
             this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
             // 
-            // label1
+            // errors
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 43);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "&Site URL:";
+            this.errors.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
+            this.errors.ContainerControl = this;
             // 
             // txtUrl
             // 
             this.txtUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.errors.SetIconPadding(this.txtUrl, 5);
-            this.txtUrl.Location = new System.Drawing.Point(65, 40);
+            this.txtUrl.Location = new System.Drawing.Point(59, 0);
             this.txtUrl.Name = "txtUrl";
-            this.txtUrl.Size = new System.Drawing.Size(305, 20);
+            this.txtUrl.Size = new System.Drawing.Size(302, 20);
             this.txtUrl.TabIndex = 2;
+            this.txtUrl.TextChanged += new System.EventHandler(this.txtUrl_TextChanged);
+            this.txtUrl.Enter += new System.EventHandler(this.txtUrl_Enter);
             this.txtUrl.Validating += new System.ComponentModel.CancelEventHandler(this.txtUrl_Validating);
+            // 
+            // txtUser
+            // 
+            this.txtUser.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.errors.SetIconPadding(this.txtUser, 5);
+            this.txtUser.Location = new System.Drawing.Point(67, 1);
+            this.txtUser.Name = "txtUser";
+            this.txtUser.Size = new System.Drawing.Size(259, 20);
+            this.txtUser.TabIndex = 1;
+            this.txtUser.TextChanged += new System.EventHandler(this.txtUser_TextChanged);
+            this.txtUser.Enter += new System.EventHandler(this.txtUser_Enter);
+            this.txtUser.Validating += new System.ComponentModel.CancelEventHandler(this.txtUser_Validating);
+            // 
+            // txtPassword
+            // 
+            this.txtPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.errors.SetIconPadding(this.txtPassword, 5);
+            this.txtPassword.Location = new System.Drawing.Point(67, 29);
+            this.txtPassword.Name = "txtPassword";
+            this.txtPassword.Size = new System.Drawing.Size(259, 20);
+            this.txtPassword.TabIndex = 3;
+            this.txtPassword.UseSystemPasswordChar = true;
+            this.txtPassword.TextChanged += new System.EventHandler(this.txtPassword_TextChanged);
+            this.txtPassword.Enter += new System.EventHandler(this.txtPassword_Enter);
+            this.txtPassword.Validating += new System.ComponentModel.CancelEventHandler(this.txtPassword_Validating);
+            // 
+            // txtDomain
+            // 
+            this.txtDomain.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.errors.SetIconPadding(this.txtDomain, 5);
+            this.txtDomain.Location = new System.Drawing.Point(67, 57);
+            this.txtDomain.Name = "txtDomain";
+            this.txtDomain.Size = new System.Drawing.Size(259, 20);
+            this.txtDomain.TabIndex = 5;
+            this.txtDomain.TextChanged += new System.EventHandler(this.txtDomain_TextChanged);
+            this.txtDomain.Enter += new System.EventHandler(this.txtDomain_Enter);
+            this.txtDomain.Validating += new System.ComponentModel.CancelEventHandler(this.txtDomain_Validating);
+            // 
+            // bgConnect
+            // 
+            this.bgConnect.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bgConnect_DoWork);
+            this.bgConnect.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bgConnect_RunWorkerCompleted);
+            // 
+            // panel
+            // 
+            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel.Controls.Add(this.lblError);
+            this.panel.Controls.Add(this.label1);
+            this.panel.Controls.Add(this.txtUrl);
+            this.panel.Controls.Add(this.btnTest);
+            this.panel.Controls.Add(this.label2);
+            this.panel.Controls.Add(this.groupBox1);
+            this.panel.Location = new System.Drawing.Point(9, 42);
+            this.panel.Name = "panel";
+            this.panel.Size = new System.Drawing.Size(391, 237);
+            this.panel.TabIndex = 12;
+            // 
+            // lblError
+            // 
+            this.lblError.AutoSize = true;
+            this.lblError.ForeColor = System.Drawing.Color.Red;
+            this.lblError.Location = new System.Drawing.Point(0, 215);
+            this.lblError.Name = "lblError";
+            this.lblError.Size = new System.Drawing.Size(196, 13);
+            this.lblError.TabIndex = 12;
+            this.lblError.Text = "Failed to connect to the SharePoint site.";
+            this.lblError.Visible = false;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(0, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(53, 13);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "&Site URL:";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(62, 63);
+            this.label2.Location = new System.Drawing.Point(59, 23);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(110, 13);
             this.label2.TabIndex = 3;
@@ -108,9 +190,9 @@
             this.groupBox1.Controls.Add(this.panelCustom);
             this.groupBox1.Controls.Add(this.radCustom);
             this.groupBox1.Controls.Add(this.radNetwork);
-            this.groupBox1.Location = new System.Drawing.Point(9, 92);
+            this.groupBox1.Location = new System.Drawing.Point(0, 48);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(391, 157);
+            this.groupBox1.Size = new System.Drawing.Size(391, 156);
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Log on to the server";
@@ -130,40 +212,6 @@
             this.panelCustom.Name = "panelCustom";
             this.panelCustom.Size = new System.Drawing.Size(350, 86);
             this.panelCustom.TabIndex = 2;
-            // 
-            // txtDomain
-            // 
-            this.txtDomain.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtDomain, 5);
-            this.txtDomain.Location = new System.Drawing.Point(67, 57);
-            this.txtDomain.Name = "txtDomain";
-            this.txtDomain.Size = new System.Drawing.Size(259, 20);
-            this.txtDomain.TabIndex = 5;
-            this.txtDomain.Validating += new System.ComponentModel.CancelEventHandler(this.txtDomain_Validating);
-            // 
-            // txtPassword
-            // 
-            this.txtPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtPassword, 5);
-            this.txtPassword.Location = new System.Drawing.Point(67, 29);
-            this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(259, 20);
-            this.txtPassword.TabIndex = 3;
-            this.txtPassword.UseSystemPasswordChar = true;
-            this.txtPassword.Validating += new System.ComponentModel.CancelEventHandler(this.txtPassword_Validating);
-            // 
-            // txtUser
-            // 
-            this.txtUser.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtUser, 5);
-            this.txtUser.Location = new System.Drawing.Point(67, 1);
-            this.txtUser.Name = "txtUser";
-            this.txtUser.Size = new System.Drawing.Size(259, 20);
-            this.txtUser.TabIndex = 1;
-            this.txtUser.Validating += new System.ComponentModel.CancelEventHandler(this.txtUser_Validating);
             // 
             // label6
             // 
@@ -216,31 +264,23 @@
             this.radNetwork.Text = "Default &network credentials";
             this.radNetwork.UseVisualStyleBackColor = true;
             // 
-            // errors
-            // 
-            this.errors.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
-            this.errors.ContainerControl = this;
-            // 
             // Connect
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.txtUrl);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.btnTest);
+            this.Controls.Add(this.panel);
             this.Controls.Add(this.label3);
             this.Name = "Connect";
             this.Size = new System.Drawing.Size(411, 282);
             this.Load += new System.EventHandler(this.Connect_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.errors)).EndInit();
+            this.panel.ResumeLayout(false);
+            this.panel.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.panelCustom.ResumeLayout(false);
             this.panelCustom.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.errors)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -248,19 +288,22 @@
 
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnTest;
+        private System.Windows.Forms.ErrorProvider errors;
+        private System.ComponentModel.BackgroundWorker bgConnect;
+        private System.Windows.Forms.Panel panel;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtUrl;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Panel panelCustom;
+        private System.Windows.Forms.TextBox txtDomain;
+        private System.Windows.Forms.TextBox txtPassword;
+        private System.Windows.Forms.TextBox txtUser;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.RadioButton radCustom;
         private System.Windows.Forms.RadioButton radNetwork;
-        private System.Windows.Forms.TextBox txtDomain;
-        private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.TextBox txtUser;
-        private System.Windows.Forms.ErrorProvider errors;
+        private System.Windows.Forms.Label lblError;
     }
 }

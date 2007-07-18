@@ -39,11 +39,36 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                         new Connect(context),
                         new Finish(context)
                     };
+            SetupEvents();
 
             InitializeComponent();
 
             step = 0;
             Step();
+        }
+
+        private void SetupEvents()
+        {
+            foreach (IWizardStep step in steps)
+            {
+                step.StateChanged +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        btnNext.Enabled = ((IWizardStep)sender).CanNext;
+                    };
+                step.Working +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        progress.Visible = true;
+                        buttons.Enabled = false;
+                    };
+                step.WorkCompleted +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        progress.Visible = false;
+                        buttons.Enabled = true;
+                    };
+            }
         }
 
         public Context Context
@@ -73,15 +98,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             current = s;
 
             lblTitle.Text = s.Title;
-
-            //
-            // Event handler.
-            //
-            current.StateChanged +=
-                delegate(object sender, EventArgs e)
-                {
-                    btnNext.Enabled = ((IWizardStep)sender).CanNext;
-                };
 
             //
             // Enable/disable buttons.
@@ -122,7 +138,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void Wizard_Load(object sender, EventArgs e)
         {
-
+            btnNext.Focus();
         }
 
         private void btnNext_Click(object sender, EventArgs e)

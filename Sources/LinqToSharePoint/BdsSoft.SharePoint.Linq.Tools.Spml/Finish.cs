@@ -49,5 +49,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         }
 
         public event EventHandler StateChanged;
+        public event EventHandler Working;
+        public event EventHandler WorkCompleted;
     }
 }

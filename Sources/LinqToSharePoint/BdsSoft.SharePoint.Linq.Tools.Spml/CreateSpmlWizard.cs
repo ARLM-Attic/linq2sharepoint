@@ -61,7 +61,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 if (_ok)
                 {
-                    replacementsDictionary.Add("$WssUrl$", start.Context.WssUrl);
+                    replacementsDictionary.Add("$WssUrl$", start.Context.Connection.Parameters.Url);
                 }
             }
         }

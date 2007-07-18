@@ -33,15 +33,18 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.lblTitle = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.btnCancel = new System.Windows.Forms.Button();
+            this.buttons = new System.Windows.Forms.Panel();
             this.btnFinish = new System.Windows.Forms.Button();
             this.btnNext = new System.Windows.Forms.Button();
             this.btnPrev = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.contents = new System.Windows.Forms.Panel();
+            this.progress = new System.Windows.Forms.ProgressBar();
             this.line1 = new BdsSoft.SharePoint.Linq.Tools.Spml.Line();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
+            this.buttons.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -79,14 +82,57 @@
             // 
             this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel2.Controls.Add(this.buttons);
             this.panel2.Controls.Add(this.btnCancel);
-            this.panel2.Controls.Add(this.btnFinish);
-            this.panel2.Controls.Add(this.btnNext);
-            this.panel2.Controls.Add(this.btnPrev);
             this.panel2.Location = new System.Drawing.Point(3, 364);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(457, 49);
             this.panel2.TabIndex = 5;
+            // 
+            // buttons
+            // 
+            this.buttons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttons.Controls.Add(this.btnFinish);
+            this.buttons.Controls.Add(this.btnNext);
+            this.buttons.Controls.Add(this.btnPrev);
+            this.buttons.Location = new System.Drawing.Point(29, 14);
+            this.buttons.Name = "buttons";
+            this.buttons.Size = new System.Drawing.Size(340, 23);
+            this.buttons.TabIndex = 0;
+            // 
+            // btnFinish
+            // 
+            this.btnFinish.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnFinish.Location = new System.Drawing.Point(265, 0);
+            this.btnFinish.Name = "btnFinish";
+            this.btnFinish.Size = new System.Drawing.Size(75, 23);
+            this.btnFinish.TabIndex = 2;
+            this.btnFinish.Text = "&Finish";
+            this.btnFinish.UseVisualStyleBackColor = true;
+            this.btnFinish.Click += new System.EventHandler(this.btnFinish_Click);
+            // 
+            // btnNext
+            // 
+            this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnNext.Location = new System.Drawing.Point(181, 0);
+            this.btnNext.Name = "btnNext";
+            this.btnNext.Size = new System.Drawing.Size(75, 23);
+            this.btnNext.TabIndex = 1;
+            this.btnNext.Text = "&Next >";
+            this.btnNext.UseVisualStyleBackColor = true;
+            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            // 
+            // btnPrev
+            // 
+            this.btnPrev.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPrev.Enabled = false;
+            this.btnPrev.Location = new System.Drawing.Point(103, 0);
+            this.btnPrev.Name = "btnPrev";
+            this.btnPrev.Size = new System.Drawing.Size(75, 23);
+            this.btnPrev.TabIndex = 0;
+            this.btnPrev.Text = "< &Previous";
+            this.btnPrev.UseVisualStyleBackColor = true;
+            this.btnPrev.Click += new System.EventHandler(this.btnPrev_Click);
             // 
             // btnCancel
             // 
@@ -96,44 +142,10 @@
             this.btnCancel.Location = new System.Drawing.Point(378, 14);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 8;
+            this.btnCancel.TabIndex = 1;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
-            // 
-            // btnFinish
-            // 
-            this.btnFinish.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnFinish.Location = new System.Drawing.Point(294, 14);
-            this.btnFinish.Name = "btnFinish";
-            this.btnFinish.Size = new System.Drawing.Size(75, 23);
-            this.btnFinish.TabIndex = 7;
-            this.btnFinish.Text = "&Finish";
-            this.btnFinish.UseVisualStyleBackColor = true;
-            this.btnFinish.Click += new System.EventHandler(this.btnFinish_Click);
-            // 
-            // btnNext
-            // 
-            this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnNext.Location = new System.Drawing.Point(210, 14);
-            this.btnNext.Name = "btnNext";
-            this.btnNext.Size = new System.Drawing.Size(75, 23);
-            this.btnNext.TabIndex = 6;
-            this.btnNext.Text = "&Next >";
-            this.btnNext.UseVisualStyleBackColor = true;
-            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
-            // 
-            // btnPrev
-            // 
-            this.btnPrev.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPrev.Enabled = false;
-            this.btnPrev.Location = new System.Drawing.Point(132, 14);
-            this.btnPrev.Name = "btnPrev";
-            this.btnPrev.Size = new System.Drawing.Size(75, 23);
-            this.btnPrev.TabIndex = 5;
-            this.btnPrev.Text = "< &Previous";
-            this.btnPrev.UseVisualStyleBackColor = true;
-            this.btnPrev.Click += new System.EventHandler(this.btnPrev_Click);
             // 
             // contents
             // 
@@ -143,8 +155,19 @@
             this.contents.AutoScroll = true;
             this.contents.Location = new System.Drawing.Point(3, 49);
             this.contents.Name = "contents";
-            this.contents.Size = new System.Drawing.Size(469, 309);
-            this.contents.TabIndex = 6;
+            this.contents.Size = new System.Drawing.Size(469, 300);
+            this.contents.TabIndex = 1;
+            // 
+            // progress
+            // 
+            this.progress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.progress.Location = new System.Drawing.Point(3, 351);
+            this.progress.Name = "progress";
+            this.progress.Size = new System.Drawing.Size(469, 10);
+            this.progress.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.progress.TabIndex = 2;
+            this.progress.Visible = false;
             // 
             // line1
             // 
@@ -153,7 +176,7 @@
             this.line1.Location = new System.Drawing.Point(-1, 362);
             this.line1.Name = "line1";
             this.line1.Size = new System.Drawing.Size(475, 10);
-            this.line1.TabIndex = 10;
+            this.line1.TabIndex = 3;
             this.line1.Text = "line1";
             // 
             // Wizard
@@ -163,6 +186,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(472, 413);
+            this.Controls.Add(this.progress);
             this.Controls.Add(this.line1);
             this.Controls.Add(this.contents);
             this.Controls.Add(this.panel2);
@@ -181,6 +205,7 @@
             this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel2.ResumeLayout(false);
+            this.buttons.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -197,5 +222,7 @@
         private System.Windows.Forms.Button btnPrev;
         private System.Windows.Forms.Panel contents;
         private Line line1;
+        private System.Windows.Forms.Panel buttons;
+        private System.Windows.Forms.ProgressBar progress;
     }
 }
