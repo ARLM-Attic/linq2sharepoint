@@ -126,14 +126,21 @@ namespace BdsSoft.SharePoint.Linq
             //
             ListAttribute la = Helpers.GetListAttribute(_results.EntityType, true);
             if (_results.Context._site != null)
-                _list = _results.Context._site.RootWeb.GetList(la.Path);
+                _list = _results.Context._site.RootWeb.Lists[la.List];
             else
                 _wsList = la.List;
 
             //
-            // Perform version check; the _CheckListVersion method will figure out whether or not such a check is required.
+            // Perform version check; the CheckListVersion method will figure out whether or not such a check is required.
             //
-            _CheckListVersion();
+            if (ShouldCheckListVersion(la))
+            {
+                //
+                // Should check? If not, we consider the version to be okay.
+                //
+                if (!CheckListVersion(la.Version))
+                    throw RuntimeErrors.ListVersionMismatch();
+            }
 
             //
             // We don't want the default view, so we'll make an exhaustive list of all the properties to retrieve.
@@ -186,7 +193,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Logging gathered query information.
             //
-            if (_results.Context._site != null)
+            if (_list != null)
                 DoLogging(_list.Title, _results.Where, _results.Order, _results.Projection);
             else
                 DoLogging(_wsList, _results.Where, _results.Order, _results.Projection);
@@ -194,7 +201,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Perform query via the SharePoint Object Model or via SharePoint web services.
             //
-            if (_results.Context._site != null)
+            if (_list != null)
                 return GetEnumeratorSp<T>();
             else
                 return GetEnumeratorWs<T>();
@@ -212,18 +219,12 @@ namespace BdsSoft.SharePoint.Linq
         #region Enumeration helpers
 
         /// <summary>
-        /// Performs a list version check to make sure that the exported list definition matches the online list version.
+        /// Determines whether or not a list version check is required.
         /// </summary>
-        private void _CheckListVersion()
+        /// <param name="la">ListAttribute applied on the list entity type.</param>
+        /// <returns>true if the a list version check is required; otherwise, false.</returns>
+        private bool ShouldCheckListVersion(ListAttribute la)
         {
-            bool check;
-            int version;
-
-            //
-            // Find the list attribute, which is required to perform a list version match check.
-            //
-            ListAttribute la = Helpers.GetListAttribute(_results.EntityType, true);
-
             //
             // Check on context level.
             //
@@ -237,35 +238,38 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 bool? checkList = (bool?)list.GetType().GetProperty("CheckVersion").GetValue(list, null);
                 if (checkList == null)
-                    check = la.CheckVersion;
+                    return la.CheckVersion;
                 else
-                    check = checkList.Value;
+                    return checkList.Value;
             }
             else
-                check = checkContext.Value;
+                return checkContext.Value;
+        }
 
-            //
-            // Should check?
-            //
-            if (!check)
-                return;
+        /// <summary>
+        /// Performs a list version check to make sure that the exported list definition matches the online list version.
+        /// </summary>
+        /// <param name="version">List version to check the online list version against.</param>
+        /// <returns>true if the exported list version matches the online version; otherwise, false.</returns>
+        private bool CheckListVersion(int version)
+        {
+            int v;
 
             //
             // Check version via the SharePoint Object Model or via SharePoint web services.
             //
-            if (_results.Context._site != null)
-                version = _list.Version;
+            if (_list != null)
+                v = _list.Version;
             else
             {
                 XmlNode lst = _results.Context._wsProxy.GetList(_wsList);
-                version = int.Parse(lst.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
+                v = int.Parse(lst.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
             }
 
             //
             // Check the version.
             //
-            if (la.Version != version)
-                throw RuntimeErrors.ListVersionMismatch();
+            return (version == v);
         }
 
         /// <summary>
@@ -351,7 +355,7 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Use SharePoint object model.
                         //
-                        if (_results.Context._site != null)
+                        if (_list != null)
                         {
                             //
                             // Build the query.
@@ -376,10 +380,7 @@ namespace BdsSoft.SharePoint.Linq
                             // Get subquery results.
                             //
                             foreach (SPListItem item in _results.Context._site.RootWeb.Lists[innerList].GetItems(query))
-                            {
-                                //fks.Add(item[lookup.LookupField]);
                                 ids.Add((int)item["ID"]);
-                            }
                         }
                         //
                         // Use SharePoint web services.
@@ -420,10 +421,7 @@ namespace BdsSoft.SharePoint.Linq
                             if (tbl != null)
                             {
                                 foreach (DataRow row in tbl.Rows)
-                                {
-                                    //fks.Add(row["ows_" + lookup.LookupField]);
                                     ids.Add(int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat));
-                                }
                             }
                         }
 
@@ -431,13 +429,8 @@ namespace BdsSoft.SharePoint.Linq
                         // Create patch.
                         //
                         XmlElement patch = null;
-                        //foreach (object o in fks)
                         foreach (int id in ids)
-                        {
-                            //XmlElement val = GetValue(o, lookup, 0, 0);
-                            //patch = CreatePatch(lookupField, val, patch);
                             patch = CreatePatch(lookupField, id, patch);
-                        }
 
                         //
                         // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
@@ -851,26 +844,27 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Check whether logging is enabled or not.
             //
-            if (_results.Context.Log != null)
+            TextWriter log = _results.Context.Log;
+            if (log != null)
             {
                 //
                 // List general info.
                 //
-                if (_results.Context._site != null)
-                    _results.Context.Log.WriteLine("Query for " + list + " through object model...");
+                if (_list != null)
+                    log.WriteLine("Query for " + list + " through object model...");
                 else
-                    _results.Context.Log.WriteLine("Query for " + list + " through web services...");
+                    log.WriteLine("Query for " + list + " through web services...");
 
                 //
                 // Do the remainder of the logging (CAML).
                 //
-                Helpers.LogTo(_results.Context.Log, where, order, projection);
+                Helpers.LogTo(log, where, order, projection);
 
                 //
                 // Spacing to distinguish between subsequent queries.
                 //
-                _results.Context.Log.WriteLine();
-                _results.Context.Log.Flush();
+                log.WriteLine();
+                log.Flush();
             }
         }
 
@@ -886,7 +880,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Either item or row should be null.</remarks>
         private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
         {
-            Debug.Assert(item != null || row != null);
+            Debug.Assert(item != null ^ row != null);
 
             bool isEntity = lst != null;
             int? id = null;
@@ -924,21 +918,10 @@ namespace BdsSoft.SharePoint.Linq
             IEnumerable<PropertyInfo> props = (!isEntity ? (IEnumerable<PropertyInfo>)_results.ProjectionProperties : typeof(T).GetProperties());
 
             //
-            // Data comes from the SharePoint Object Model.
+            // Assign properties.
             //
-            if (item != null)
-            {
-                foreach (PropertyInfo p in props)
-                    AssignResultProperty<T>(item, null, p, result);
-            }
-            //
-            // Data comes from the SharePoint list web service.
-            //
-            else
-            {
-                foreach (PropertyInfo p in props)
-                    AssignResultProperty<T>(null, row, p, result);
-            }
+            foreach (PropertyInfo p in props)
+                AssignResultProperty<T>(item, row, p, result);
 
             //
             // Perform projection if required.
@@ -970,7 +953,7 @@ namespace BdsSoft.SharePoint.Linq
                 return; //partial entity classes could be extended with additional properties
 
             //
-            // Ignore fill-in choice fields for Choice and MultiChoice fields.
+            // Ignore fill-in choice fields for Choice and MultiChoice fields. These will get set by the corresponding enum-typed property.
             //
             if ((field.FieldType == FieldType.Choice || field.FieldType == FieldType.MultiChoice) && property.PropertyType == typeof(string))
                 return;
@@ -979,7 +962,6 @@ namespace BdsSoft.SharePoint.Linq
             // Get the value of the property either using the SharePoint list object or using the current DataRow.
             //
             object val;
-            string valueAsString;
             if (item != null)
                 //
                 // Results have a field name which is XML encoded.
@@ -1000,11 +982,18 @@ namespace BdsSoft.SharePoint.Linq
                 val = row[col];
             }
 
+            AssignResultProperty(property, target, field, val);
+        }
+
+        private void AssignResultProperty(PropertyInfo property, object target, FieldAttribute field, object val)
+        {
             //
             // If no value has been set, ignore this property.
             //
             if (val == null || val is DBNull)
                 return;
+
+            string valueAsString;
 
             //
             // Special treatment for SPFieldLookupValueCollection.
@@ -1246,31 +1235,9 @@ namespace BdsSoft.SharePoint.Linq
             }
 
             //
-            // The value can be converted to a string in case of (Multi)Choice results. Each choice value is separated by ;#, so we'll split the set of choices.
+            // The value can be converted to a string in case of (Multi)Choice results.
             // From this set of individual choices, we can filter out the known values, which will leave us with a possible fill-in choice.
             //
-
-            /*
-            string s = ((string)val);
-            if (s.StartsWith(";#")) //Trim at the begin
-                s = s.Substring(2);
-            if (!s.EndsWith(";#")) //Make sure ;# is at the end
-                s = s + ";#";
-
-            List<string> vs = new List<string>();
-            int pos = 0; //Position to start looking from
-            while (pos < s.Length)
-            {
-                int next = s.IndexOf(";#", pos, StringComparison.Ordinal); //Find next marker position
-                if (next < 0)
-                    break;
-
-                vs.Add(s.Substring(pos, next - pos)); //Get occurrence of choice value
-
-                pos = next + 2;
-            }
-             */
-
             List<string> vs = new List<string>();
             SPFieldMultiChoiceValue mcVal = new SPFieldMultiChoiceValue(val as string);
             for (int i = 0; i < mcVal.Count; i++)
