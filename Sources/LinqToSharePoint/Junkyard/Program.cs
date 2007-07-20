@@ -37,8 +37,6 @@ namespace Junkyard
             var res = from u in lst where u.Homepage.Description == "Test" select u;
             SharePointListQueryVisualizer.TestShowVisualizer(res);
 
-            string s = "";
-
             /*
             int fkey = 1;
 

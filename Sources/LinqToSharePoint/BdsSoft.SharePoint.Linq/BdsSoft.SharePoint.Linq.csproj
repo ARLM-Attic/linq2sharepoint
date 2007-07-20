@@ -71,10 +71,13 @@
     <Compile Include="Error handling\RuntimeErrors.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="ISharePointDataProvider.cs" />
     <Compile Include="Lists.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Error handling\ParseErrors.cs" />
+    <Compile Include="Providers\ObjectModelSharePointDataProvider.cs" />
+    <Compile Include="Providers\WebServicesSharePointDataProvider.cs" />
     <Compile Include="QueryParser.cs" />
     <Compile Include="SharePointConnectionException.cs" />
     <Compile Include="SharePointDataContext.cs" />
@@ -106,9 +109,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Old\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

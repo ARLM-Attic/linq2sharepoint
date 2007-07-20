@@ -12,7 +12,8 @@
  * Version history:
  *
  * 0.2.1 - Introduction of SharePointDataContext.
- * 0.2.2 - New entity model
+ * 0.2.2 - New entity model.
+ *         Provider model.
  */
 
 #region Namespace imports
@@ -26,6 +27,13 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using Microsoft.SharePoint;
+using System.Xml;
+using System.Globalization;
+using System.Data;
+using System.Reflection;
+using System.Web.Services.Protocols;
+using Microsoft.SharePoint.Utilities;
+using BdsSoft.SharePoint.Linq.Providers;
 
 #endregion
 
@@ -38,27 +46,10 @@ namespace BdsSoft.SharePoint.Linq
     {
         #region Private members
 
-        #region Connection information
-
         /// <summary>
-        /// Web services URI to connect to SharePoint.
-        /// Will be null when using the SharePoint object model instead of web services.
+        /// Data provider used for communication with SharePoint.
         /// </summary>
-        private Uri _wsUri;
-
-        /// <summary>
-        /// Web services proxy object to connect to SharePoint.
-        /// Will be null when using the SharePoint object model instead of web services.
-        /// </summary>
-        internal Lists _wsProxy;
-
-        /// <summary>
-        /// SharePoint site object to connect to SharePoint.
-        /// Will be null when using web services instead of the SharePoint object model.
-        /// </summary>
-        internal SPSite _site;
-
-        #endregion
+        private ISharePointDataProvider _dataProvider;
 
         /// <summary>
         /// Dictionary of SharePointListSource objects for entities. The key represents the entity type, the value the SharePointListSource object.
@@ -96,13 +87,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="wsUri">URI to the SharePoint site.</param>
         public SharePointDataContext(Uri wsUri)
         {
-            if (wsUri == null)
-                throw new ArgumentNullException("wsUri");
-
-            _wsUri = wsUri;
-            _wsProxy = new Lists();
-            _wsProxy.Url = wsUri.AbsoluteUri.TrimEnd('/') + "/_vti_bin/lists.asmx";
-            _wsProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+            _dataProvider = new WebServicesSharePointDataProvider(wsUri);
         }
 
         /// <summary>
@@ -112,10 +97,7 @@ namespace BdsSoft.SharePoint.Linq
         [CLSCompliant(false)]
         public SharePointDataContext(SPSite site)
         {
-            if (site == null)
-                throw new ArgumentNullException("site");
-
-            _site = site;
+            _dataProvider = new ObjectModelSharePointDataProvider(site);
         }
 
         #endregion
@@ -123,29 +105,13 @@ namespace BdsSoft.SharePoint.Linq
         #region Properties
 
         /// <summary>
-        /// Gets the web services URI used to connect to SharePoint.
-        /// Will be null when using the SharePoint object model instead of web services.
+        /// Gets the data provider.
         /// </summary>
-        public Uri Url
+        internal ISharePointDataProvider DataProvider
         {
             get
             {
-                CheckDisposed();
-                return _wsUri;
-            }
-        }
-
-        /// <summary>
-        /// Gets the SharePoint site object used to connect to SharePoint.
-        /// Will be null when using web services instead of the SharePoint object model.
-        /// </summary>
-        [CLSCompliant(false)]
-        public SPSite Site
-        {
-            get
-            {
-                CheckDisposed();
-                return _site;
+                return _dataProvider;
             }
         }
 
@@ -197,18 +163,12 @@ namespace BdsSoft.SharePoint.Linq
             get
             {
                 CheckDisposed();
-                if (_wsProxy == null)
-                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
-                else
-                    return _wsProxy.Credentials;
+                return _dataProvider.Credentials;
             }
             set
             {
                 CheckDisposed();
-                if (_wsProxy == null)
-                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
-                else
-                    _wsProxy.Credentials = value;
+                _dataProvider.Credentials = value;
             }
         }
 
@@ -223,7 +183,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns>List source object for the specified entity type.</returns>
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
         public SharePointList<T> GetList<T>()
-            //where T : SharePointListEntity
             where T : class
         {
             CheckDisposed();
@@ -269,7 +228,7 @@ namespace BdsSoft.SharePoint.Linq
                 list = _lists[listType];
                 Debug.Assert(list.GetType().IsGenericType && list.GetType().GetGenericTypeDefinition() == typeof(SharePointList<>));
             }
-            
+
             return list;
         }
 
@@ -341,8 +300,8 @@ namespace BdsSoft.SharePoint.Linq
             {
                 if (disposing)
                 {
-                    if (_wsProxy != null)
-                        _wsProxy.Dispose();
+                    if (_dataProvider != null)
+                        _dataProvider.Dispose();
                 }
             }
             _disposed = true;

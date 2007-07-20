@@ -58,7 +58,7 @@ namespace BdsSoft.SharePoint.Linq
         //
         // Results of the parser.
         //
-        private ParseResults _results = new ParseResults();
+        private QueryInfo _results = new QueryInfo();
 
         #endregion
 
@@ -87,7 +87,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Start the parse operation.
         /// </summary>
-        public ParseResults Parse()
+        public QueryInfo Parse()
         {
             //
             // Initialize position tracking.
@@ -2327,9 +2327,9 @@ namespace BdsSoft.SharePoint.Linq
     }
 
     /// <summary>
-    /// Helper class to hold parser results.
+    /// Helper class to hold information about a SharePoint query.
     /// </summary>
-    internal class ParseResults
+    internal class QueryInfo
     {
         /// <summary>
         /// Entity type of the source list items.

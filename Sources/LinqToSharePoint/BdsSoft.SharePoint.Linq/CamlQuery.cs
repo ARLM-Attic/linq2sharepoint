@@ -18,6 +18,7 @@
  *         Improvement to Lookup field subqueries; now using a foreign key concept.
  *         Refactoring of parser functionality into QueryParser.
  * 0.2.2 - New entity model; changes to property assignment and lazy loading.
+ *         Provider model for data retrieval.
  */
 
 #region Namespace imports
@@ -62,21 +63,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Parse results.
         /// </summary>
-        internal ParseResults _results;
-
-        #region Connection
+        internal QueryInfo _results;
 
         /// <summary>
-        /// SPList object for object model connections.
+        /// List attribute for the list entity type used in the query.
         /// </summary>
-        private SPList _list;
-
-        /// <summary>
-        /// Web service proxy to Lists service for web service connections.
-        /// </summary>
-        private string _wsList;
-
-        #endregion
+        private ListAttribute _listAttribute;
 
         #endregion
 
@@ -102,6 +94,7 @@ namespace BdsSoft.SharePoint.Linq
             parser._factory = query._factory;
 
             query._results = parser.Parse();
+            query._listAttribute = Helpers.GetListAttribute(query._results.EntityType, !validate); //throw exception only if in "run mode" (= no validation)
             query._errors = parser._errors;
 
             //
@@ -122,23 +115,14 @@ namespace BdsSoft.SharePoint.Linq
         public IEnumerator<T> Execute<T>()
         {
             //
-            // Get list information.
-            //
-            ListAttribute la = Helpers.GetListAttribute(_results.EntityType, true);
-            if (_results.Context._site != null)
-                _list = _results.Context._site.RootWeb.Lists[la.List];
-            else
-                _wsList = la.List;
-
-            //
             // Perform version check; the CheckListVersion method will figure out whether or not such a check is required.
             //
-            if (ShouldCheckListVersion(la))
+            if (ShouldCheckListVersion(_listAttribute))
             {
                 //
                 // Should check? If not, we consider the version to be okay.
                 //
-                if (!CheckListVersion(la.Version))
+                if (_listAttribute.Version != _results.Context.DataProvider.GetListVersion(_listAttribute.List))
                     throw RuntimeErrors.ListVersionMismatch();
             }
 
@@ -187,33 +171,28 @@ namespace BdsSoft.SharePoint.Linq
                 // Predicate evaluates to false. No results will be fetched.
                 //
                 else
-                    return VoidResult<T>();
+                    yield break;
             }
 
             //
             // Logging gathered query information.
             //
-            if (_list != null)
-                DoLogging(_list.Title, _results.Where, _results.Order, _results.Projection);
-            else
-                DoLogging(_wsList, _results.Where, _results.Order, _results.Projection);
+            DoLogging(_listAttribute.List, _results.Where, _results.Order, _results.Projection);
 
             //
-            // Perform query via the SharePoint Object Model or via SharePoint web services.
+            // Still an entity?
             //
-            if (_list != null)
-                return GetEnumeratorSp<T>();
-            else
-                return GetEnumeratorWs<T>();
-        }
+            object lst = null;
+            MethodInfo fromCache = null;
+            MethodInfo toCache = null;
+            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
 
-        /// <summary>
-        /// Helper method to return a void result if the query predicate evaluates to a constant false value.
-        /// </summary>
-        /// <returns>Empty sequence.</returns>
-        private IEnumerator<T> VoidResult<T>()
-        {
-            yield break;
+            //
+            // Perform query via the provider.
+            //
+            DataTable results = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
+            foreach (DataRow row in results.Rows)
+                yield return GetItem<T>(row, lst, fromCache, toCache);
         }
 
         #region Enumeration helpers
@@ -244,32 +223,6 @@ namespace BdsSoft.SharePoint.Linq
             }
             else
                 return checkContext.Value;
-        }
-
-        /// <summary>
-        /// Performs a list version check to make sure that the exported list definition matches the online list version.
-        /// </summary>
-        /// <param name="version">List version to check the online list version against.</param>
-        /// <returns>true if the exported list version matches the online version; otherwise, false.</returns>
-        private bool CheckListVersion(int version)
-        {
-            int v;
-
-            //
-            // Check version via the SharePoint Object Model or via SharePoint web services.
-            //
-            if (_list != null)
-                v = _list.Version;
-            else
-            {
-                XmlNode lst = _results.Context._wsProxy.GetList(_wsList);
-                v = int.Parse(lst.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
-            }
-
-            //
-            // Check the version.
-            //
-            return (version == v);
         }
 
         /// <summary>
@@ -353,77 +306,21 @@ namespace BdsSoft.SharePoint.Linq
                         List<int> ids = new List<int>();
 
                         //
-                        // Use SharePoint object model.
+                        // Create subquery to retrieve foreign keys.
                         //
-                        if (_list != null)
-                        {
-                            //
-                            // Build the query.
-                            //
-                            SPQuery query = new SPQuery();
-                            XmlElement q = _factory.CreateElement("Where");
-                            q.InnerXml = caml;
-                            query.Query = q.OuterXml;
-                            query.ViewFields = viewFields.InnerXml;
-                            query.IncludeMandatoryColumns = false;
-                            query.IncludePermissions = false;
-                            query.IncludeAttachmentVersion = false;
-                            query.IncludeAttachmentUrls = false;
-                            query.IncludeAllUserPermissions = false;
+                        QueryInfo query = new QueryInfo();
+                        query.Where = _factory.CreateElement("Where");
+                        query.Where.InnerXml = caml;
+                        query.Projection = _factory.ViewFields();
+                        query.Projection.AppendChild(_factory.FieldRef("ID"));
+                        DoLogging(innerList, query.Where, query.Order, query.Projection);
 
-                            //
-                            // Log it.
-                            //
-                            DoLogging(innerList, q, null, viewFields);
-
-                            //
-                            // Get subquery results.
-                            //
-                            foreach (SPListItem item in _results.Context._site.RootWeb.Lists[innerList].GetItems(query))
-                                ids.Add((int)item["ID"]);
-                        }
                         //
-                        // Use SharePoint web services.
+                        // Execute subquery and retrieve the ids.
                         //
-                        else
-                        {
-                            //
-                            // Build the query.
-                            //
-                            XmlElement query = _factory.CreateElement("Query");
-                            XmlElement where = _factory.CreateElement("Where");
-                            where.InnerXml = caml;
-                            query.AppendChild(where);
-
-                            XmlNode queryOptions = _factory.CreateElement("QueryOptions");
-
-                            XmlNode includeMandatoryColumns = _factory.CreateElement("IncludeMandatoryColumns");
-                            includeMandatoryColumns.InnerText = "FALSE";
-                            queryOptions.AppendChild(includeMandatoryColumns);
-
-                            //
-                            // Log it.
-                            //
-                            DoLogging(innerList, where, null, viewFields);
-
-                            //
-                            // Get results.
-                            //
-                            XmlNode res = _results.Context._wsProxy.GetListItems(innerList, null, query, viewFields, null, queryOptions, null);
-                            DataSet ds = new DataSet();
-                            ds.Locale = CultureInfo.InvariantCulture;
-                            ds.ReadXml(new StringReader(res.OuterXml));
-                            DataTable tbl = ds.Tables["row"];
-
-                            //
-                            // Get subquery results.
-                            //
-                            if (tbl != null)
-                            {
-                                foreach (DataRow row in tbl.Rows)
-                                    ids.Add(int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat));
-                            }
-                        }
+                        DataTable tbl = _results.Context.DataProvider.ExecuteQuery(innerList, query);
+                        foreach (DataRow row in tbl.Rows)
+                            ids.Add(int.Parse(row["ID"].ToString(), CultureInfo.InvariantCulture.NumberFormat));
 
                         //
                         // Create patch.
@@ -611,197 +508,6 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Helper method to execute a query and fetch results using the SharePoint Object Model.
-        /// </summary>
-        /// <returns>Query results.</returns>
-        private IEnumerator<T> GetEnumeratorSp<T>()
-        {
-            //
-            // Construct the query ready for consumption by the SharePoint Object Model, without <Query> root element.
-            //
-            StringBuilder queryBuilder = new StringBuilder();
-            XmlWriterSettings settings = new XmlWriterSettings();
-            settings.OmitXmlDeclaration = true;
-            settings.ConformanceLevel = ConformanceLevel.Auto;
-            using (XmlWriter xw = XmlWriter.Create(queryBuilder, settings))
-            {
-                if (this._results.Where != null && this._results.Where.ChildNodes.Count != 0)
-                    this._results.Where.WriteTo(xw);
-                if (_results.Order != null)
-                    _results.Order.WriteTo(xw);
-                xw.Flush();
-            }
-
-            //
-            // Make the SharePoint SPQuery object.
-            //
-            SPQuery query = new SPQuery();
-            query.Query = queryBuilder.ToString();
-            query.IncludeMandatoryColumns = false;
-
-            //
-            // Include projection fields if a projection clause has been parsed.
-            //
-            if (_results.Projection != null)
-            {
-                query.ViewFields = _results.Projection.InnerXml;
-            }
-
-            //
-            // In case a row limit (Take) was found, set the limit on the query.
-            //
-            if (_results.Top != null)
-            {
-                uint top = (uint)_results.Top.Value;
-                if (top == 0) //FIX: query.RowLimit = 0 seems to be ineffective.
-                    yield break;
-                else
-                    query.RowLimit = top;
-            }
-
-            //
-            // Execute the query via the SPList object.
-            //
-            SPListItemCollection items;
-            try
-            {
-                items = _list.GetItems(query);
-            }
-            catch (Exception ex)
-            {
-                throw RuntimeErrors.ConnectionExceptionSp(_results.Context._site.Url, ex);
-            }
-
-            //
-            // Still an entity?
-            //
-            object lst = null;
-            MethodInfo fromCache = null;
-            MethodInfo toCache = null;
-            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
-
-            //
-            // Fetch results using an iterator.
-            //
-            foreach (SPListItem item in items)
-            {
-                yield return GetItem<T>(item, null, lst, fromCache, toCache);
-            }
-        }
-
-        /// <summary>
-        /// Helper method to execute a query and fetch results using SharePoint web services.
-        /// </summary>
-        /// <returns>Query results.</returns>
-        private IEnumerator<T> GetEnumeratorWs<T>()
-        {
-            //
-            // Construct the query ready for consumption by the SharePoint web services, including a <Query> root element.
-            //
-            XmlNode query = _factory.CreateElement("Query");
-            if (this._results.Where != null && this._results.Where.ChildNodes.Count != 0)
-                query.AppendChild(this._results.Where);
-            if (_results.Order != null)
-                query.AppendChild(_results.Order);
-
-            //
-            // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
-            //
-            uint top = 0;
-            if (_results.Top != null)
-            {
-                top = (uint)_results.Top.Value;
-                if (top == 0) //FIX: don't roundtrip to server if no results are requested.
-                    yield break;
-            }
-
-            //
-            // Store results in a DataSet for easy iteration.
-            // TODO: the DataSet approach could be replaced by raw XML parsing.
-            //
-            DataSet results = new DataSet();
-
-            //
-            // Get data; server-side result paging could occur.
-            //
-            XmlNode res;
-            string nextPage = null;
-            bool page = false;
-            do
-            {
-                //
-                // Set query options.
-                //
-                XmlNode queryOptions = _factory.CreateElement("QueryOptions");
-                if (nextPage != null)
-                {
-                    XmlElement paging = _factory.Paging(nextPage);
-                    queryOptions.AppendChild(paging);
-                }
-
-                //
-                // Make web service call.
-                //
-                try
-                {
-                    res = _results.Context._wsProxy.GetListItems(_wsList, null, query, _results.Projection, _results.Top == null ? null : top.ToString(), queryOptions, null);
-                }
-                catch (SoapException ex)
-                {
-                    throw RuntimeErrors.ConnectionExceptionWs(_results.Context._wsProxy.Url, ex);
-                }
-
-                //
-                // Merge results.
-                //
-                DataSet ds = new DataSet();
-                ds.ReadXml(new StringReader(res.OuterXml));
-                results.Merge(ds);
-
-                //
-                // If no results found, break.
-                //
-                if (ds.Tables["row"] == null)
-                    break;
-
-                //
-                // Avoid paging when a row limit has been set (Take query operator).
-                //
-                if (_results.Top != null && results.Tables["row"].Rows.Count >= _results.Top)
-                    break;
-
-                //
-                // Check for paging.
-                //
-                nextPage = res["rs:data"].GetAttribute("ListItemCollectionPositionNext");
-                page = !string.IsNullOrEmpty(nextPage);
-            } while (page);
-
-            //
-            // Make sure results are available. If not, return nothing.
-            //
-            DataTable tbl = results.Tables["row"];
-            if (tbl == null)
-                yield break;
-
-            //
-            // Still an entity?
-            //
-            object lst = null;
-            MethodInfo fromCache = null;
-            MethodInfo toCache = null;
-            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
-
-            //
-            // Fetch results using an iterator.
-            //
-            foreach (DataRow row in tbl.Rows)
-            {
-                yield return GetItem<T>(null, row, lst, fromCache, toCache);
-            }
-        }
-
-        /// <summary>
         /// Retrieves the entity accessors on the list type. These allow retrieval from and storage to the entity cache that's stored with the list.
         /// </summary>
         /// <typeparam name="T">Type of the entity to retrieve accessors for.</typeparam>
@@ -850,10 +556,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // List general info.
                 //
-                if (_list != null)
-                    log.WriteLine("Query for " + list + " through object model...");
-                else
-                    log.WriteLine("Query for " + list + " through web services...");
+                log.WriteLine("Query for {0} through the {1} data provider...", list, _results.Context.DataProvider.Name);
 
                 //
                 // Do the remainder of the logging (CAML).
@@ -871,16 +574,16 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Constructs a query result object based on the given item that was retrieved either via the SharePoint object model or via the SharePoint list web service.
         /// </summary>
-        /// <param name="item">Item retrieved via the SharePoint object model.</param>
         /// <param name="row">Item retrieved via the SharePoint list web service.</param>
         /// <param name="lst">List that will hold the entity (if result still is an entity).</param>
         /// <param name="fromCache">Accessor method to get entity from list entity cache.</param>
         /// <param name="toCache">Accessor method to store entity in list entity cache.</param>
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
-        private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
+        //private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
+        private T GetItem<T>(DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
         {
-            Debug.Assert(item != null ^ row != null);
+            //Debug.Assert(item != null ^ row != null);
 
             bool isEntity = lst != null;
             int? id = null;
@@ -893,10 +596,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Get the id.
                 //
-                if (item != null)
-                    id = (int)item["ID"];
-                else
-                    id = int.Parse((string)row["ows_ID"], CultureInfo.InvariantCulture.NumberFormat);
+                id = int.Parse((string)row["ID"], CultureInfo.InvariantCulture.NumberFormat);
 
                 //
                 // Already in list?
@@ -921,7 +621,7 @@ namespace BdsSoft.SharePoint.Linq
             // Assign properties.
             //
             foreach (PropertyInfo p in props)
-                AssignResultProperty<T>(item, row, p, result);
+                AssignResultProperty<T>(row, p, result);
 
             //
             // Perform projection if required.
@@ -939,11 +639,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Assigns a value from the query result to a given property of the entity object.
         /// </summary>
-        /// <param name="item">Query result item retrieved using the SharePoint object model.</param>
         /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
         /// <param name="property">Property to set on the entity object.</param>
         /// <param name="target">Entity object to set the property for.</param>
-        private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)
+        //private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)
+        private void AssignResultProperty<T>(DataRow row, PropertyInfo property, object target)
         {
             //
             // Get the field mapping attribute for the given property.
@@ -959,28 +659,16 @@ namespace BdsSoft.SharePoint.Linq
                 return;
 
             //
-            // Get the value of the property either using the SharePoint list object or using the current DataRow.
+            // Results from the web service have columns prefixed by ows_.
             //
-            object val;
-            if (item != null)
-                //
-                // Results have a field name which is XML encoded.
-                //
-                val = item[XmlConvert.EncodeName(field.Field)];
-            else
-            {
-                //
-                // Results from the web service have columns prefixed by ows_.
-                //
-                string col = "ows_" + field.Field;
+            string col = field.Field;
 
-                //
-                // If no results were found with a specific column, it won't be present in the DataRow. We can ignore this property then.
-                //
-                if (!row.Table.Columns.Contains(col))
-                    return;
-                val = row[col];
-            }
+            //
+            // If no results were found with a specific column, it won't be present in the DataRow. We can ignore this property then.
+            //
+            if (!row.Table.Columns.Contains(col))
+                return;
+            object val = row[col];
 
             AssignResultProperty(property, target, field, val);
         }
@@ -1043,7 +731,7 @@ namespace BdsSoft.SharePoint.Linq
                     // DateTime values can be parsed using System.DateTime.Parse.
                     //
                     case FieldType.DateTime:
-                        DateTime dt = DateTime.ParseExact(valueAsString, "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-us")); //FIX hh to HH (check!)
+                        DateTime dt = DateTime.Parse(valueAsString, CultureInfo.InvariantCulture.DateTimeFormat); //recognizes and supports the ISO8601 standard
                         AssignValue(target, property, field, dt);
                         break;
                     //
