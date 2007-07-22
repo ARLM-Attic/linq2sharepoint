@@ -274,6 +274,18 @@
         "Entry"
         {
         "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
+        "OwnerKey" = "8:_047E45C478D44FA3B090BCB3EE52B201"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
+        "OwnerKey" = "8:_96D02D2D71DC925CE9BE9F5A874D8655"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
         "OwnerKey" = "8:_7FA1F85F2F60461B9C16EDA313888162"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -287,18 +299,6 @@
         {
         "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
         "OwnerKey" = "8:_40B8CCA68FA9498C9C87827F0E149C20"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
-        "OwnerKey" = "8:_96D02D2D71DC925CE9BE9F5A874D8655"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
-        "OwnerKey" = "8:_047E45C478D44FA3B090BCB3EE52B201"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -880,12 +880,6 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_96D02D2D71DC925CE9BE9F5A874D8655"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_FA9D88B3B16F0A35F02271475439CD4A"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -910,6 +904,12 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_96D02D2D71DC925CE9BE9F5A874D8655"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_8EBA9C64244F172F27D91DD355A35FCD"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -929,12 +929,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_7FA1F85F2F60461B9C16EDA313888162"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1055,6 +1049,12 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_047E45C478D44FA3B090BCB3EE52B201"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_492B8228FAA63EFB2127904F1B48E6C7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2342,14 +2342,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:LINQ to SharePoint"
-        "ProductCode" = "8:{33BF9993-401A-4465-B25F-2793CEC14DF5}"
-        "PackageCode" = "8:{2AD82C43-5E02-44B2-A230-881AECE4F4F9}"
+        "ProductCode" = "8:{3B9D67E6-CDA4-4FF6-97E7-00A9835A0635}"
+        "PackageCode" = "8:{14420D43-F103-4F05-B904-468B3ACE0E09}"
         "UpgradeCode" = "8:{A2AD6A2C-2673-4B38-9E1C-C353D6399ADF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:0.2.2"
+        "ProductVersion" = "8:0.2.3"
         "Manufacturer" = "8:BdsSoft"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.codeplex.com/LINQtoSharePoint"
