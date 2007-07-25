@@ -9,6 +9,7 @@ using System.Net;
 using System.Xml;
 using System.Web.Services.Protocols;
 using System.Diagnostics;
+using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
@@ -62,7 +63,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 string password = txtPassword.Text;
                 string domain = txtDomain.Text;
 
-                ConnectionParameters conn = new ConnectionParameters() { Url = url, User = user, Password = password, Domain = domain, CustomAuthentication = radCustom.Checked };
+                EG.Connection conn = new EG.Connection() { Url = url, User = user, Password = password, Domain = domain, CustomAuthentication = radCustom.Checked };
                 bgConnect.RunWorkerAsync(conn);
             }
         }
@@ -149,7 +150,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void bgConnect_DoWork(object sender, DoWorkEventArgs e)
         {
-            ConnectionParameters parameters = (ConnectionParameters)e.Argument;
+            Connection parameters = (Connection)e.Argument;
 
             context.ConnectionParameters = parameters;
             Helpers.GetLists(context);
@@ -219,45 +220,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         }
     }
 
-    public class ConnectionParameters
-    {
-        public string Url { get; set; }
-        public bool CustomAuthentication { get; set; }
-        public string User { get; set; }
-        public string Password { get; set; }
-        public string Domain { get; set; }
-
-        public string ToSpml()
-        {
-            XmlDataDocument doc = new XmlDataDocument();
-            XmlElement conn = doc.CreateElement("Connection");
-
-            XmlAttribute url = doc.CreateAttribute("Url");
-            url.Value = Url;
-            conn.Attributes.Append(url);
-
-            if (CustomAuthentication)
-            {
-                XmlAttribute user = doc.CreateAttribute("User");
-                user.Value = User ?? "";
-                conn.Attributes.Append(user);
-
-                XmlAttribute password = doc.CreateAttribute("Password");
-                password.Value = Password ?? "";
-                conn.Attributes.Append(password);
-
-                XmlAttribute domain = doc.CreateAttribute("Domain");
-                domain.Value = Domain ?? "";
-                conn.Attributes.Append(domain);
-            }
-
-            return conn.OuterXml;
-        }
-    }
-
     public class Connection
     {
         public WebServices.Lists ListsProxy { get; set; }
-        public ConnectionParameters Parameters { get; set; }
+        public EG.Connection Parameters { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.Net;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
@@ -11,29 +11,29 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     {
         public static void GetLists(Context context)
         {
-            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters);
+            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters.Parameters);
             XmlNode listsXml = lists.GetListCollection();
 
-            List<List> result = new List<List>();
+            List<EG.List> result = new List<EG.List>();
 
             foreach (XmlNode l in listsXml.ChildNodes)
             {
                 if (l.Attributes["Hidden"].Value.ToLower() != "true")
-                    result.Add(List.FromCaml(l));
+                    result.Add(EG.List.FromCaml(l));
             }
 
             context.Lists = result;
         }
 
-        public static List GetList(Context context, string name)
+        public static EG.List GetList(Context context, string name)
         {
-            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters);
+            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters.Parameters);
             XmlNode listXml = lists.GetList(name);
 
-            return List.FromCaml(listXml);
+            return EG.List.FromCaml(listXml);
         }
 
-        private static WebServices.Lists GetListsProxy(ConnectionParameters parameters)
+        private static WebServices.Lists GetListsProxy(EG.Connection parameters)
         {
             WebServices.Lists lists = new WebServices.Lists();
             lists.Url = parameters.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;

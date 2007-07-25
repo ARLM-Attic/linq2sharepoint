@@ -22,6 +22,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
@@ -32,10 +35,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
     /// </summary>
     public class Args
     {
+        #region Properties
+
+        /// <summary>
+        /// Run-mode to run the entity generator in.
+        /// </summary>
+        public RunMode RunMode { get; set; }
+
+        #region {online}
+
         /// <summary>
         /// Url to the SharePoint site.
         /// </summary>
-        public string Url {get; set; }
+        public string Url { get; set; }
+
+        /// <summary>
+        /// Name of the list on the SharePoint site to query for.
+        /// </summary>
+        public string List { get; set; }
+
+        /// <summary>
+        /// Name of the SharePoint data context to generate.
+        /// </summary>
+        public string Context { get; set; }
+
+        #endregion
+
+        #region {connect}
 
         /// <summary>
         /// User name to connect to the SharePoint web services (optional).
@@ -53,26 +79,49 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// </summary>
         public string Domain { get; set; }
 
+        #endregion
+
+        #region {codegen}
+
         /// <summary>
         /// Namespace to put code in.
         /// </summary>
         public string Namespace { get; set; }
 
         /// <summary>
-        /// Name of the list on the SharePoint site to query for.
-        /// </summary>
-        public string List { get; set; }
-
-        /// <summary>
         /// Output file (optional).
         /// </summary>
         /// <remarks>If no output file is specified, the list's name will be used with an extension of .cs.</remarks>
-        public string File { get; set; }
+        public string Code { get; set; }
 
         /// <summary>
         /// Output code language.
         /// </summary>
         public string Language { get; set; }
+
+        #endregion
+
+        #region {offline}
+
+        /// <summary>
+        /// Input SPML file.
+        /// </summary>
+        public string In { get; set; }
+
+        #endregion
+
+        #region {export}
+
+        /// <summary>
+        /// Output SPML file.
+        /// </summary>
+        public string Xml { get; set; }
+
+        #endregion
+
+        #endregion
+
+        #region Factory methods
 
         /// <summary>
         /// Parses the given command-line arguments.
@@ -82,148 +131,195 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         public static Args Parse(string[] args)
         {
             //
-            // Valid argument count, length and prefixes?
+            // Find arguments and check for mutual exclusiveness of online/offline run mode.
             //
-            if (!CheckArgs(args))
+            Dictionary<string, string> arguments = FindArgs(args);
+            if (!(arguments.ContainsKey("url") ^ arguments.ContainsKey("in")))
                 return null;
 
+            //
+            // Resulting arguments object.
+            //
             Args res = new Args();
 
             //
-            // Url shouldn't be empty and should start with either http:// or https://.
+            // Online mode.
             //
-            string url = FindArg(args, "url");
-            if (url == null || url.Length == 0)
-                return null;
-            res.Url = url;
-            url = url.ToLower();
-            if (!(url.StartsWith("http://") && url.Length > 7) && !(url.StartsWith("https://") && url.Length > 8))
-                return null;
-
-            //
-            // List shouldn't be empty.
-            //
-            string list = FindArg(args, "list");
-            if (list == null || list.Length == 0)
-                return null;
-            res.List = list;
-
-            //
-            // Output language can be set optionally and should be CS or VB (case-insensitive).
-            //
-            string language = FindArg(args, "language");
-            if (language != null && language.Length != 0)
+            if (arguments.ContainsKey("url"))
             {
-                language = language.ToUpper();
+                //
+                // Check for SPML "xml" output argument.
+                //
+                string xml;
+                arguments.TryGetValue("xml", out xml);
 
-                if (language != "CS" && language != "VB" && language != "C#")
+                //
+                // Code (out) can optionally be empty; in that case, take the lists's name suffixed with the language extension.
+                // v0.2.0.0 - File name will be inferred from the loaded list name, not the -list parameter which could be a GUID too.
+                //
+                string code;
+                if (!arguments.TryGetValue("code", out code))
+                    arguments.TryGetValue("out", out code);
+
+                //
+                // Only one mode is supported: CodeGen or Export.
+                //
+                if (xml != null && code != null)
                     return null;
+                //
+                // If Export mode, xml shouldn't be null.
+                //
+                else if (xml != null)
+                {
+                    res.Xml = xml;
+                    res.RunMode = RunMode.Online | RunMode.Export;
+                }
+                //
+                // Code parameter can be null.
+                //
                 else
-                    res.Language = language.Replace("C#", "CS");
+                {
+                    res.Code = code;
+                    res.RunMode = RunMode.Online | RunMode.CodeGen;
+                }
+            }
+            //
+            // Offline mode.
+            //
+            else if (arguments.ContainsKey("in"))
+            {
+                res.RunMode = RunMode.Offline | RunMode.CodeGen;
+
+                //
+                // In shouldn't be empty.
+                //
+                string input;
+                if (!arguments.TryGetValue("in", out input) || input.Length == 0)
+                    return null;
+                res.In = input;
             }
             else
-                res.Language = "CS";
+                Debug.Assert(false);
 
-            //
-            // Out can optionally be empty; in that case, take the lists's name suffixed with the language extension.
-            // v0.2.0.0 - File name will be deferred from the loaded list name, not the -list parameter which could be a GUID too.
-            //
-            res.File = FindArg(args, "out");
-
-            //
-            // v0.2.1.0 - Namespace support.
-            //
-            res.Namespace = FindArg(args, "namespace");
-
-            //
-            // Only process authentication arguments if a user argument is present.
-            //
-            string user = FindArg(args, "user");
-            if (user != null && user.Length != 0)
+            if ((res.RunMode & RunMode.Online) == RunMode.Online)
             {
                 //
-                // Password required if user has been specified. Password can be the empty string.
+                // Url shouldn't be empty and should start with either http:// or https://.
                 //
-                string password = FindArg(args, "password");
-                if (password != null)
-                {
-                    res.User = user;
-                    res.Password = password;
+                string url;
+                if (!arguments.TryGetValue("url", out url) || url.Length == 0)
+                    return null;
+                res.Url = url;
+                url = url.ToLower();
+                if (!(url.StartsWith("http://") && url.Length > 7) && !(url.StartsWith("https://") && url.Length > 8))
+                    return null;
 
+                //
+                // List shouldn't be empty.
+                //
+                string list;
+                if (!arguments.TryGetValue("list", out list) || list.Length == 0)
+                    return null;
+                res.List = list;
+
+                //
+                // Context can be empty.
+                //
+                string context;
+                if (arguments.TryGetValue("context", out context) && list.Length != 0)
+                    res.Context = context;
+
+                //
+                // Only process authentication arguments if a user argument is present.
+                //
+                string user;
+                if (arguments.TryGetValue("user", out user) && user.Length != 0)
+                {
                     //
-                    // Optional domain name.
+                    // Password required if user has been specified. Password can be the empty string.
                     //
-                    string domain = FindArg(args, "domain");
-                    if (domain != null && domain.Length != 0)
-                        res.Domain = domain;
+                    string password;
+                    if (arguments.TryGetValue("password", out password))
+                    {
+                        res.User = user;
+                        res.Password = password;
+
+                        //
+                        // Optional domain name.
+                        //
+                        string domain;
+                        if (arguments.TryGetValue("domain", out domain) && domain.Length != 0)
+                            res.Domain = domain;
+                    }
+                    else
+                        return null;
+                }
+            }
+
+            if ((res.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
+            {
+                //
+                // Output language can be set optionally and should be CS or VB (case-insensitive).
+                // We use a string instead of an enum since we'll pass the language name to CodeDOM.
+                //
+                string language;
+                if (arguments.TryGetValue("language", out language) && language.Length != 0)
+                {
+                    language = language.ToLower();
+
+                    switch (language)
+                    {
+                        case "cs":
+                        case "vcs":
+                        case "c#":
+                        case "csharp":
+                        case "vcsharp":
+                            res.Language = "CS";
+                            break;
+                        case "vb":
+                        case "visualbasic":
+                            res.Language = "VB";
+                            break;
+                        default:
+                            return null;
+                    }
                 }
                 else
-                    return null;
+                    res.Language = "CS";
+
+                //
+                // v0.2.1.0 - Namespace support.
+                //
+                string ns;
+                arguments.TryGetValue("namespace", out ns);
+                res.Namespace = ns;
             }
 
             return res;
         }
 
-        /// <summary>
-        /// Checks that all arguments have a valid prefix ('/' or '-') and have a suitable minimal length.
-        /// </summary>
-        /// <param name="args">Arguments to be checked.</param>
-        /// <returns>True if valid; false otherwise.</returns>
-        private static bool CheckArgs(string[] args)
-        {
-            //
-            // Minimum required: -url and -list
-            //
-            if (args.Length < 2)
-                return false;
+        #endregion
 
-            foreach (string arg in args)
-            {
-                //
-                // Check for valid prefix.
-                //
-                if (!arg.StartsWith("-") && !arg.StartsWith("/"))
-                    return false;
-
-                //
-                // Minimal length as in "-out:x"
-                //
-                if (arg.Length <= 5)
-                    return false;
-            }
-
-            return true;
-        }
+        #region Helper methods
 
         /// <summary>
-        /// Finds an argument with the specified name.
+        /// Finds the command-line arguments and parses the key and value.
         /// </summary>
-        /// <param name="args">Arguments collection to search in.</param>
-        /// <param name="prefix">Name of the argument requested.</param>
-        /// <returns>Value of the argument, i.e. the portion after the ':' without optional double quotes; null if the argument isn't found.</returns>
-        private static string FindArg(string[] args, string prefix)
+        /// <param name="args">Argument list to search for key/value argument pairs.</param>
+        /// <returns>Dictionary with key/value argument pairs.</returns>
+        /// <example>-key:value, /key:value, -key:"value with spaces"</example>
+        private static Dictionary<string, string> FindArgs(string[] args)
         {
-            //
-            // Prefix should end with :
-            //
-            prefix += ":";
-            int n = prefix.Length;
+            Dictionary<string, string> res = new Dictionary<string, string>();
 
+            Regex r = new Regex(@"[-/](?<option>\w+):(""(?<value>.*)""|(?<value>.*))", RegexOptions.CultureInvariant | RegexOptions.Compiled);
             foreach (string arg in args)
-            {
-                //
-                // Trim the '-' or '/'.
-                //
-                string a = arg.Substring(1);
+                foreach (Match m in r.Matches(arg))
+                    res.Add(m.Groups["option"].Value.ToLower(), m.Groups["value"].Value);
 
-                //
-                // Case-insensitive prefix-match. Returns the "-trimmed version of the argument value.
-                //
-                if (a.ToLower().StartsWith(prefix) && a.Length >= n)
-                    return a.Substring(n).Trim('\"');
-            }
-
-            return null;
+            return res;
         }
+
+        #endregion
     }
 }

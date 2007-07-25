@@ -61,11 +61,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 if (_ok)
                 {
-                    replacementsDictionary.Add("$WssUrl$", start.Context.ConnectionParameters.Url);
+                    //
+                    // TODO: replace by Context object construction and ToSpml call.
+                    //
+                    replacementsDictionary.Add("$WssUrl$", start.Context.ConnectionParameters.Parameters.Url);
                     List<string> lists = start.Context.Selection.Lists.ConvertAll<string>(l => "\t\t" + l.ToSpml());
                     string sLists = String.Join("\r\n", lists.ToArray());
                     replacementsDictionary.Add("$lists$", sLists);
-                    string conn = start.Context.ConnectionParameters.ToSpml();
+                    string conn = start.Context.ConnectionParameters.Parameters.ToSpml().InnerText;
                     replacementsDictionary.Add("$connection$", "\t" + conn);
                 }
             }

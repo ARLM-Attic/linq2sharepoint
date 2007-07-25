@@ -41,6 +41,7 @@ using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.CodeDom;
 using System.CodeDom.Compiler;
+using System.Diagnostics;
 
 #endregion
 
@@ -78,51 +79,125 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             // Entity generator.
             //
             EG.EntityGenerator gen = new EG.EntityGenerator(
-                                         new EG.EntityGeneratorArgs() { 
-                                             Domain = a.Domain, 
-                                             User = a.User, 
-                                             Password = a.Password, 
-                                             Url = a.Url,
+                                         new EG.EntityGeneratorArgs()
+                                         {
+                                             RunMode = a.RunMode,
+                                             Connection = new Connection()
+                                                          {
+                                                              CustomAuthentication = a.User != null,
+                                                              Url = a.Url,
+                                                              User = a.User,
+                                                              Password = a.Password,
+                                                              Domain = a.Domain
+                                                          },
                                              Namespace = a.Namespace,
                                              Language = (a.Language == "VB" ? EG.Language.VB : EG.Language.CSharp)
-                                            }
-                                         );
-            
-            //
-            // Set up event handlers for status information.
-            //
-            //SetupEventHandlers(gen);
+                                         }
+                                     );
 
             //
-            // Generate code in the appropriate language.
+            // Get SPML first.
             //
-            CodeCompileUnit compileUnit = gen.Generate(null, a.List);
-            CodeDomProvider cdp = CodeDomProvider.CreateProvider(a.Language);
-            StringBuilder code = new StringBuilder();
-            TextWriter tw = new StringWriter(code);
-            cdp.GenerateCodeFromCompileUnit(compileUnit, tw, null);
+            XmlDocument spml = new XmlDocument();
 
             //
-            // Infer file name from list name if not specified on the command-line (v0.2.0.0).
+            // Check run mode: online or offline.
             //
-            if (a.File == null || a.File.Length == 0)
+            if ((a.RunMode & RunMode.Online) == RunMode.Online)
             {
-                string file = a.List + (a.Language == "CS" ? ".cs" : ".vb");
-                foreach (char c in Path.GetInvalidFileNameChars())
-                    file = file.Replace(c.ToString(), "");
-                a.File = file;
+                try
+                {
+                    spml.InnerXml = gen.GenerateSpml(a.Context, a.List).InnerXml;
+                }
+                catch (EntityGeneratorException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
             }
-
-            //
-            // Write to output file.
-            //
-            //Console.Write("Writing file {0}... ", a.File);
-
-            using (StreamWriter sw = File.CreateText(a.File))
+            else if ((a.RunMode & RunMode.Offline) == RunMode.Offline)
             {
-                sw.WriteLine(code.ToString());
-                //Console.WriteLine("Done");
+                try
+                {
+                    spml.InnerXml = File.ReadAllText(a.In);
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
             }
+            else
+                Debug.Assert(false);
+
+            //
+            // Just save the SPML.
+            //
+            if ((a.RunMode & RunMode.Export) == RunMode.Export)
+            {
+                //
+                // Write to output file.
+                //
+                using (FileStream fs = File.Open(a.Xml, FileMode.Create, FileAccess.Write))
+                {
+                    XmlWriterSettings settings = new XmlWriterSettings();
+                    settings.Indent = true;
+                    using (XmlWriter writer = XmlWriter.Create(fs, settings))
+                    {
+                        spml.WriteTo(writer);
+                    }
+                }
+            }
+            //
+            // Create and save entity code.
+            //
+            else if ((a.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
+            {
+                //
+                // Generate code in the appropriate language.
+                //
+                CodeCompileUnit compileUnit = gen.GenerateCode(spml);
+                CodeDomProvider cdp = CodeDomProvider.CreateProvider(a.Language);
+                StringBuilder code = new StringBuilder();
+                TextWriter tw = new StringWriter(code);
+                cdp.GenerateCodeFromCompileUnit(compileUnit, tw, null);
+
+                //
+                // Infer file name from list name if not specified on the command-line (v0.2.0.0).
+                //
+                if (a.Code == null || a.Code.Length == 0)
+                {
+                    string file;
+
+                    if (!string.IsNullOrEmpty(a.Context))
+                        file = a.Context + "SharePointDataContext";
+                    else
+                    {
+                        XmlAttribute ctx = spml["SharePointDataContext"].Attributes["Name"];
+                        if (ctx != null && !string.IsNullOrEmpty(ctx.Value))
+                            file = ctx.Value + "SharePointDataContext";
+                        else if (!string.IsNullOrEmpty(a.List))
+                            file = a.List; //TODO: non-GUID file name
+                        else
+                            file = Path.GetRandomFileName();
+                    }
+
+                    file += (a.Language == "CS" ? ".cs" : ".vb");
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                        file = file.Replace(c.ToString(), "");
+                    a.Code = file;
+                }
+
+                //
+                // Write to output file.
+                //
+                using (StreamWriter sw = File.CreateText(a.Code))
+                {
+                    sw.WriteLine(code.ToString());
+                }
+            }
+            else
+                Debug.Assert(false);
         }
 
         /// <summary>
@@ -186,22 +261,45 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Console.WriteLine("No inputs specified\n");
 
             string file = Assembly.GetEntryAssembly().GetName().Name + ".exe";
-            Console.WriteLine("Usage: {0} -url:<url> -list:<list> [-out:<file>]", file);
-            Console.WriteLine("       {0} [-language:<language>] [-namespace:<namespace>", new string(' ', file.Length));
-            Console.WriteLine("       {0} [-user:<user> -password:<password> [-domain:<domain>]]", new string(' ', file.Length));
+            Console.WriteLine("Usage: {0} [options]", file);
+
+            //Console.WriteLine("Usage: {0} -url:<url> [-list:<list>]", file);
+            //Console.WriteLine("       {0} [-in:<file>] [-xml:<file>]", new string(' ', file.Length));
+            //Console.WriteLine("       {0} [-code:<file> [-language:<lang>] [-namespace:<ns>]]", new string(' ', file.Length));
+            //Console.WriteLine("       {0} [-user:<user> -password:<password> [-domain:<domain>]]", new string(' ', file.Length));
             Console.WriteLine();
 
-            Console.WriteLine("  -url:<url>              URL to the root of the SharePoint site");
-            Console.WriteLine("  -list:<list>            Name of the list");
-            Console.WriteLine("  -out:<file>             Output file");
-            Console.WriteLine("  -language:<language>    Code language used for output (VB or CS)");
-            Console.WriteLine("                          (Default: CS)");
-            Console.WriteLine("  -namespace:<namespace>  Namespace to put generated code in");
+            Console.WriteLine("Options:");
+            Console.WriteLine("  -url:<url>            URL to the root of the SharePoint site");
+            Console.WriteLine("  -user:<user>          User name for connection to SharePoint site");
+            Console.WriteLine("  -password:<password>  Password for connection to SharePoint site");
+            Console.WriteLine("  -domain:<domain>      Domain for connection to SharePoint site");
+            Console.WriteLine("  -list:<list>          Name of the list to export (* = all lists)");
+            Console.WriteLine("  -context:<ctx>        Name of the context to create");
+            Console.WriteLine("  -in:<file>            Input file with SPML for code generation");
+            Console.WriteLine("  -xml:<file>           Output file for SPML generation");
+            Console.WriteLine("  -code:<file>          Output file for code generation (= -out:<file>)");
+            Console.WriteLine("  -language:<lang>      Code language used for output: VB or CS (default)");
+            Console.WriteLine("  -namespace:<ns>       Namespace to put generated code in");
             Console.WriteLine();
-
-            Console.WriteLine("  -user:<user>            User name for connection to SharePoint site");
-            Console.WriteLine("  -password:<password>    Password for connection to SharePoint site");
-            Console.WriteLine("  -domain:<domain>        Domain for connection to SharePoint site");
+            Console.WriteLine("Syntax:");
+            Console.WriteLine("  {0} [{{online}}|{{offline}}]", file);
+            Console.WriteLine("  {online}  := -url:<url> -list:<list> [-context:<ctx>] {connect} {option}");
+            Console.WriteLine("  {offline} := -in:<file> {codegen}");
+            Console.WriteLine("  {connect} := [-user:<user> -password:<password> [-domain:<domain>]]");
+            Console.WriteLine("  {option}  := [{codegen}|{export}]");
+            Console.WriteLine("  {codegen} := [-code:<file>] [-language:<lang>] [-namespace:<ns>]");
+            Console.WriteLine("  {export}  := [-xml:<file>]");
+            Console.WriteLine();
+            Console.WriteLine("Samples:");
+            Console.WriteLine("To export one list to code (online codegen).");
+            Console.WriteLine("  {0} -url:http://wss -list:Products -language:CS -code:Products.cs", file);
+            Console.WriteLine();
+            Console.WriteLine("To generate an SPML mapping definition for all lists (online export).");
+            Console.WriteLine("  {0} -url:http://wss3demo -list:* -xml:Northwind.dbml", file);
+            Console.WriteLine();
+            Console.WriteLine("To generate code for an SPML mapping definition (offline codegen).");
+            Console.WriteLine("  {0} -in:Northwind.spml -language:CS -code:Northwind.cs", file);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             Selection = new Selection();
         }
 
-        public ConnectionParameters ConnectionParameters { get; set; }
+        public Connection ConnectionParameters { get; set; }
         public List<List> Lists { get; set; }
         public Selection Selection { get; set; }
     }

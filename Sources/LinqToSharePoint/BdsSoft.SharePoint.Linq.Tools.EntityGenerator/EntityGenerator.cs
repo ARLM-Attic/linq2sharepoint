@@ -15,6 +15,7 @@
  *         Hosting model with events
  * 0.2.1 - Use of CodeDom for code generation; move from SpMetal code to EntityGenerator
  * 0.2.2 - New entity model
+ * 0.2.3 - New SPML run modes
  */
 
 #region Namespace imports
@@ -28,6 +29,7 @@ using System.Net;
 using System.Text;
 using System.Xml;
 using Microsoft.SharePoint;
+using System.Web.Services.Protocols;
 
 #endregion
 
@@ -82,7 +84,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Dictionary of entity type definitions mapped by list name.
         /// </summary>
-        private Dictionary<string, CodeTypeDeclaration> entities = new Dictionary<string, CodeTypeDeclaration>();
+        private Dictionary<Guid, CodeTypeDeclaration> entities = new Dictionary<Guid, CodeTypeDeclaration>();
 
         /// <summary>
         /// Set of assigned type names that shouldn't be used in type name generation (<seealso cref="GetTypeName"/>).
@@ -108,13 +110,80 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         }
 
         /// <summary>
+        /// Generates a SPML document based on the given arguments.
+        /// </summary>
+        /// <param name="contextName">Prefix for the custom SharePointDataContext type's name.</param>
+        /// <param name="listNames">Names of the lists to generate entity types for.</param>
+        /// <returns>SPML document with exported entity information.</returns>
+        public XmlDocument GenerateSpml(string contextName, params string[] listNames)
+        {
+            //
+            // Create Context object and set parameters.
+            //
+            Context context = new Context();
+            context.Name = contextName;
+            context.Url = args.Connection.Url;
+            context.Connection = args.Connection;
+
+            if (listNames == null || listNames.Length == 0)
+            {
+                // Get all lists here.
+            }
+            else
+            {
+                //
+                // Calculate closure of lists, including Lookup(Multi) referenced lists.
+                //
+                Dictionary<Guid, List> closure = new Dictionary<Guid, List>();
+                foreach (string lst in listNames)
+                {
+                    List list = List.FromCaml(GetListDefinition(lst));
+                    if (!closure.ContainsKey(list.Id))
+                    {
+                        closure.Add(list.Id, list);
+
+                        //
+                        // Search for referenced lists in the known fields collection.
+                        //
+                        foreach (Field field in list.GetKnownFields())
+                        {
+                            if (field.FieldType == FieldType.Lookup || field.FieldType == FieldType.LookupMulti)
+                            {
+                                Guid lookup = new Guid(field.LookupList);
+                                if (!closure.ContainsKey(lookup))
+                                    closure.Add(lookup, List.FromCaml(GetListDefinition(field.LookupList)));
+                            }
+                        }
+                    }
+                }
+
+                //
+                // Set the Lists property of the context.
+                //
+                context.Lists = new List<List>(closure.Values);
+            }
+
+            XmlDocument doc = new XmlDocument();
+            doc.AppendChild(doc.ImportNode(context.ToSpml(), true));
+            return doc;
+        }
+
+        /// <summary>
         /// Generates entity types based on the given arguments.
         /// </summary>
-        /// <param name="contextName">Prefix for the custom SharePointDataContext type's name. No custom context will be created if this parameter is null or the empty string.</param>
-        /// <param name="listNames">Names of the lists to generate entity types for.</param>
+        /// <param name="spml">SPML definition to generate code for.</param>
         /// <returns>Code compilation unit for all required entity types and helper types.</returns>
-        public CodeCompileUnit Generate(string contextName, params string[] listNames)
+        public CodeCompileUnit GenerateCode(XmlDocument spml)
         {
+            //
+            // TODO: validate SPML.
+            //
+
+            //
+            // Get the SharePointDataContext root.
+            //
+            Context context = Context.FromSpml(spml["SharePointDataContext"]);
+
             //
             // Create code unit in specified namespace.
             //
@@ -130,9 +199,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             ns.Imports.Add(new CodeNamespaceImport("BdsSoft.SharePoint.Linq"));
 
             //
+            // Prepare entities.
+            //
+            foreach (List list in context.Lists)
+                entities.Add(list.Id, new CodeTypeDeclaration(GetTypeName(list.Name)));
+
+            //
             // Generate entities.
             //
-            foreach (string list in listNames)
+            foreach (List list in context.Lists)
                 GenerateEntityForList(list);
 
             //
@@ -144,10 +219,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Create a custom SharePointDataContext type.
             //
-            if (!string.IsNullOrEmpty(contextName))
+            if (!string.IsNullOrEmpty(context.Name))
             {
                 List<string> entities = new List<CodeTypeDeclaration>(this.entities.Values).ConvertAll<string>(t => t.Name);
-                CodeTypeDeclaration ctx = GenerateSharePointDataContext(contextName, entities.ToArray());
+                CodeTypeDeclaration ctx = GenerateSharePointDataContext(context, entities.ToArray());
                 ns.Types.Add(ctx);
             }
 
@@ -164,15 +239,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Generates the type definition for a custom SharePointDataContext object, holding property references to the list objects.
         /// </summary>
-        /// <param name="contextName">Friendly name to create the SharePointDataContext for, e.g. the WSS site name.</param>
+        /// <param name="context">Context definition to create the SharePointDataContext for.</param>
         /// <param name="entityNames">List of entity type names to be included in the custom data context.</param>
         /// <returns>Type definition of a custom SharePointDataContext with property references to the specified lists.</returns>
-        private CodeTypeDeclaration GenerateSharePointDataContext(string contextName, params string[] entityNames)
+        private CodeTypeDeclaration GenerateSharePointDataContext(Context context, params string[] entityNames)
         {
             //
             // Create CodeDOM context type.
             //
-            CodeTypeDeclaration ctx = new CodeTypeDeclaration(contextName + "SharePointDataContext");
+            CodeTypeDeclaration ctx = new CodeTypeDeclaration(context.Name + "SharePointDataContext");
             ctx.Attributes = MemberAttributes.Public;
             ctx.IsPartial = true;
             ctx.BaseTypes.Add(new CodeTypeReference(typeof(SharePointDataContext), CodeTypeReferenceOptions.GlobalReference));
@@ -206,9 +281,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             CodeConstructor customCtor = new CodeConstructor();
             customCtor.Attributes = MemberAttributes.Public;
             customCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
-            customCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference(typeof(Uri), CodeTypeReferenceOptions.GlobalReference), new CodePrimitiveExpression(args.Url)));
+            customCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference(typeof(Uri), CodeTypeReferenceOptions.GlobalReference), new CodePrimitiveExpression(context.Url)));
             customCtor.Comments.Add(new CodeCommentStatement("<summary>", true));
-            customCtor.Comments.Add(new CodeCommentStatement("Connect to the " + args.Url + " SharePoint site using the SharePoint web services.", true));
+            customCtor.Comments.Add(new CodeCommentStatement("Connect to the " + context.Url + " SharePoint site using the SharePoint web services.", true));
             customCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
             ctx.Members.Add(customCtor);
 
@@ -251,22 +326,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Generates the type definition for an entity type for the specified list.
         /// </summary>
-        /// <param name="listName">List to generate the entity type for.</param>
+        /// <param name="list">List to generate the entity type for.</param>
         /// <returns>Entity type definition for the specified list.</returns>
-        private CodeTypeDeclaration GenerateEntityForList(string listName)
+        private CodeTypeDeclaration GenerateEntityForList(List list)
         {
-            //
-            // Get general information of the list.
-            //
-            XmlNode lst = GetListDefinition(listName);
-            List list = List.FromCaml(lst);
-
-            //
-            // Check for duplicates.
-            //
-            if (entities.ContainsKey(list.Id.ToString()))
-                return entities[list.Id.ToString()];
-
             //
             // Send event about schema exporting.
             //
@@ -277,18 +340,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // CodeDOM entity type for list definition.
             //
-            CodeTypeDeclaration listType = new CodeTypeDeclaration(GetTypeName(list.Name));
+            CodeTypeDeclaration listType = entities[list.Id];
             listType.Attributes = MemberAttributes.Public;
-            //listType.BaseTypes.Add(new CodeTypeReference(typeof(SharePointListEntity), CodeTypeReferenceOptions.GlobalReference));
             listType.BaseTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanged), CodeTypeReferenceOptions.GlobalReference));
             listType.BaseTypes.Add(new CodeTypeReference(typeof(System.ComponentModel.INotifyPropertyChanging), CodeTypeReferenceOptions.GlobalReference));
             listType.IsClass = true;
             listType.IsPartial = true;
-
-            //
-            // Keep mapping.
-            //
-            entities.Add(list.Id.ToString(), listType);
 
             //
             // Custom attribute for list entity type.
@@ -311,169 +368,158 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Generate field definitions.
             //
             int n = 0;
-            foreach (Field field in list.Fields)
+            foreach (Field field in list.GetKnownFields())
             {
                 //
-                // Export only fields that aren't hidden or the primary key field.
+                // Build FieldAttribute attribute.
                 //
-                if (!field.IsHidden || field.IsPrimaryKey)
+                List<CodeAttributeArgument> fieldAttributeArgs = new List<CodeAttributeArgument>();
+                fieldAttributeArgs.Add(new CodeAttributeArgument(new CodePrimitiveExpression(XmlConvert.DecodeName(field.Name))));
+                fieldAttributeArgs.Add(
+                    new CodeAttributeArgument(
+                        new CodeFieldReferenceExpression(
+                            new CodeTypeReferenceExpression(new CodeTypeReference(typeof(FieldType), CodeTypeReferenceOptions.GlobalReference)),
+                            Enum.GetName(typeof(FieldType), field.FieldType)
+                        )
+                    )
+                );
+                fieldAttributeArgs.Add(new CodeAttributeArgument("Id", new CodePrimitiveExpression(field.Id.ToString())));
+
+                //
+                // Read-only and calculated field require additional mapping attribute parameters.
+                //
+                if (field.IsPrimaryKey)
+                    fieldAttributeArgs.Add(new CodeAttributeArgument("PrimaryKey", new CodePrimitiveExpression(true)));
+                if (field.IsReadOnly)
+                    fieldAttributeArgs.Add(new CodeAttributeArgument("ReadOnly", new CodePrimitiveExpression(true)));
+                if (field.IsCalculated)
+                    fieldAttributeArgs.Add(new CodeAttributeArgument("Calculated", new CodePrimitiveExpression(true)));
+
+                //
+                // Create helper field and refer to it in case a multi-choice fields with fill-in choice was detected.
+                // The helper field has the same name as the .NET type (which will be an enum) suffixed with "Other".
+                //
+                if (field.FillInChoiceEnabled)
+                    fieldAttributeArgs.Add(new CodeAttributeArgument("OtherChoice", new CodePrimitiveExpression(Helpers.GetHelperName(field.DisplayName))));
+
+                //
+                // Runtime type for entity property. Will be supplied in type-specific switching logic below.
+                // Keep track of value (and Nullable) types for VB code generation (compare using .Equals instead of Is or =).
+                // Keep track of Lookup and LookupMulti fields for special code generation.
+                //
+                CodeTypeReference bclTypeRef;
+                bool isValue = false;
+                bool isLookup = false;
+                bool isLookupMulti = false;
+
+                //
+                // Type-specific generation actions; generate other entities or choice enums if required.
+                //
+                switch (field.FieldType)
+                {
+                    case FieldType.Choice:
+                    case FieldType.MultiChoice:
+                        isValue = true;
+                        bool flags = field.FieldType == FieldType.MultiChoice;
+                        if (field.IsRequired)
+                            bclTypeRef = new CodeTypeReference(GenerateChoiceEnum(field, flags));
+                        else
+                        {
+                            bclTypeRef = new CodeTypeReference(typeof(Nullable<>), CodeTypeReferenceOptions.GlobalReference);
+                            bclTypeRef.TypeArguments.Add(new CodeTypeReference(GenerateChoiceEnum(field, flags)));
+                        }
+                        break;
+                    case FieldType.Lookup:
+                    case FieldType.LookupMulti:
+                        {
+                            Guid lookup = new Guid(field.LookupList);
+
+                            if (entities.ContainsKey(lookup))
+                                bclTypeRef = new CodeTypeReference(entities[lookup].Name);
+                            else
+                                throw new Exception(String.Format("Invalid Lookup field list reference encountered: list {0} referred to by field {1} is unknown in the SharePoint context.", field.LookupList, field.Name)); //TODO
+                            fieldAttributeArgs.Add(new CodeAttributeArgument("LookupDisplayField", new CodePrimitiveExpression(field.LookupField)));
+
+                            //
+                            // Lookup fields are mapped on EntityRef<T> properties.
+                            //
+                            if (field.FieldType == FieldType.Lookup)
+                            {
+                                isLookup = true;
+                            }
+                            //
+                            // LookupMulti fields are mapped on EntitySet<T> properties.
+                            //
+                            else
+                            {
+                                isLookupMulti = true;
+
+                                CodeTypeReference t = bclTypeRef;
+                                bclTypeRef = new CodeTypeReference(typeof(EntitySet<>), CodeTypeReferenceOptions.GlobalReference);
+                                bclTypeRef.TypeArguments.Add(t);
+                            }
+                        }
+                        break;
+                    default:
+                        bclTypeRef = new CodeTypeReference(field.RuntimeType, CodeTypeReferenceOptions.GlobalReference);
+                        if (field.RuntimeType.IsGenericType)
+                            isValue = (field.RuntimeType.GetGenericTypeDefinition() == typeof(Nullable<>));
+                        else
+                            isValue = (field.RuntimeType.BaseType == typeof(System.ValueType));
+                        break;
+                }
+
+                //
+                // LookupMulti fields shouldn't be settable. The underlying EntitySet<T> type will allow changes to the collection though.
+                //
+                bool readOnly = field.FieldType != FieldType.LookupMulti ? field.IsReadOnly : true;
+
+                //
+                // Create field property definition.
+                //
+                string fieldName = Helpers.GetFriendlyName(field.DisplayName);
+                CodeMemberField storageField;
+                CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField);
+                listType.Members.Add(fieldProperty);
+                listType.Members.Add(storageField);
+
+                //
+                // Generate additional helper property if needed.
+                //
+                if (field.FillInChoiceEnabled && (field.FieldType == FieldType.Choice || field.FieldType == FieldType.MultiChoice))
                 {
                     //
-                    // Is the underlying type recognized and supported by the mapper?
+                    // Fill-in choice field is of type Text. Create FieldAttribute accordingly.
                     //
-                    if (field.FieldType != FieldType.None)
-                    {
-                        //
-                        // Build FieldAttribute attribute.
-                        //
-                        List<CodeAttributeArgument> fieldAttributeArgs = new List<CodeAttributeArgument>();
-                        fieldAttributeArgs.Add(new CodeAttributeArgument(new CodePrimitiveExpression(XmlConvert.DecodeName(field.Name))));
-                        fieldAttributeArgs.Add(
-                            new CodeAttributeArgument(
-                                new CodeFieldReferenceExpression(
-                                    new CodeTypeReferenceExpression(new CodeTypeReference(typeof(FieldType), CodeTypeReferenceOptions.GlobalReference)),
-                                    Enum.GetName(typeof(FieldType), field.FieldType)
-                                )
+                    List<CodeAttributeArgument> helperFieldAttributeArgs = new List<CodeAttributeArgument>();
+                    helperFieldAttributeArgs.Add(new CodeAttributeArgument(new CodePrimitiveExpression(XmlConvert.DecodeName(field.Name))));
+                    helperFieldAttributeArgs.Add(
+                        new CodeAttributeArgument(
+                            new CodeFieldReferenceExpression(
+                                new CodeTypeReferenceExpression(typeof(FieldType)),
+                                Enum.GetName(typeof(FieldType), field.FieldType)
                             )
-                        );
-                        fieldAttributeArgs.Add(new CodeAttributeArgument("Id", new CodePrimitiveExpression(field.Id.ToString())));
+                        )
+                    );
 
-                        //
-                        // Read-only and calculated field require additional mapping attribute parameters.
-                        //
-                        if (field.IsPrimaryKey)
-                            fieldAttributeArgs.Add(new CodeAttributeArgument("PrimaryKey", new CodePrimitiveExpression(true)));
-                        if (field.IsReadOnly)
-                            fieldAttributeArgs.Add(new CodeAttributeArgument("ReadOnly", new CodePrimitiveExpression(true)));
-                        if (field.IsCalculated)
-                            fieldAttributeArgs.Add(new CodeAttributeArgument("Calculated", new CodePrimitiveExpression(true)));
+                    //
+                    // Use same field Id as the helper's parent.
+                    //
+                    helperFieldAttributeArgs.Add(new CodeAttributeArgument("Id", new CodePrimitiveExpression(field.Id.ToString())));
 
-                        //
-                        // Create helper field and refer to it in case a multi-choice fields with fill-in choice was detected.
-                        // The helper field has the same name as the .NET type (which will be an enum) suffixed with "Other".
-                        //
-                        if (field.FillInChoiceEnabled)
-                            fieldAttributeArgs.Add(new CodeAttributeArgument("OtherChoice", new CodePrimitiveExpression(Helpers.GetHelperName(field.DisplayName))));
-
-                        //
-                        // Runtime type for entity property. Will be supplied in type-specific switching logic below.
-                        // Keep track of value (and Nullable) types for VB code generation (compare using .Equals instead of Is or =).
-                        // Keep track of Lookup and LookupMulti fields for special code generation.
-                        //
-                        CodeTypeReference bclTypeRef;
-                        bool isValue = false;
-                        bool isLookup = false;
-                        bool isLookupMulti = false;
-
-                        //
-                        // Type-specific generation actions; generate other entities or choice enums if required.
-                        //
-                        switch (field.FieldType)
-                        {
-                            case FieldType.Choice:
-                            case FieldType.MultiChoice:
-                                isValue = true;
-                                bool flags = field.FieldType == FieldType.MultiChoice;
-                                if (field.IsRequired)
-                                    bclTypeRef = new CodeTypeReference(GenerateChoiceEnum(field, flags));
-                                else
-                                {
-                                    bclTypeRef = new CodeTypeReference(typeof(Nullable<>), CodeTypeReferenceOptions.GlobalReference);
-                                    bclTypeRef.TypeArguments.Add(new CodeTypeReference(GenerateChoiceEnum(field, flags)));
-                                }
-                                break;
-                            case FieldType.Lookup:
-                            case FieldType.LookupMulti:
-                                {
-                                    if (entities.ContainsKey(field.LookupList))
-                                        bclTypeRef = new CodeTypeReference(entities[field.LookupList].Name);
-                                    else
-                                        bclTypeRef = new CodeTypeReference(GenerateEntityForList(field.LookupList).Name);
-                                    fieldAttributeArgs.Add(new CodeAttributeArgument("LookupDisplayField", new CodePrimitiveExpression(field.LookupField)));
-
-                                    //
-                                    // Lookup fields are mapped on EntityRef<T> properties.
-                                    //
-                                    if (field.FieldType == FieldType.Lookup)
-                                    {
-                                        isLookup = true;
-                                    }
-                                    //
-                                    // LookupMulti fields are mapped on EntitySet<T> properties.
-                                    //
-                                    else
-                                    {
-                                        isLookupMulti = true;
-
-                                        CodeTypeReference t = bclTypeRef;
-                                        //bclTypeRef = new CodeTypeReference(typeof(IList<>), CodeTypeReferenceOptions.GlobalReference);
-                                        bclTypeRef = new CodeTypeReference(typeof(EntitySet<>), CodeTypeReferenceOptions.GlobalReference);
-                                        bclTypeRef.TypeArguments.Add(t);
-                                    }
-                                }
-                                break;
-                            default:
-                                bclTypeRef = new CodeTypeReference(field.RuntimeType, CodeTypeReferenceOptions.GlobalReference);
-                                if (field.RuntimeType.IsGenericType)
-                                    isValue = (field.RuntimeType.GetGenericTypeDefinition() == typeof(Nullable<>));
-                                else
-                                    isValue = (field.RuntimeType.BaseType == typeof(System.ValueType));
-                                break;
-                        }
-
-                        //
-                        // LookupMulti fields shouldn't be settable. The underlying IList<T> type will allow changes to the collection though.
-                        //
-                        bool readOnly = field.FieldType != FieldType.LookupMulti ? field.IsReadOnly : true;
-
-                        //
-                        // Create field property definition.
-                        //
-                        string fieldName = Helpers.GetFriendlyName(field.DisplayName);
-                        CodeMemberField storageField;
-                        CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField);
-                        listType.Members.Add(fieldProperty);
-                        listType.Members.Add(storageField);
-
-                        //
-                        // Generate additional helper property if needed.
-                        //
-                        if (field.FillInChoiceEnabled && (field.FieldType == FieldType.Choice || field.FieldType == FieldType.MultiChoice))
-                        {
-                            //
-                            // Fill-in choice field is of type Text. Create FieldAttribute accordingly.
-                            //
-                            List<CodeAttributeArgument> helperFieldAttributeArgs = new List<CodeAttributeArgument>();
-                            helperFieldAttributeArgs.Add(new CodeAttributeArgument(new CodePrimitiveExpression(XmlConvert.DecodeName(field.Name))));
-                            helperFieldAttributeArgs.Add(
-                                new CodeAttributeArgument(
-                                    new CodeFieldReferenceExpression(
-                                        new CodeTypeReferenceExpression(typeof(FieldType)),
-                                        Enum.GetName(typeof(FieldType), field.FieldType)
-                                    )
-                                )
-                            );
-
-                            //
-                            // Use same field Id as the helper's parent.
-                            //
-                            helperFieldAttributeArgs.Add(new CodeAttributeArgument("Id", new CodePrimitiveExpression(field.Id.ToString())));
-
-                            //
-                            // Create field definition for helper.
-                            //
-                            CodeMemberField helperStorageField;
-                            CodeMemberProperty helperField = GetFieldMemberProperty(listType, field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), false, fieldName, helperFieldAttributeArgs, true, false, false, out helperStorageField);
-                            listType.Members.Add(helperField);
-                            listType.Members.Add(helperStorageField);
-                        }
-
-                        //
-                        // Keep field count.
-                        //
-                        n++;
-                    }
+                    //
+                    // Create field definition for helper.
+                    //
+                    CodeMemberField helperStorageField;
+                    CodeMemberProperty helperField = GetFieldMemberProperty(listType, field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), false, fieldName, helperFieldAttributeArgs, true, false, false, out helperStorageField);
+                    listType.Members.Add(helperField);
+                    listType.Members.Add(helperStorageField);
                 }
+
+                //
+                // Keep field count.
+                //
+                n++;
             }
 
             //
@@ -533,6 +579,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             return evt;
         }
 
+        /// <summary>
+        /// Gets the entity event model's event invocation method for the specified event.
+        /// </summary>
+        /// <param name="eventName">Event to generate event invocation method for.</param>
+        /// <returns>Event invocation method definition.</returns>
         private CodeMemberMethod GetEventModelMethod(string eventName)
         {
             //
@@ -776,7 +827,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Field reference.
             //
-            CodeExpression fieldRef = 
+            CodeExpression fieldRef =
                 new CodeFieldReferenceExpression(
                     new CodeThisReferenceExpression(),
                     field.Name
@@ -974,7 +1025,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Create proxy object referring to the SharePoint lists.asmx service on the specified server.
             //
             Lists l = new Lists();
-            l.Url = args.Url.TrimEnd('/') + "/_vti_bin/lists.asmx";
+            l.Url = args.Connection.Url.TrimEnd('/') + "/_vti_bin/lists.asmx";
 
             //
             // Try to connect to server.
@@ -991,17 +1042,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 // Integrated authentication using current network credentials.
                 //
-                if (args.User == null)
+                if (!args.Connection.CustomAuthentication)
                     l.Credentials = CredentialCache.DefaultNetworkCredentials;
                 //
                 // Use specified credentials.
                 //
                 else
                 {
-                    if (args.Domain == null)
-                        l.Credentials = new NetworkCredential(args.User, args.Password);
+                    if (args.Connection.Domain == null)
+                        l.Credentials = new NetworkCredential(args.Connection.User, args.Connection.Password);
                     else
-                        l.Credentials = new NetworkCredential(args.User, args.Password, args.Domain);
+                        l.Credentials = new NetworkCredential(args.Connection.User, args.Connection.Password, args.Connection.Domain);
                 }
 
                 //
@@ -1020,7 +1071,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 if (connected != null)
                     connected(this, new ConnectedEventArgs(ex));
 
-                return null;
+                throw new EntityGeneratorException("Failed to connect to the SharePoint site at " + args.Connection.Url + ".", ex);
             }
 
             try
@@ -1040,7 +1091,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 if (loadedSchema != null)
                     loadedSchema(this, new LoadedSchemaEventArgs());
             }
-            catch (Exception ex)
+            catch (WebException ex)
             {
                 //
                 // Send event about schema loading failure.
@@ -1049,9 +1100,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 if (loadedSchema != null)
                     loadedSchema(this, new LoadedSchemaEventArgs(ex));
 
-                return null;
+                throw new EntityGeneratorException("Failed to connect to the SharePoint site at " + args.Connection.Url + ".", ex);
             }
-            
+            catch (SoapException ex)
+            {
+                //
+                // Send event about schema loading failure.
+                //
+                EventHandler<LoadedSchemaEventArgs> loadedSchema = LoadedSchema;
+                if (loadedSchema != null)
+                    loadedSchema(this, new LoadedSchemaEventArgs(ex));
+
+                throw new EntityGeneratorException("Cannot load the list definition for " + list + ".", ex);
+            }
+
             return lst;
         }
 
@@ -1073,5 +1135,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         }
 
         #endregion
+    }
+
+    [Serializable]
+    public class EntityGeneratorException : Exception
+    {
+        public EntityGeneratorException() { }
+        public EntityGeneratorException(string message) : base(message) { }
+        public EntityGeneratorException(string message, Exception inner) : base(message, inner) { }
+        protected EntityGeneratorException(
+          System.Runtime.Serialization.SerializationInfo info,
+          System.Runtime.Serialization.StreamingContext context)
+            : base(info, context) { }
     }
 }

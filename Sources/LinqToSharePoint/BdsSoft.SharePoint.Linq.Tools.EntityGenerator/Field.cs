@@ -8,6 +8,13 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+/*
+ * Version history:
+ * 
+ * 0.2.1 - Introduction of Field class
+ * 0.2.3 - SPML conversions
+ */
+
 #region Namespace imports
 
 using System;
@@ -27,6 +34,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     public class Field
     {
+        #region Properties
+
         /// <summary>
         /// Field identifier.
         /// </summary>
@@ -172,11 +181,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [Description("List of choices for Choice and MultiChoice fields.")]
         public List<string> Choices { get; set; }
 
+        #endregion
+
+        #region Factory methods
+
         /// <summary>
-        /// 
+        /// Creates a Field definition object from a CAML list definition.
         /// </summary>
         /// <param name="fieldDefinition">SharePoint list field definition.</param>
-        /// <returns></returns>
+        /// <returns>Field definition object for the specified list field.</returns>
         public static Field FromCaml(XmlNode fieldDefinition)
         {
             //
@@ -246,9 +259,42 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 field.IsPrimaryKey = bool.Parse(primaryKey.Value);
 
             //
+            // Check whether the field is required or not. Will be used to make value types nullable if not required.
+            //
+            XmlAttribute aRequired = fieldDefinition.Attributes["Required"];
+            field.IsRequired = false;
+            if (aRequired != null)
+                field.IsRequired = bool.Parse(aRequired.Value);
+
+            //
+            // Choices.
+            //
+            if (field.SharePointType.EndsWith("Choice"))
+            {
+                field.Choices = new List<string>();
+                foreach (XmlNode choice in fieldDefinition["CHOICES"])
+                    field.Choices.Add(choice.InnerText);
+
+                //
+                // Additional fill-in field needed if FillInChoice is set.
+                //
+                XmlAttribute fillInChoice = fieldDefinition.Attributes["FillInChoice"];
+                field.FillInChoiceEnabled = fillInChoice != null && bool.Parse((string)fillInChoice.Value);
+            }
+
+            //
+            // Lookup.
+            //
+            if (field.SharePointType.StartsWith("Lookup"))
+            {
+                field.LookupList = (string)fieldDefinition.Attributes["List"].Value;
+                field.LookupField = (string)fieldDefinition.Attributes["ShowField"].Value;
+            }
+
+            //
             // Populate type information.
             //
-            GetType(fieldDefinition, field);
+            GetType(field);
 
             //
             // Return field definition object.
@@ -257,48 +303,105 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         }
 
         /// <summary>
-        /// 
+        /// Creates a Field definition object from a SPML field definition.
         /// </summary>
-        /// <param name="fieldDefinition">SharePoint list field definition.</param>
-        /// <param name="field"></param>
-        private static void GetType(XmlNode fieldDefinition, Field field)
+        /// <param name="spml">SharePoint field definition in SPML.</param>
+        /// <returns>Field definition object for the specified field.</returns>
+        public static Field FromSpml(XmlNode spml)
         {
             //
-            // Default case: no additional helper field needed.
+            // Field object.
             //
-            //additional = false;
+            Field field = new Field();
 
             //
-            // Find SharePoint-type of the field.
+            // General field information.
             //
-            string type = (string)fieldDefinition.Attributes["Type"].Value;
+            field.Name = spml.Attributes["Name"].Value;
+            field.DisplayName = spml.Attributes["DisplayName"].Value;
+            field.Id = new Guid(spml.Attributes["Id"].Value);
+            field.SharePointType = spml.Attributes["Type"].Value;
+            XmlAttribute description = spml.Attributes["Description"];
+            if (description != null)
+                field.Description = description.Value;
 
             //
-            // Check whether the field is required or not. Will be used to make value types nullable if not required.
+            // Boolean values.
             //
-            XmlAttribute aRequired = fieldDefinition.Attributes["Required"];
-            bool required = false;
-            if (aRequired != null)
-                required = bool.Parse(aRequired.Value);
-            field.IsRequired = required;
+            XmlAttribute hidden = spml.Attributes["Hidden"];
+            if (hidden != null)
+                field.IsHidden = hidden.Value.ToLower() == "true";
+            XmlAttribute readOnly = spml.Attributes["ReadOnly"];
+            if (readOnly != null)
+                field.IsReadOnly = readOnly.Value.ToLower() == "true";
+            XmlAttribute primaryKey = spml.Attributes["PrimaryKey"];
+            if (primaryKey != null)
+                field.IsPrimaryKey = primaryKey.Value.ToLower() == "true";
+            XmlAttribute calculated = spml.Attributes["Calculated"];
+            if (calculated != null)
+                field.IsCalculated = calculated.Value.ToLower() == "true";
+            XmlAttribute required = spml.Attributes["Required"];
+            if (required != null)
+                field.IsRequired = required.Value.ToLower() == "true";
 
             //
-            // Convert calculated type to underlying result type for representation in the entity type.
+            // Choices.
             //
-            if (type == "Calculated")
-                type = (string)fieldDefinition.Attributes["ResultType"].Value;
+            XmlAttribute fillInChoice = spml.Attributes["FillInChoice"];
+            if (fillInChoice != null)
+                field.FillInChoiceEnabled = fillInChoice.Value.ToLower() == "true";
 
+            XmlElement choices = spml["Choices"];
+            if (choices != null)
+            {
+                field.Choices = new List<string>();
+                foreach (XmlNode choice in choices.ChildNodes)
+                    if (choice.Name == "Choice")
+                        field.Choices.Add(choice.InnerText);
+            }
+
+            //
+            // Lookup.
+            //
+            XmlAttribute lookupList = spml.Attributes["LookupList"];
+            XmlAttribute lookupField = spml.Attributes["LookupField"];
+            if (lookupList != null)
+                field.LookupList = lookupList.Value;
+            if (lookupField != null)
+                field.LookupField = lookupField.Value;
+
+            //
+            // Populate type information.
+            //
+            GetType(field);
+
+            //
+            // Return field definition object.
+            //
+            return field;
+        }
+
+        #endregion
+
+        #region Helper methods
+
+        /// <summary>
+        /// Sets the FieldType and RuntimeType properties on the specified field.
+        /// </summary>
+        /// <param name="field">Field to set type information for.</param>
+        private static void GetType(Field field)
+        {
             //
             // Analyze the types.
             //
-            switch (type)
+            switch (field.SharePointType)
             {
                 //
                 // Boolean == bool or bool?
                 //
                 case "Boolean":
                     field.FieldType = FieldType.Boolean;
-                    field.RuntimeType = required ? typeof(bool) : typeof(bool?);
+                    field.RuntimeType = field.IsRequired ? typeof(bool) : typeof(bool?);
                     break;
                 //
                 // Text == string
@@ -319,21 +422,21 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 case "DateTime":
                     field.FieldType = FieldType.DateTime;
-                    field.RuntimeType = required ? typeof(DateTime) : typeof(DateTime?);
+                    field.RuntimeType = field.IsRequired ? typeof(DateTime) : typeof(DateTime?);
                     break;
                 //
                 // Number == double or double?
                 //
                 case "Number":
                     field.FieldType = FieldType.Number;
-                    field.RuntimeType = required ? typeof(double) : typeof(double?);
+                    field.RuntimeType = field.IsRequired ? typeof(double) : typeof(double?);
                     break;
                 //
                 // Currency == double or double?
                 //
                 case "Currency":
                     field.FieldType = FieldType.Currency;
-                    field.RuntimeType = required ? typeof(double) : typeof(double?);
+                    field.RuntimeType = field.IsRequired ? typeof(double) : typeof(double?);
                     break;
                 //
                 // Counter == int (used for primary key field)
@@ -355,36 +458,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 case "Choice":
                 case "MultiChoice":
-                    field.FieldType = (type == "Choice" ? FieldType.Choice : FieldType.MultiChoice);
-
-                    //
-                    // Get choices.
-                    //
-                    field.Choices = new List<string>();
-                    foreach (XmlNode choice in fieldDefinition["CHOICES"])
-                        field.Choices.Add(choice.InnerText);
-
-                    //
-                    // Additional fill-in field needed if FillInChoice is set.
-                    //
-                    XmlAttribute fillInChoice = fieldDefinition.Attributes["FillInChoice"];
-                    field.FillInChoiceEnabled = fillInChoice != null && bool.Parse((string)fillInChoice.Value);
+                    field.FieldType = (field.SharePointType == "Choice" ? FieldType.Choice : FieldType.MultiChoice);
                     break;
                 //
                 // Lookup fields require the generation of another linked entity type.
                 //
                 case "Lookup":
                     field.FieldType = FieldType.Lookup;
-                    field.LookupList = (string)fieldDefinition.Attributes["List"].Value;
-                    field.LookupField = (string)fieldDefinition.Attributes["ShowField"].Value;
                     break;
                 //
                 // LookupMulti fields require the generation of another linked entity type.
                 //
                 case "LookupMulti":
                     field.FieldType = FieldType.LookupMulti;
-                    field.LookupList = (string)fieldDefinition.Attributes["List"].Value;
-                    field.LookupField = (string)fieldDefinition.Attributes["ShowField"].Value;
                     break;
                 //
                 // Currently no support for User and UserMulti fields.
@@ -401,5 +487,61 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     break;
             }
         }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Generates the SPML representation for the Field element.
+        /// </summary>
+        /// <returns>SPML XML element.</returns>
+        public XmlNode ToSpml()
+        {
+            XmlDocument doc = new XmlDocument();
+            XmlElement field = doc.CreateElement("Field");
+            field.Attributes.Append(doc.CreateAttribute("Name")).Value = this.Name;
+            field.Attributes.Append(doc.CreateAttribute("DisplayName")).Value = this.DisplayName;
+            field.Attributes.Append(doc.CreateAttribute("Type")).Value = this.SharePointType;
+            if (!string.IsNullOrEmpty(this.Description))
+                field.Attributes.Append(doc.CreateAttribute("Description")).Value = this.Description;
+            field.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
+
+            if (this.IsHidden)
+                field.Attributes.Append(doc.CreateAttribute("Hidden")).Value = "TRUE";
+            if (this.IsReadOnly)
+                field.Attributes.Append(doc.CreateAttribute("ReadOnly")).Value = "TRUE";
+            if (this.IsPrimaryKey)
+                field.Attributes.Append(doc.CreateAttribute("PrimaryKey")).Value = "TRUE";
+            if (this.IsCalculated)
+                field.Attributes.Append(doc.CreateAttribute("Calculated")).Value = "TRUE";
+            if (this.IsRequired)
+                field.Attributes.Append(doc.CreateAttribute("Required")).Value = "TRUE";
+
+            if (this.FieldType == FieldType.Choice || this.FieldType == FieldType.MultiChoice)
+            {
+                if (this.FillInChoiceEnabled)
+                    field.Attributes.Append(doc.CreateAttribute("FillInChoice")).Value = "TRUE";
+
+                XmlElement choices = doc.CreateElement("Choices");
+                foreach (string choice in this.Choices)
+                {
+                    XmlElement c = doc.CreateElement("Choice");
+                    c.InnerText = choice;
+                    choices.AppendChild(c);
+                }
+                field.AppendChild(choices);
+            }
+
+            if (this.FieldType == FieldType.Lookup || this.FieldType == FieldType.LookupMulti)
+            {
+                field.Attributes.Append(doc.CreateAttribute("LookupList")).Value = this.LookupList;
+                field.Attributes.Append(doc.CreateAttribute("LookupField")).Value = this.LookupField;
+            }
+
+            return field;
+        }
+
+        #endregion
     }
 }
