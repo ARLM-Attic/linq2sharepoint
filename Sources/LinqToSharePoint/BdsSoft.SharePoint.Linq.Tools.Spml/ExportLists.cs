@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+ * LINQ to SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+/*
+ * Version history:
+ * 
+ * 0.2.2 - Introduction of entity wizard
+ */
+
+#region Namespace imports
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -8,14 +26,16 @@ using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.Diagnostics;
 
+#endregion
+
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     public partial class ExportLists : UserControl, IWizardStep
     {
-        private Context context;
+        private WizardContext context;
         private bool _next;
 
-        public ExportLists(Context context)
+        public ExportLists(WizardContext context)
         {
             this.context = context;
             _next = true;

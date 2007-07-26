@@ -12,33 +12,35 @@
  * Version history:
  * 
  * 0.2.2 - Introduction of entity wizard
+ * 0.2.3 - Rename to WizardContext
  */
 
 #region Namespace imports
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Text;
-using System.Windows.Forms;
+using System.Xml;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
-    public partial class Line : Control
+    public class WizardContext
     {
-        public Line()
+        public WizardContext()
         {
-            InitializeComponent();
+            Selection = new Selection();
         }
 
-        protected override void OnPaint(PaintEventArgs pe)
-        {
-            pe.Graphics.DrawLine(Pens.White, 0, 0, this.Width, 0);
-            base.OnPaint(pe);
-        }
+        public WizardConnection ConnectionParameters { get; set; }
+        public List<List> Lists { get; set; }
+        public Selection Selection { get; set; }
+    }
+
+    public class Selection
+    {
+        public List<List> Lists { get; set; }
     }
 }

@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.Shell;
 using System.Runtime.InteropServices;
 using VSLangProj80;
 using System.CodeDom.Compiler;
-using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.CodeDom;
 using System.IO;
 using System.Xml;
@@ -76,23 +76,23 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Set arguments.
             //
-            EG.EntityGeneratorArgs args = new EG.EntityGeneratorArgs();
+            EntityGeneratorArgs args = new EntityGeneratorArgs();
             args.Namespace = this.FileNameSpace;
 
             string lang = GetProject().CodeModel.Language;
             Debug.Assert(lang == CodeModelLanguageConstants.vsCMLanguageCSharp || lang == CodeModelLanguageConstants.vsCMLanguageVB);
 
             if (lang == CodeModelLanguageConstants.vsCMLanguageCSharp)
-                args.Language = EG.Language.CSharp;
+                args.Language = BdsSoft.SharePoint.Linq.Tools.EntityGenerator.Language.CSharp;
             else if (lang == CodeModelLanguageConstants.vsCMLanguageVB)
-                args.Language = EG.Language.VB;
+                args.Language = BdsSoft.SharePoint.Linq.Tools.EntityGenerator.Language.VB;
             else
                 throw new NotSupportedException("Specified language not supported.");
 
-            return GenerateCode(new EG.EntityGenerator(args), spml);
+            return GenerateCode(new BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator(args), spml);
         }
 
-        private byte[] GenerateCode(EG.EntityGenerator gen, XmlDocument spml)
+        private byte[] GenerateCode(BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator gen, XmlDocument spml)
         {
             CodeCompileUnit compileUnit = gen.GenerateCode(spml);
 

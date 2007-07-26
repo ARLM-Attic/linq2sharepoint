@@ -112,6 +112,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             url.Value = Url;
             ctx.Attributes.Append(url);
 
+            XmlAttribute ns = doc.CreateAttribute("xmlns");
+            ns.Value = "http://www.codeplex.com/LINQtoSharePoint/SPML.xsd";
+            ctx.Attributes.Append(ns);
+
             XmlElement lists = doc.CreateElement("Lists");
             ctx.AppendChild(lists);
             foreach (List list in Lists)

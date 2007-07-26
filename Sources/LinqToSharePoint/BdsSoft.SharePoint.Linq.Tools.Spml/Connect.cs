@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+ * LINQ to SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+/*
+ * Version history:
+ * 
+ * 0.2.2 - Introduction of entity wizard
+ */
+
+#region Namespace imports
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -9,16 +27,18 @@ using System.Net;
 using System.Xml;
 using System.Web.Services.Protocols;
 using System.Diagnostics;
-using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class Connect : UserControl, IWizardStep
     {
-        private Context context;
+        private WizardContext context;
         private bool _next;
 
-        public Connect(Context context)
+        public Connect(WizardContext context)
         {
             this.context = context;
             _next = false;
@@ -63,7 +83,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 string password = txtPassword.Text;
                 string domain = txtDomain.Text;
 
-                EG.Connection conn = new EG.Connection() { Url = url, User = user, Password = password, Domain = domain, CustomAuthentication = radCustom.Checked };
+                Connection conn = new Connection() { Url = url, User = user, Password = password, Domain = domain, CustomAuthentication = radCustom.Checked };
                 bgConnect.RunWorkerAsync(conn);
             }
         }
@@ -150,7 +170,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void bgConnect_DoWork(object sender, DoWorkEventArgs e)
         {
-            Connection parameters = (Connection)e.Argument;
+            WizardConnection parameters = (WizardConnection)e.Argument;
 
             context.ConnectionParameters = parameters;
             Helpers.GetLists(context);
@@ -220,9 +240,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         }
     }
 
-    public class Connection
+    public class WizardConnection
     {
         public WebServices.Lists ListsProxy { get; set; }
-        public EG.Connection Parameters { get; set; }
+        public Connection Parameters { get; set; }
     }
 }

@@ -26,14 +26,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     public partial class Wizard : Form
     {
         private List<Control> steps;
-        private Context context;
+        private WizardContext context;
         private int step;
         private IWizardStep current;
         private bool noCancel = false;
 
         public Wizard()
         {
-            context = new Context();
+            context = new WizardContext();
             steps = new List<Control>() {
                         new Welcome(context),
                         new Connect(context),
@@ -80,7 +80,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
         }
 
-        public Context Context
+        public WizardContext Context
         {
             get
             {

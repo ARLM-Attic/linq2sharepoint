@@ -25,9 +25,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class Finish : UserControl, IWizardStep
     {
-        private Context context;
+        private WizardContext context;
 
-        public Finish(Context context)
+        public Finish(WizardContext context)
         {
             this.context = context;
 

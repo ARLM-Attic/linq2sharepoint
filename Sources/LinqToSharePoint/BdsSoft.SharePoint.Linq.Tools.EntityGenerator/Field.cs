@@ -330,19 +330,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             XmlAttribute hidden = spml.Attributes["Hidden"];
             if (hidden != null)
-                field.IsHidden = hidden.Value.ToLower() == "true";
+                field.IsHidden = hidden.Value == "true";
             XmlAttribute readOnly = spml.Attributes["ReadOnly"];
             if (readOnly != null)
-                field.IsReadOnly = readOnly.Value.ToLower() == "true";
+                field.IsReadOnly = readOnly.Value == "true";
             XmlAttribute primaryKey = spml.Attributes["PrimaryKey"];
             if (primaryKey != null)
-                field.IsPrimaryKey = primaryKey.Value.ToLower() == "true";
+                field.IsPrimaryKey = primaryKey.Value == "true";
             XmlAttribute calculated = spml.Attributes["Calculated"];
             if (calculated != null)
-                field.IsCalculated = calculated.Value.ToLower() == "true";
+                field.IsCalculated = calculated.Value == "true";
             XmlAttribute required = spml.Attributes["Required"];
             if (required != null)
-                field.IsRequired = required.Value.ToLower() == "true";
+                field.IsRequired = required.Value == "true";
 
             //
             // Choices.
@@ -508,20 +508,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             field.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
 
             if (this.IsHidden)
-                field.Attributes.Append(doc.CreateAttribute("Hidden")).Value = "TRUE";
+                field.Attributes.Append(doc.CreateAttribute("Hidden")).Value = "true";
             if (this.IsReadOnly)
-                field.Attributes.Append(doc.CreateAttribute("ReadOnly")).Value = "TRUE";
+                field.Attributes.Append(doc.CreateAttribute("ReadOnly")).Value = "true";
             if (this.IsPrimaryKey)
-                field.Attributes.Append(doc.CreateAttribute("PrimaryKey")).Value = "TRUE";
+                field.Attributes.Append(doc.CreateAttribute("PrimaryKey")).Value = "true";
             if (this.IsCalculated)
-                field.Attributes.Append(doc.CreateAttribute("Calculated")).Value = "TRUE";
+                field.Attributes.Append(doc.CreateAttribute("Calculated")).Value = "true";
             if (this.IsRequired)
-                field.Attributes.Append(doc.CreateAttribute("Required")).Value = "TRUE";
+                field.Attributes.Append(doc.CreateAttribute("Required")).Value = "true";
 
             if (this.FieldType == FieldType.Choice || this.FieldType == FieldType.MultiChoice)
             {
                 if (this.FillInChoiceEnabled)
-                    field.Attributes.Append(doc.CreateAttribute("FillInChoice")).Value = "TRUE";
+                    field.Attributes.Append(doc.CreateAttribute("FillInChoice")).Value = "true";
 
                 XmlElement choices = doc.CreateElement("Choices");
                 foreach (string choice in this.Choices)

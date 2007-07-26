@@ -84,7 +84,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             // Entity generator.
             //
             EG.EntityGenerator gen = new EG.EntityGenerator(
-                                         new EG.EntityGeneratorArgs()
+                                         new EntityGeneratorArgs()
                                          {
                                              RunMode = a.RunMode,
                                              Connection = new Connection()
@@ -96,7 +96,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                                                               Domain = a.Domain
                                                           },
                                              Namespace = a.Namespace,
-                                             Language = (a.Language == "VB" ? EG.Language.VB : EG.Language.CSharp)
+                                             Language = (a.Language == "VB" ? Language.VB : Language.CSharp)
                                          }
                                      );
 
@@ -116,7 +116,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 }
                 catch (EntityGeneratorException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("Failed to generate SPML. " + ex.Message);
                     return;
                 }
             }
@@ -126,9 +126,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 {
                     spml.InnerXml = File.ReadAllText(a.In);
                 }
+                catch (XmlException ex)
+                {
+                    Console.WriteLine("Invalid SPML file. " + ex.Message);
+                    return;
+                }
                 catch (IOException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("Failed to read input file. " + ex.Message);
                     return;
                 }
             }
@@ -152,6 +157,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                         using (XmlWriter writer = XmlWriter.Create(fs, settings))
                         {
                             spml.WriteTo(writer);
+                            Console.WriteLine("Output written to {0}.", a.Xml);
                         }
                     }
                 }
@@ -174,7 +180,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 //
                 // Generate code in the appropriate language.
                 //
-                CodeCompileUnit compileUnit = gen.GenerateCode(spml);
+                CodeCompileUnit compileUnit;
+                try
+                {
+                    compileUnit = gen.GenerateCode(spml);
+                }
+                catch (EntityGeneratorException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    if (ex.Data.Contains("messages"))
+                    {
+                        Console.WriteLine("\nSchema validation messages:");
+                        foreach (string s in (List<string>)ex.Data["messages"])
+                            Console.WriteLine("- " + s);
+                    }
+                    return;
+                }
                 CodeDomProvider cdp = CodeDomProvider.CreateProvider(a.Language);
                 StringBuilder code = new StringBuilder();
                 TextWriter tw = new StringWriter(code);
@@ -214,6 +235,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     using (StreamWriter sw = File.CreateText(a.Code))
                     {
                         sw.WriteLine(code.ToString());
+                        Console.WriteLine("Output written to {0}.", a.Code);
                     }
                 }
                 catch (UnauthorizedAccessException ex)
@@ -272,6 +294,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                         sw.WriteLine("End of report");
                     }
                     Console.WriteLine("An error report was written to:\n{0}", report);
+
+#if DEBUG
+                    Process.Start("notepad.exe", report);
+#endif
                 }
                 catch { }
             }

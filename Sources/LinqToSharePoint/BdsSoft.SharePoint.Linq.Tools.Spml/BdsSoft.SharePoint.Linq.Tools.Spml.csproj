@@ -94,7 +94,7 @@
     <Compile Include="Connect.Designer.cs">
       <DependentUpon>Connect.cs</DependentUpon>
     </Compile>
-    <Compile Include="Context.cs" />
+    <Compile Include="WizardContext.cs" />
     <Compile Include="CreateSpmlWizard.cs" />
     <Compile Include="ExportLists.cs">
       <SubType>UserControl</SubType>

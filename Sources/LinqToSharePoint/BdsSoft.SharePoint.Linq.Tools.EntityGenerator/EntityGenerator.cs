@@ -30,6 +30,9 @@ using System.Text;
 using System.Xml;
 using Microsoft.SharePoint;
 using System.Web.Services.Protocols;
+using System.IO;
+using System.Xml.Schema;
+using System.Reflection;
 
 #endregion
 
@@ -176,8 +179,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         public CodeCompileUnit GenerateCode(XmlDocument spml)
         {
             //
-            // TODO: validate SPML.
+            // Validate the SPML input.
             //
+            List<string> messages;
+            if (!ValidateSpml(spml, out messages))
+            {
+                EntityGeneratorException ex = new EntityGeneratorException("SPML validation failed.");
+                ex.Data.Add("messages", messages);
+                throw ex;
+            }
 
             //
             // Get the SharePointDataContext root.
@@ -230,6 +240,40 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Return compile unit.
             //
             return compileUnit;
+        }
+
+        /// <summary>
+        /// Validates the SPML document against the SPML schema.
+        /// </summary>
+        /// <param name="spml">SPML document to validate.</param>
+        /// <param name="messages">Validation messages.</param>
+        /// <returns>true if validation succeeded; otherwise, false.</returns>
+        private bool ValidateSpml(XmlDocument spml, out List<string> messages)
+        {
+            //
+            // Get the resource with the SPML XSD definition.
+            //
+            Assembly a = Assembly.GetExecutingAssembly();
+            string xsd = a.GetName().Name + ".SPML.xsd";
+            spml.Schemas = new XmlSchemaSet();
+            using (Stream s = a.GetManifestResourceStream(xsd))
+                spml.Schemas.Add(XmlSchema.Read(s, null));
+
+            //
+            // Validate.
+            //
+            bool success = true;
+            List<string> msgs = new List<string>();
+            spml.Validate(
+                delegate (object sender, ValidationEventArgs e)
+                {
+                    msgs.Add(e.Message);
+                    if (e.Severity == XmlSeverityType.Error)
+                        success = false;
+                }
+            );
+            messages = msgs;
+            return success;
         }
 
         #endregion

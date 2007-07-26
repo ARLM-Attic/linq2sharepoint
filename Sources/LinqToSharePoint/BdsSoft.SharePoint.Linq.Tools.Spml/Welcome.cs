@@ -24,9 +24,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class Welcome : UserControl, IWizardStep
     {
-        private Context context;
+        private WizardContext context;
 
-        public Welcome(Context context)
+        public Welcome(WizardContext context)
         {
             this.context = context;
 
