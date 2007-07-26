@@ -56,6 +56,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         static void Main(string[] args)
         {
             //
+            // Unhandled exception signaling.
+            //
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(Error);
+
+            //
             // Title including assembly version number.
             //
             Console.WriteLine("Bart De Smet SpMetal SharePoint List Definition Export version {0}", Assembly.GetEntryAssembly().GetName().Version);
@@ -138,14 +143,27 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 //
                 // Write to output file.
                 //
-                using (FileStream fs = File.Open(a.Xml, FileMode.Create, FileAccess.Write))
+                try
                 {
-                    XmlWriterSettings settings = new XmlWriterSettings();
-                    settings.Indent = true;
-                    using (XmlWriter writer = XmlWriter.Create(fs, settings))
+                    using (FileStream fs = File.Open(a.Xml, FileMode.Create, FileAccess.Write))
                     {
-                        spml.WriteTo(writer);
+                        XmlWriterSettings settings = new XmlWriterSettings();
+                        settings.Indent = true;
+                        using (XmlWriter writer = XmlWriter.Create(fs, settings))
+                        {
+                            spml.WriteTo(writer);
+                        }
                     }
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Console.WriteLine("Failed to write ouput. " + ex.Message);
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine("Failed to write ouput. " + ex.Message);
+                    return;
                 }
             }
             //
@@ -191,9 +209,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 //
                 // Write to output file.
                 //
-                using (StreamWriter sw = File.CreateText(a.Code))
+                try
                 {
-                    sw.WriteLine(code.ToString());
+                    using (StreamWriter sw = File.CreateText(a.Code))
+                    {
+                        sw.WriteLine(code.ToString());
+                    }
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Console.WriteLine("Failed to write ouput. " + ex.Message);
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine("Failed to write ouput. " + ex.Message);
+                    return;
                 }
             }
             else
@@ -201,56 +232,51 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         }
 
         /// <summary>
-        /// Hooks up event handler for the entity generator in order to report progress on the console output.
+        /// Catch all for unexpected application-level exceptions.
         /// </summary>
-        /// <param name="gen">Entity generator to hook up event handlers for.</param>
-        private static void SetupEventHandlers(EG.EntityGenerator gen)
+        /// <param name="sender">Sender.</param>
+        /// <param name="e">Event arguments.</param>
+        static void Error(object sender, UnhandledExceptionEventArgs e)
         {
-            gen.Connecting += delegate(object sender, ConnectingEventArgs e) { Console.Write("Connecting to server... "); };
-            gen.Connected += delegate(object sender, ConnectedEventArgs e)
+            //
+            // Create message.
+            //
+            Exception ex = e.ExceptionObject as Exception;
+            string message = null;
+            if (ex != null)
+                message = String.Format("{0}: {1}\r\n{2}", ex.GetType().FullName, ex.Message, ex.StackTrace);
+
+            //
+            // Print error message.
+            //
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Fatal error occurred. Please contact the LINQ to SharePoint team.\n");
+            Console.ResetColor();
+
+            //
+            // Log error report.
+            //
+            if (message != null)
             {
-                if (e.Succeeded)
-                    Console.WriteLine("Done");
-                else
+                string report = Path.GetTempFileName();
+                try
                 {
-                    Console.WriteLine("Failed\n");
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.Exception.Message);
-                    Console.ResetColor();
-                    Environment.Exit(-1);
+                    using (StreamWriter sw = new StreamWriter(report))
+                    {
+                        sw.WriteLine("Error report for LINQ to SharePoint SpMetal version {0}\r\n", Assembly.GetEntryAssembly().GetName().Version);
+                        sw.WriteLine("Generated on {0}", DateTime.Now);
+                        sw.WriteLine("Running {0}", Environment.OSVersion.VersionString);
+                        sw.WriteLine();
+                        sw.WriteLine(message);
+                        sw.WriteLine();
+                        sw.WriteLine("End of report");
+                    }
+                    Console.WriteLine("An error report was written to:\n{0}", report);
                 }
-            };
-            gen.LoadingSchema += delegate(object sender, LoadingSchemaEventArgs e) { Console.Write("Loading schema... "); };
-            gen.LoadedSchema += delegate(object sender, LoadedSchemaEventArgs e)
-            {
-                if (e.Succeeded)
-                    Console.WriteLine("Done\n");
-                else
-                {
-                    Console.WriteLine("Failed\n");
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.Exception.Message);
-                    Console.ResetColor();
-                    Environment.Exit(-1);
-                }
-            };
-            gen.ExportingSchema += delegate(object sender, ExportingSchemaEventArgs e) { Console.Write("Processing list {0} ({1}) version {2}... ", e.List, e.Identifier, e.Version); };
-            gen.ExportedSchema += delegate(object sender, ExportedSchemaEventArgs e)
-            {
-                if (e.Succeeded)
-                {
-                    Console.WriteLine("Done");
-                    Console.WriteLine("Exported {0} properties\n", e.PropertyCount);
-                }
-                else
-                {
-                    Console.WriteLine("Failed\n");
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.Exception.Message);
-                    Console.ResetColor();
-                    Environment.Exit(-1);
-                }
-            };
+                catch { }
+            }
+
+            Environment.Exit(-1);
         }
 
         /// <summary>
@@ -262,11 +288,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
 
             string file = Assembly.GetEntryAssembly().GetName().Name + ".exe";
             Console.WriteLine("Usage: {0} [options]", file);
-
-            //Console.WriteLine("Usage: {0} -url:<url> [-list:<list>]", file);
-            //Console.WriteLine("       {0} [-in:<file>] [-xml:<file>]", new string(' ', file.Length));
-            //Console.WriteLine("       {0} [-code:<file> [-language:<lang>] [-namespace:<ns>]]", new string(' ', file.Length));
-            //Console.WriteLine("       {0} [-user:<user> -password:<password> [-domain:<domain>]]", new string(' ', file.Length));
             Console.WriteLine();
 
             Console.WriteLine("Options:");
