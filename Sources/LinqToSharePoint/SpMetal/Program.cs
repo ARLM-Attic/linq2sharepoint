@@ -42,6 +42,7 @@ using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
+using System.Xml.Schema;
 
 #endregion
 
@@ -154,6 +155,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     {
                         XmlWriterSettings settings = new XmlWriterSettings();
                         settings.Indent = true;
+                        settings.Encoding = Encoding.UTF8;
                         using (XmlWriter writer = XmlWriter.Create(fs, settings))
                         {
                             spml.WriteTo(writer);
@@ -191,8 +193,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     if (ex.Data.Contains("messages"))
                     {
                         Console.WriteLine("\nSchema validation messages:");
-                        foreach (string s in (List<string>)ex.Data["messages"])
-                            Console.WriteLine("- " + s);
+                        foreach (var s in (List<ValidationEventArgs>)ex.Data["messages"])
+                            Console.WriteLine("- [{3}] {0} ({1},{2})", s.Message, s.Exception.LineNumber, s.Exception.LinePosition, s.Severity.ToString().ToUpper());
                     }
                     return;
                 }

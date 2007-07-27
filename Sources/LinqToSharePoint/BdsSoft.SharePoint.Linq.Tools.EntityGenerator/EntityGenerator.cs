@@ -181,7 +181,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Validate the SPML input.
             //
-            List<string> messages;
+            List<ValidationEventArgs> messages;
             if (!ValidateSpml(spml, out messages))
             {
                 EntityGeneratorException ex = new EntityGeneratorException("SPML validation failed.");
@@ -248,7 +248,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <param name="spml">SPML document to validate.</param>
         /// <param name="messages">Validation messages.</param>
         /// <returns>true if validation succeeded; otherwise, false.</returns>
-        private bool ValidateSpml(XmlDocument spml, out List<string> messages)
+        private bool ValidateSpml(XmlDocument spml, out List<ValidationEventArgs> messages)
         {
             //
             // Get the resource with the SPML XSD definition.
@@ -263,11 +263,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Validate.
             //
             bool success = true;
-            List<string> msgs = new List<string>();
+            List<ValidationEventArgs> msgs = new List<ValidationEventArgs>();
             spml.Validate(
                 delegate (object sender, ValidationEventArgs e)
                 {
-                    msgs.Add(e.Message);
+                    msgs.Add(e);
                     if (e.Severity == XmlSeverityType.Error)
                         success = false;
                 }
@@ -1191,5 +1191,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
+    }
+
+    public class XsdError
+    {
+
     }
 }

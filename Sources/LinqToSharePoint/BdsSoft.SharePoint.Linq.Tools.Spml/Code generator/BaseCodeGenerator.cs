@@ -33,9 +33,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     /// </summary>
     public abstract class BaseCodeGenerator : IVsSingleFileGenerator
     {
+        #region Private members
+
         private IVsGeneratorProgress codeGeneratorProgress;
         private string codeFileNameSpace = String.Empty;
         private string codeFilePath = String.Empty;
+
+        #endregion
 
         #region IVsSingleFileGenerator Members
 
@@ -111,6 +115,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         #endregion
 
+        #region Properties
+
         /// <summary>
         /// Namespace for the file
         /// </summary>
@@ -144,6 +150,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
         }
 
+        #endregion
+
+        #region Abstract methods
+
         /// <summary>
         /// Gets the default extension for this generator
         /// </summary>
@@ -157,19 +167,24 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <returns>The generated code file as a byte-array</returns>
         protected abstract byte[] GenerateCode(string inputFileContent);
 
+        #endregion
+
+        #region Methods
+
         /// <summary>
         /// Method that will communicate an error via the shell callback mechanism
         /// </summary>
+        /// <param name="warning">Indicates the error is a warning</param>
         /// <param name="level">Level or severity</param>
         /// <param name="message">Text displayed to the user</param>
         /// <param name="line">Line number of error</param>
         /// <param name="column">Column number of error</param>
-        protected virtual void GeneratorError(uint level, string message, uint line, uint column)
+        protected virtual void GeneratorError(bool warning, uint level, string message, uint line, uint column)
         {
             IVsGeneratorProgress progress = CodeGeneratorProgress;
             if (progress != null)
             {
-                progress.GeneratorError(0, level, message, line, column);
+                progress.GeneratorError(warning ? 1 : 0, level, message, line, column);
             }
         }
 
@@ -188,5 +203,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 progress.GeneratorError(1, level, message, line, column);
             }
         }
+
+        #endregion
     }
 }

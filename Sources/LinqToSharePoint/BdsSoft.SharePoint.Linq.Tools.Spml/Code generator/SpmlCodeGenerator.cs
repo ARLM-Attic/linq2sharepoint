@@ -30,6 +30,7 @@ using System.IO;
 using System.Xml;
 using EnvDTE;
 using System.Diagnostics;
+using System.Xml.Schema;
 
 #endregion
 
@@ -45,6 +46,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     [ProvideObject(typeof(SpmlCodeGenerator))]
     public class SpmlCodeGenerator : BaseCodeGeneratorWithSite
     {
+        #region Methods
+
         /// <summary>
         /// Get the default extension for the generated code file.
         /// </summary>
@@ -89,34 +92,60 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             else
                 throw new NotSupportedException("Specified language not supported.");
 
+            //
+            // Generate the code.
+            //
             return GenerateCode(new BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator(args), spml);
         }
 
+        #endregion
+
+        #region Helper methods
+
         private byte[] GenerateCode(BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator gen, XmlDocument spml)
         {
-            CodeCompileUnit compileUnit = gen.GenerateCode(spml);
+            //
+            // Generate code and report warnings/errors if any.
+            //
+            CodeCompileUnit compileUnit;
+            try
+            {
+                compileUnit = gen.GenerateCode(spml);
+            }
+            catch (EntityGeneratorException ex)
+            {
+                if (ex.Data.Contains("messages"))
+                    foreach (var s in (List<ValidationEventArgs>)ex.Data["messages"])
+                        this.GeneratorError(s.Severity == XmlSeverityType.Warning, 0, s.Message, (uint)s.Exception.LineNumber, (uint)s.Exception.LinePosition);
 
+                return null;
+            }
+
+            //
+            // Use CodeDOM to generate source code.
+            //
             CodeDomProvider provider = GetCodeProvider();
             StringBuilder code = new StringBuilder();
             TextWriter tw = new StringWriter(code);
             provider.GenerateCodeFromCompileUnit(compileUnit, tw, null);
-
             tw.Flush();
 
+            //
+            // Do the right encoding to write to the target output file.
+            //
             Encoding enc = Encoding.GetEncoding(tw.Encoding.WindowsCodePage);
-
             byte[] preamble = enc.GetPreamble();
             int preambleLength = preamble.Length;
-
-            //Convert the writer contents to a byte array
             byte[] body = enc.GetBytes(code.ToString());
-
-            //Prepend the preamble to body (store result in resized preamble array)
             Array.Resize<byte>(ref preamble, preambleLength + body.Length);
             Array.Copy(body, 0, preamble, preambleLength, body.Length);
 
-            //Return the combined byte array
+            //
+            // Return generated code.
+            //
             return preamble;
         }
+
+        #endregion
     }
 }

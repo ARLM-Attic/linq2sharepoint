@@ -29,39 +29,37 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     static class Helpers
     {
-        public static void GetLists(WizardContext context)
+        public static List<List> GetLists(Connection connection)
         {
-            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters.Parameters);
+            WebServices.Lists lists = GetListsProxy(connection);
             XmlNode listsXml = lists.GetListCollection();
 
             List<List> result = new List<List>();
 
             foreach (XmlNode l in listsXml.ChildNodes)
-            {
                 if (l.Attributes["Hidden"].Value.ToLower() != "true")
                     result.Add(List.FromCaml(l));
-            }
 
-            context.Lists = result;
+            return result;
         }
 
-        public static List GetList(WizardContext context, string name)
+        public static List GetList(Connection connection, string name)
         {
-            WebServices.Lists lists = GetListsProxy(context.ConnectionParameters.Parameters);
+            WebServices.Lists lists = GetListsProxy(connection);
             XmlNode listXml = lists.GetList(name);
 
             return List.FromCaml(listXml);
         }
 
-        private static WebServices.Lists GetListsProxy(Connection parameters)
+        private static WebServices.Lists GetListsProxy(Connection connection)
         {
             WebServices.Lists lists = new WebServices.Lists();
-            lists.Url = parameters.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
+            lists.Url = connection.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
 
-            if (!parameters.CustomAuthentication)
+            if (!connection.CustomAuthentication)
                 lists.Credentials = CredentialCache.DefaultNetworkCredentials;
             else
-                lists.Credentials = new NetworkCredential(parameters.User, parameters.Password, parameters.Domain);
+                lists.Credentials = new NetworkCredential(connection.User, connection.Password, connection.Domain);
 
             return lists;
         }

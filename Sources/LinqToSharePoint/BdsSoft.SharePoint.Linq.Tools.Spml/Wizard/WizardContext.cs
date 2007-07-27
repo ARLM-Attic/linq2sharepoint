@@ -31,16 +31,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     {
         public WizardContext()
         {
-            Selection = new Selection();
+            FullContext = new Context();
+            ResultContext = new Context();
         }
 
-        public WizardConnection ConnectionParameters { get; set; }
-        public List<List> Lists { get; set; }
-        public Selection Selection { get; set; }
-    }
-
-    public class Selection
-    {
-        public List<List> Lists { get; set; }
+        public Context FullContext { get; set; }
+        public Context ResultContext { get; set; }
     }
 }

@@ -32,12 +32,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     public partial class ExportLists : UserControl, IWizardStep
     {
-        private WizardContext context;
+        private WizardContext ctx;
         private bool _next;
 
         public ExportLists(WizardContext context)
         {
-            this.context = context;
+            this.ctx = context;
             _next = true;
 
             InitializeComponent();
@@ -50,9 +50,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             this.splitContainer2.Panel1MinSize = 100;
             this.splitContainer2.Panel2MinSize = 200;
 
-            if (context.Selection.Lists == null)
+            if (ctx.ResultContext.Lists == null)
             {
-                context.Selection.Lists = new List<List>();
+                ctx.ResultContext.Lists = new List<List>();
                 PopulateLists();
             }
         }
@@ -60,7 +60,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void PopulateLists()
         {
             lists.Items.Clear();
-            foreach (List list in context.Lists)
+            foreach (List list in ctx.FullContext.Lists)
                 lists.Items.Add(new ListListViewItem(list));
             lists.AutoResizeColumn(0, ColumnHeaderAutoResizeStyle.ColumnContent);
         }
@@ -87,20 +87,27 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void lnkRefresh_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            //CHECK!!!
+
+            /*
             panel.Enabled = false;
             if (Working != null)
                 Working(this, new EventArgs());
 
             bgGetLists.RunWorkerAsync();
+             */
         }
 
         private void bgGetLists_DoWork(object sender, DoWorkEventArgs e)
         {
-            Helpers.GetLists(context);
+            //CHECK!!! Won't store and shouldn't conflict with current selection (or show message)
+            //Helpers.GetLists(ctx.FullContext.Connection);
         }
 
         private void bgGetLists_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            //CHECK!!!
+            /*
             if (e.Error == null)
             {
                 PopulateLists();
@@ -113,6 +120,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             panel.Enabled = true;
             if (WorkCompleted != null)
                 WorkCompleted(this, new EventArgs());
+             */
         }
 
         private void lists_SelectedIndexChanged(object sender, EventArgs e)
@@ -127,14 +135,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 // TODO: display additional data about the list
                 fields.Items.Clear();
-                foreach (Field f in item.List.Fields)
+                foreach (Field f in item.List.GetKnownFields())
                 {
-                    if (!f.IsHidden || f.IsPrimaryKey) //This filtering logic should be part of the lower layer
-                    {
-                        FieldListViewItem fi = new FieldListViewItem(f);
-                        fi.Checked = true;
-                        fields.Items.Add(fi);
-                    }
+                    FieldListViewItem fi = new FieldListViewItem(f);
+                    fi.Checked = true;
+                    fields.Items.Add(fi);
                 }
                 fields.AutoResizeColumn(0, ColumnHeaderAutoResizeStyle.ColumnContent);
             }
@@ -145,7 +150,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // TODO: put in background
             //
-            item.List = Helpers.GetList(context, item.List.Id.ToString());
+            item.List = Helpers.GetList(ctx.FullContext.Connection, item.List.Id.ToString());
             item.Loaded = true;
         }
 
@@ -158,10 +163,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 if (!item.Loaded)
                     LoadList(item);
 
-                context.Selection.Lists.Add(item.List);
+                ctx.ResultContext.Lists.Add(item.List);
             }
             else
-                context.Selection.Lists.Remove(item.List);
+                ctx.ResultContext.Lists.Remove(item.List);
         }
 
         private void fields_SelectedIndexChanged(object sender, EventArgs e)

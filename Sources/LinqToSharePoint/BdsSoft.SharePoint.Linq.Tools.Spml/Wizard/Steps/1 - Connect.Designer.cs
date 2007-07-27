@@ -91,7 +91,6 @@
             this.txtUrl.TabIndex = 2;
             this.txtUrl.Text = "http://";
             this.txtUrl.TextChanged += new System.EventHandler(this.txtUrl_TextChanged);
-            this.txtUrl.Validated += new System.EventHandler(this.txtUrl_Validated);
             this.txtUrl.Enter += new System.EventHandler(this.txtUrl_Enter);
             this.txtUrl.Validating += new System.ComponentModel.CancelEventHandler(this.txtUrl_Validating);
             // 
@@ -105,7 +104,6 @@
             this.txtUser.Size = new System.Drawing.Size(259, 20);
             this.txtUser.TabIndex = 1;
             this.txtUser.TextChanged += new System.EventHandler(this.txtUser_TextChanged);
-            this.txtUser.Validated += new System.EventHandler(this.txtUser_Validated);
             this.txtUser.Enter += new System.EventHandler(this.txtUser_Enter);
             this.txtUser.Validating += new System.ComponentModel.CancelEventHandler(this.txtUser_Validating);
             // 
@@ -121,7 +119,6 @@
             this.txtPassword.UseSystemPasswordChar = true;
             this.txtPassword.TextChanged += new System.EventHandler(this.txtPassword_TextChanged);
             this.txtPassword.Enter += new System.EventHandler(this.txtPassword_Enter);
-            this.txtPassword.Validating += new System.ComponentModel.CancelEventHandler(this.txtPassword_Validating);
             // 
             // txtDomain
             // 
@@ -134,7 +131,6 @@
             this.txtDomain.TabIndex = 5;
             this.txtDomain.TextChanged += new System.EventHandler(this.txtDomain_TextChanged);
             this.txtDomain.Enter += new System.EventHandler(this.txtDomain_Enter);
-            this.txtDomain.Validating += new System.ComponentModel.CancelEventHandler(this.txtDomain_Validating);
             // 
             // bgConnect
             // 

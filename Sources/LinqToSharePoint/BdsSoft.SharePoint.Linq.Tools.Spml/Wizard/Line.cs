@@ -28,13 +28,23 @@ using System.Windows.Forms;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
+    /// <summary>
+    /// Helper class to draw a line.
+    /// </summary>
     public partial class Line : Control
     {
+        /// <summary>
+        /// Creates a new line control.
+        /// </summary>
         public Line()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Draws the line.
+        /// </summary>
+        /// <param name="pe">Paint event args.</param>
         protected override void OnPaint(PaintEventArgs pe)
         {
             pe.Graphics.DrawLine(Pens.White, 0, 0, this.Width, 0);

@@ -60,7 +60,6 @@
             this.Controls.Add(this.label2);
             this.Name = "Welcome";
             this.Size = new System.Drawing.Size(459, 150);
-            this.Load += new System.EventHandler(this.Welcome_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

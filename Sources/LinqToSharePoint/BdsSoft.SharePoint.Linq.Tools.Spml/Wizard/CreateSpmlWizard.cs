@@ -16,16 +16,34 @@ using System.Text;
 using Microsoft.VisualStudio.TemplateWizard;
 using System.Windows.Forms;
 using EnvDTE;
+using System.Xml;
+using System.IO;
+using System.Reflection;
 
 #endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
+    /// <summary>
+    /// Entity generator wizard.
+    /// </summary>
     public class CreateSpmlWizard : IWizard
     {
+        #region Private members
+
+        /// <summary>
+        /// Name of the custom code generator tool.
+        /// </summary>
         private string _tool;
-        //private string _namespace;
+
+        /// <summary>
+        /// Indicates whether SPML generation succeeded; used to determine whether or not the file should be written.
+        /// </summary>
         private bool _ok;
+
+        #endregion
+
+        #region Methods
 
         public void BeforeOpeningFile(EnvDTE.ProjectItem projectItem)
         {
@@ -38,7 +56,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         public void ProjectItemFinishedGenerating(EnvDTE.ProjectItem projectItem)
         {
             projectItem.Properties.Item("CustomTool").Value = _tool;
-            //projectItem.Properties.Item("CustomToolNamespace").Value = _namespace;
         }
 
         public void RunFinished()
@@ -53,7 +70,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             if (runKind == WizardRunKind.AsNewItem)
             {
                 _tool = replacementsDictionary["$CustomTool$"];
-                //_namespace = "test";// replacementsDictionary["$rootnamespace$"];
 
                 Wizard start = new Wizard();
                 DialogResult res = start.ShowDialog(window);
@@ -61,15 +77,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
                 if (_ok)
                 {
-                    //
-                    // TODO: replace by Context object construction and ToSpml call.
-                    //
-                    replacementsDictionary.Add("$WssUrl$", start.Context.ConnectionParameters.Parameters.Url);
-                    List<string> lists = start.Context.Selection.Lists.ConvertAll<string>(l => "\t\t" + l.ToSpml());
-                    string sLists = String.Join("\r\n", lists.ToArray());
-                    replacementsDictionary.Add("$lists$", sLists);
-                    string conn = start.Context.ConnectionParameters.Parameters.ToSpml().InnerText;
-                    replacementsDictionary.Add("$connection$", "\t" + conn);
+                    XmlDocument spml = new XmlDocument();
+                    spml.InnerXml = start.WizardContext.ResultContext.ToSpml().OuterXml;
+
+                    XmlWriterSettings settings = new XmlWriterSettings();
+                    settings.Indent = true;
+                    settings.Encoding = Encoding.UTF8;
+                    settings.OmitXmlDeclaration = true;
+                    StringBuilder sb = new StringBuilder();
+                    using (XmlWriter writer = XmlWriter.Create(sb, settings))
+                        spml.WriteTo(writer);
+
+                    replacementsDictionary.Add("$spml$", sb.ToString());
+                    replacementsDictionary.Add("$version$", Assembly.GetExecutingAssembly().GetName().Version.ToString());
                 }
             }
         }
@@ -78,17 +98,32 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         {
             return _ok;
         }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Helper class for the Visual Studio IDE window.
+    /// </summary>
     internal class IDEWindow : IWin32Window
     {
+        /// <summary>
+        /// Handle to the IDE window.
+        /// </summary>
         private IntPtr _handle;
 
+        /// <summary>
+        /// Creates a new Visual Studio IDE window wrapper.
+        /// </summary>
+        /// <param name="handle">Handle to the IDE window.</param>
         public IDEWindow(IntPtr handle)
         {
             _handle = handle;
         }
 
+        /// <summary>
+        /// Gets the handle to the IDE window.
+        /// </summary>
         public IntPtr Handle
         {
             get { return _handle; }

@@ -25,11 +25,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class Finish : UserControl, IWizardStep
     {
-        private WizardContext context;
+        private WizardContext ctx;
 
         public Finish(WizardContext context)
         {
-            this.context = context;
+            this.ctx = context;
 
             InitializeComponent();
         }
@@ -37,7 +37,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void Finish_Load(object sender, EventArgs e)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (List list in context.Selection.Lists)
+            foreach (List list in ctx.ResultContext.Lists)
             {
                 sb.AppendLine("Generate entity for list " + list.Name);
             }
