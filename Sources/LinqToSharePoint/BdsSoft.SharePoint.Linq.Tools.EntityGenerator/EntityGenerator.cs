@@ -21,6 +21,7 @@
 #region Namespace imports
 
 using System;
+using System.Linq;
 using System.CodeDom;
 using System.ComponentModel;
 using System.Collections.Generic;
@@ -90,6 +91,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         private Dictionary<Guid, CodeTypeDeclaration> entities = new Dictionary<Guid, CodeTypeDeclaration>();
 
         /// <summary>
+        /// Context used in back-mapping of SPML during code-generation.
+        /// </summary>
+        private Context context;
+
+        /// <summary>
         /// Set of assigned type names that shouldn't be used in type name generation (<seealso cref="GetTypeName"/>).
         /// </summary>
         private HashSet<string> typeNames = new HashSet<string>();
@@ -152,9 +158,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         {
                             if (field.FieldType == FieldType.Lookup || field.FieldType == FieldType.LookupMulti)
                             {
-                                Guid lookup = new Guid(field.LookupList);
-                                if (!closure.ContainsKey(lookup))
-                                    closure.Add(lookup, List.FromCaml(GetListDefinition(field.LookupList)));
+                                List lookupList = List.FromCaml(GetListDefinition(field.LookupList));
+                                if (!closure.ContainsKey(list.Id))
+                                    closure.Add(lookupList.Id, lookupList);
                             }
                         }
                     }
@@ -192,7 +198,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Get the SharePointDataContext root.
             //
-            Context context = Context.FromSpml(spml["SharePointDataContext"]);
+            context = Context.FromSpml(spml["SharePointDataContext"]);
 
             //
             // Create code unit in specified namespace.
@@ -211,8 +217,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Prepare entities.
             //
+            Dictionary<List, string> mapping = new Dictionary<List, string>();
             foreach (List list in context.Lists)
-                entities.Add(list.Id, new CodeTypeDeclaration(GetTypeName(list.Name)));
+            {
+                string name = GetTypeName(!string.IsNullOrEmpty(list.EntityAlias) ? list.EntityAlias : list.Name);
+                entities.Add(list.Id, new CodeTypeDeclaration(name));
+                mapping.Add(list, name);
+            }
 
             //
             // Generate entities.
@@ -231,8 +242,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             if (!string.IsNullOrEmpty(context.Name))
             {
-                List<string> entities = new List<CodeTypeDeclaration>(this.entities.Values).ConvertAll<string>(t => t.Name);
-                CodeTypeDeclaration ctx = GenerateSharePointDataContext(context, entities.ToArray());
+                CodeTypeDeclaration ctx = GenerateSharePointDataContext(context, mapping);
                 ns.Types.Add(ctx);
             }
 
@@ -284,14 +294,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the type definition for a custom SharePointDataContext object, holding property references to the list objects.
         /// </summary>
         /// <param name="context">Context definition to create the SharePointDataContext for.</param>
-        /// <param name="entityNames">List of entity type names to be included in the custom data context.</param>
+        /// <param name="entityNames">Entities to be included in the custom data context.</param>
         /// <returns>Type definition of a custom SharePointDataContext with property references to the specified lists.</returns>
-        private CodeTypeDeclaration GenerateSharePointDataContext(Context context, params string[] entityNames)
+        private CodeTypeDeclaration GenerateSharePointDataContext(Context context, Dictionary<List, string> entities)
         {
             //
             // Create CodeDOM context type.
             //
-            CodeTypeDeclaration ctx = new CodeTypeDeclaration(context.Name + "SharePointDataContext");
+            CodeTypeDeclaration ctx = new CodeTypeDeclaration(Helpers.GetFriendlyName(context.Name) + "SharePointDataContext");
             ctx.Attributes = MemberAttributes.Public;
             ctx.IsPartial = true;
             ctx.BaseTypes.Add(new CodeTypeReference(typeof(SharePointDataContext), CodeTypeReferenceOptions.GlobalReference));
@@ -334,30 +344,30 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Add entity properties.
             //
-            foreach (string entity in entityNames)
+            foreach (List entity in entities.Keys)
             {
                 //
                 // Create and add property for the list.
                 //
                 CodeMemberProperty ep = new CodeMemberProperty();
                 ep.Attributes = MemberAttributes.Public | MemberAttributes.Final;
-                ep.Name = entity;
+                ep.Name = Helpers.GetFriendlyName(!string.IsNullOrEmpty(entity.ListAlias) ? entity.ListAlias : entity.Name);
                 ep.Type = new CodeTypeReference(typeof(SharePointList<>), CodeTypeReferenceOptions.GlobalReference);
-                ep.Type.TypeArguments.Add(new CodeTypeReference(entity));
+                ep.Type.TypeArguments.Add(new CodeTypeReference(entities[entity]));
                 ctx.Members.Add(ep);
 
                 //
                 // Create getter for the list.
                 //
                 CodeMethodInvokeExpression getter = new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "GetList");
-                getter.Method.TypeArguments.Add(new CodeTypeReference(entity));
+                getter.Method.TypeArguments.Add(new CodeTypeReference(entities[entity]));
                 ep.GetStatements.Add(new CodeMethodReturnStatement(getter));
 
                 //
                 // Create documentation comment.
                 //
                 ep.Comments.Add(new CodeCommentStatement("<summary>", true));
-                ep.Comments.Add(new CodeCommentStatement(entity + " list.", true));
+                ep.Comments.Add(new CodeCommentStatement(entity.Name + " list.", true));
                 ep.Comments.Add(new CodeCommentStatement("</summary>", true));
             }
 
@@ -405,7 +415,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // List entity type documentation comments.
             //
             listType.Comments.Add(new CodeCommentStatement("<summary>", true));
-            listType.Comments.Add(new CodeCommentStatement(list.Description ?? list.Name, true));
+            listType.Comments.Add(new CodeCommentStatement(!string.IsNullOrEmpty(list.Description) ? list.Description : list.Name, true));
             listType.Comments.Add(new CodeCommentStatement("</summary>", true));
 
             //
@@ -476,12 +486,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     case FieldType.Lookup:
                     case FieldType.LookupMulti:
                         {
-                            Guid lookup = new Guid(field.LookupList);
+                            Guid? lookup = null;
+                            try
+                            {
+                                lookup = new Guid(field.LookupList);
+                            }
+                            catch { }
 
-                            if (entities.ContainsKey(lookup))
-                                bclTypeRef = new CodeTypeReference(entities[lookup].Name);
+                            CodeTypeDeclaration lookupEntity = null;
+                            bool found;
+                            if (lookup == null)
+                            {
+                                List lookupList = (from l in context.Lists where l.Name == field.LookupList select l).SingleOrDefault();
+                                found = lookupList != null && entities.ContainsKey(lookupList.Id);
+                                if (found)
+                                    lookupEntity = entities[lookupList.Id];
+                            }
                             else
-                                throw new Exception(String.Format("Invalid Lookup field list reference encountered: list {0} referred to by field {1} is unknown in the SharePoint context.", field.LookupList, field.Name)); //TODO
+                            {
+                                found = entities.ContainsKey(lookup.Value);
+                                if (found)
+                                    lookupEntity = entities[lookup.Value];
+                            }
+
+                            if (lookupEntity != null)
+                                bclTypeRef = new CodeTypeReference(lookupEntity.Name);
+                            else
+                                throw new Exception(String.Format("Invalid Lookup field list reference encountered: list {0} referred to by field {1} is unknown in the SharePoint context.", field.LookupList, field.Name));
                             fieldAttributeArgs.Add(new CodeAttributeArgument("LookupDisplayField", new CodePrimitiveExpression(field.LookupField)));
 
                             //
@@ -521,7 +552,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 // Create field property definition.
                 //
-                string fieldName = Helpers.GetFriendlyName(field.DisplayName);
+                string fieldName = Helpers.GetFriendlyName(!string.IsNullOrEmpty(field.Alias) ? field.Alias : field.DisplayName);
                 CodeMemberField storageField;
                 CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField);
                 listType.Members.Add(fieldProperty);
@@ -712,12 +743,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Populate the enum with the choices available in the list field definition.
             //
             HashSet<string> choices = new HashSet<string>();
-            foreach (string c in field.Choices)
+            foreach (Choice c in field.Choices)
             {
                 //
                 // Get friendly name for choice value.
                 //
-                string choice = Helpers.GetFriendlyName(c);
+                string choice = Helpers.GetFriendlyName(!string.IsNullOrEmpty(c.Alias) ? c.Alias : c.Name);
 
                 //
                 // Detect duplicate values; shouldn't occur in most cases.
@@ -736,14 +767,21 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     choiceField.InitExpression = new CodePrimitiveExpression(flagValue);
 
                 //
-                // Add a enum field mapping in case the field name doesn't match the underlying SharePoint choice value textual represention.
+                // Add code documentation.
                 //
-                if (choice != c)
+                choiceField.Comments.Add(new CodeCommentStatement("<summary>", true));
+                choiceField.Comments.Add(new CodeCommentStatement(!string.IsNullOrEmpty(c.Description) ? c.Description : c.Name, true));
+                choiceField.Comments.Add(new CodeCommentStatement("</summary>", true));
+
+                //
+                // Add an enum field mapping in case the field name doesn't match the underlying SharePoint choice value textual represention.
+                //
+                if (choice != c.Name)
                 {
                     choiceField.CustomAttributes.Add(
                         new CodeAttributeDeclaration(
                             new CodeTypeReference(typeof(ChoiceAttribute), CodeTypeReferenceOptions.GlobalReference),
-                            new CodeAttributeArgument(new CodePrimitiveExpression(c))
+                            new CodeAttributeArgument(new CodePrimitiveExpression(c.Name))
                         )
                     );
                 }

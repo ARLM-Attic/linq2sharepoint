@@ -101,5 +101,20 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         {
             return GetFriendlyName(fieldName + "Other");
         }
+
+        /// <summary>
+        /// Performs English singularization of verbs.
+        /// </summary>
+        /// <param name="listName">List name to singularize.</param>
+        /// <returns>Singularized name.</returns>
+        public static string Singularize(string listName)
+        {
+            if (listName.EndsWith("ies"))
+                return listName.Substring(0, listName.Length - "ies".Length) + "y";
+            else if (listName.EndsWith("s"))
+                return listName.Substring(0, listName.Length - "s".Length);
+            else
+                return listName;
+        }
     }
 }

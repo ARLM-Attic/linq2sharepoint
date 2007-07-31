@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Args.cs" />
+    <Compile Include="Choice.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="EntityGenerator.cs" />
     <Compile Include="Events.cs" />

@@ -39,8 +39,28 @@
                         <xs:sequence>
                           <xs:element name="Field" maxOccurs="unbounded">
                             <xs:complexType>
+                              <xs:sequence minOccurs="0">
+                                <xs:element name="Choices" maxOccurs="1">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="Choice" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:simpleContent>
+                                            <xs:extension base="xs:string">
+                                              <xs:attribute name="Alias" type="xs:string" use="optional" />
+                                              <xs:attribute name="Description" type="xs:string" use="optional" />
+                                            </xs:extension>
+                                          </xs:simpleContent>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>                                    
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
                               <xs:attribute name="Id" type="xs:string" use="required" />
                               <xs:attribute name="Name" type="xs:string" use="required" />
+                              <xs:attribute name="Alias" type="xs:string" use="optional" />
+                              <xs:attribute name="Description" type="xs:string" use="optional" />
                               <xs:attribute name="DisplayName" type="xs:string" use="required" />
                               <xs:attribute name="Type" type="SPType" use="required" />
                               <xs:attribute name="Required" type="xs:boolean" use="optional" />
@@ -48,6 +68,8 @@
                               <xs:attribute name="LookupField" type="xs:string" use="optional" />
                               <xs:attribute name="ReadOnly" type="xs:boolean" use="optional" />
                               <xs:attribute name="PrimaryKey" type="xs:boolean" use="optional" />
+                              <xs:attribute name="Calculated" type="xs:boolean" use="optional" />
+                              <xs:attribute name="FillInChoice" type="xs:boolean" use="optional" />
                             </xs:complexType>
                           </xs:element>
                         </xs:sequence>
@@ -56,9 +78,11 @@
                   </xs:sequence>
                   <xs:attribute name="Id" type="xs:string" use="required" />
                   <xs:attribute name="Name" type="xs:string" use="required" />
-                  <xs:attribute name="Description" type="xs:string" use="required" />
+                  <xs:attribute name="Description" type="xs:string" use="optional" />
                   <xs:attribute name="Version" type="xs:unsignedByte" use="required" />
                   <xs:attribute name="Path" type="xs:string" use="required" />
+                  <xs:attribute name="EntityAlias" type="xs:string" use="optional" />
+                  <xs:attribute name="ListAlias" type="xs:string" use="optional" />
                 </xs:complexType>
               </xs:element>
             </xs:sequence>

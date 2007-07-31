@@ -105,5 +105,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         }
 
         #endregion
+
+        #region Event handlers
+
+        private void Welcome_Load(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void btnOptions_Click(object sender, EventArgs e)
+        {
+            new WizardOptions().ShowDialog();
+        }
+
+        #endregion
     }
 }

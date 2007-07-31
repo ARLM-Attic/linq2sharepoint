@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Xml;
@@ -32,37 +33,87 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     public class List
     {
+        #region Static properties
+
+        /// <summary>
+        /// Enables/disables auto-pluralization/singularization for English list names into a deducted entity alias.
+        /// </summary>
+        /// <remarks>Only affects SPML generation (online mode).</remarks>
+        public static bool AutoPluralize { get; set; }
+
+        #endregion
+
         #region Properties
 
         /// <summary>
         /// List identifier.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Metadata")]
+        [Description("List identifier.")]
         public Guid Id { get; set; }
 
         /// <summary>
         /// List name.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("List name.")]
+        [ParenthesizePropertyName(true)]
         public string Name { get; set; }
 
         /// <summary>
         /// List description.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(false)]
+        [Category("Identification")]
+        [Description("List description. Will be used for the comment on the corresponding entity class.")]
         public string Description { get; set; }
 
         /// <summary>
         /// Version of the list, retrieved at entity generation time.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("Version of the list.")]
         public int Version { get; set; }
 
         /// <summary>
         /// Relative path to the list on the SharePoint site.
         /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Identification")]
+        [Description("Relative path to the list on the SharePoint site.")]
         public string Path { get; set; }
 
         /// <summary>
         /// List of exported list fields.
         /// </summary>
+        [Browsable(false)]
         public List<Field> Fields { get; set; }
+
+        /// <summary>
+        /// Mapping alias for the list.
+        /// </summary>
+        [Browsable(true)]
+        [ReadOnly(false)]
+        [Category("Mapping")]
+        [Description("Mapping alias for the list. Will be used as the property name for the list reference in the data context.")]
+        public string ListAlias { get; set; }
+
+        /// <summary>
+        /// Mapping alias for the entity type.
+        /// </summary>
+        [Browsable(true)]
+        [ReadOnly(false)]
+        [Category("Mapping")]
+        [Description("Mapping alias for the list entity. Will be used as the type name for the list entity.")]
+        public string EntityAlias { get; set; }
 
         #endregion
 
@@ -90,6 +141,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             list.Id = new Guid((string)listDefinition.Attributes["ID"].Value);
             list.Version = int.Parse(listDefinition.Attributes["Version"].Value);
             list.Path = (string)listDefinition.Attributes["RootFolder"].Value;
+
+            //
+            // Auto-pluralize?
+            //
+            if (List.AutoPluralize)
+                list.EntityAlias = Helpers.Singularize(list.Name);
 
             //
             // Get fields.
@@ -129,6 +186,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             list.Id = new Guid((string)spml.Attributes["Id"].Value);
             list.Version = int.Parse(spml.Attributes["Version"].Value);
             list.Path = (string)spml.Attributes["Path"].Value;
+            XmlAttribute entityAlias = spml.Attributes["EntityAlias"];
+            if (entityAlias != null)
+                list.EntityAlias = entityAlias.Value;
+            XmlAttribute listAlias = spml.Attributes["ListAlias"];
+            if (listAlias != null)
+                list.ListAlias = listAlias.Value;
 
             //
             // Get fields.
@@ -177,10 +240,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             list.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
             list.Attributes.Append(doc.CreateAttribute("Version")).Value = this.Version.ToString();
             list.Attributes.Append(doc.CreateAttribute("Path")).Value = this.Path;
+            if (!string.IsNullOrEmpty(this.EntityAlias))
+                list.Attributes.Append(doc.CreateAttribute("EntityAlias")).Value = this.EntityAlias;
+            if (!string.IsNullOrEmpty(this.ListAlias))
+                list.Attributes.Append(doc.CreateAttribute("ListAlias")).Value = this.ListAlias;
 
             XmlElement fields = doc.CreateElement("Fields");
             foreach (Field field in GetKnownFields())
-                fields.AppendChild(doc.ImportNode(field.ToSpml(), true));
+                if (field.Include)
+                    fields.AppendChild(doc.ImportNode(field.ToSpml(), true));
             list.AppendChild(fields);
 
             return list;

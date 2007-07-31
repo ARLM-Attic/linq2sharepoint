@@ -157,6 +157,12 @@
     <Compile Include="Wizard\Wizard.Designer.cs">
       <DependentUpon>Wizard.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard\WizardOptions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Wizard\WizardOptions.Designer.cs">
+      <DependentUpon>WizardOptions.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />
@@ -190,6 +196,10 @@
     <EmbeddedResource Include="Wizard\Wizard.resx">
       <SubType>Designer</SubType>
       <DependentUpon>Wizard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard\WizardOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>WizardOptions.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

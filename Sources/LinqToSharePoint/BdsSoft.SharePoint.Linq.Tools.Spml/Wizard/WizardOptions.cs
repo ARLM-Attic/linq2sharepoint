@@ -8,34 +8,32 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
-/*
- * Version history:
- * 
- * 0.2.2 - Introduction of entity wizard
- * 0.2.3 - Rename to WizardContext
- */
-
-#region Namespace imports
-
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
 using System.Text;
-using System.Xml;
+using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-
-#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
-    public class WizardContext
+    public partial class WizardOptions : Form
     {
-        public WizardContext(Context result)
+        public WizardOptions()
         {
-            FullContext = new Context();
-            ResultContext = result;
+            InitializeComponent();
         }
 
-        public Context FullContext { get; set; }
-        public Context ResultContext { get; set; }
+        private void WizardOptions_Load(object sender, EventArgs e)
+        {
+            chkPluralize.Checked = List.AutoPluralize;
+        }
+
+        private void btnOK_Click(object sender, EventArgs e)
+        {
+            List.AutoPluralize = chkPluralize.Checked;
+        }
     }
 }

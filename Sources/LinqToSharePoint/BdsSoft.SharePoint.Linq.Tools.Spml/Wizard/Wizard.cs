@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
@@ -62,12 +63,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Creates a new instance of the entity generator wizard.
         /// </summary>
-        public Wizard()
+        /// <param name="result">Pre-populated result context object.</param>
+        public Wizard(Context result)
         {
             //
             // Create new wizard context.
             //
-            context = new WizardContext();
+            context = new WizardContext(result);
 
             //
             // Initialize wizard steps.
@@ -179,12 +181,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 step.Working +=
                     delegate(object sender, EventArgs e)
                     {
+                        contents.Enabled = false;
                         progress.Visible = true;
                         buttons.Enabled = false;
                     };
                 step.WorkCompleted +=
                     delegate(object sender, EventArgs e)
                     {
+                        contents.Enabled = true;
                         progress.Visible = false;
                         buttons.Enabled = true;
                     };

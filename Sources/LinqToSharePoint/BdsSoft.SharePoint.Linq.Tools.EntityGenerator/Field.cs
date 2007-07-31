@@ -61,16 +61,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [Browsable(true)]
         [ReadOnly(true)]
         [Category("Identification")]
-        [Description("Field name.")]
+        [Description("Field display name.")]
         public string DisplayName { get; set; }
 
         /// <summary>
         /// Field description.
         /// </summary>
         [Browsable(true)]
-        [ReadOnly(true)]
+        [ReadOnly(false)]
         [Category("Identification")]
-        [Description("Field description.")]
+        [Description("Field description. Will be used for the comment on the corresponding entity class field property.")]
         public string Description { get; set; }
 
         /// <summary>
@@ -179,7 +179,25 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [ReadOnly(true)]
         [Category("Choices")]
         [Description("List of choices for Choice and MultiChoice fields.")]
-        public List<string> Choices { get; set; }
+        public List<Choice> Choices { get; set; }
+
+        /// <summary>
+        /// Indicates whether the field is included in a list export.
+        /// </summary>
+        [Browsable(true)]
+        [ReadOnly(true)]
+        [Category("Mapping")]
+        [Description("Indicates whether or not the field is included in the export.")]
+        public bool Include { get; set; }
+
+        /// <summary>
+        /// Mapping alias for the field.
+        /// </summary>
+        [Browsable(true)]
+        [ReadOnly(false)]
+        [Category("Mapping")]
+        [Description("Mapping alias for the field.")]
+        public string Alias { get; set; }
 
         #endregion
 
@@ -193,9 +211,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         public static Field FromCaml(XmlNode fieldDefinition)
         {
             //
-            // Field object.
+            // Field object. Include by default.
             //
             Field field = new Field();
+            field.Include = true;
 
             //
             // Field ID (GUID).
@@ -271,9 +290,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             if (field.SharePointType.EndsWith("Choice"))
             {
-                field.Choices = new List<string>();
+                field.Choices = new List<Choice>();
                 foreach (XmlNode choice in fieldDefinition["CHOICES"])
-                    field.Choices.Add(choice.InnerText);
+                    field.Choices.Add(Choice.FromCaml(choice));
 
                 //
                 // Additional fill-in field needed if FillInChoice is set.
@@ -324,6 +343,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             XmlAttribute description = spml.Attributes["Description"];
             if (description != null)
                 field.Description = description.Value;
+            XmlAttribute alias = spml.Attributes["Alias"];
+            if (alias != null)
+                field.Alias = alias.Value;
 
             //
             // Boolean values.
@@ -354,10 +376,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             XmlElement choices = spml["Choices"];
             if (choices != null)
             {
-                field.Choices = new List<string>();
+                field.Choices = new List<Choice>();
                 foreach (XmlNode choice in choices.ChildNodes)
-                    if (choice.Name == "Choice")
-                        field.Choices.Add(choice.InnerText);
+                    field.Choices.Add(Choice.FromSpml(choice));
             }
 
             //
@@ -505,6 +526,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             field.Attributes.Append(doc.CreateAttribute("Type")).Value = this.SharePointType;
             if (!string.IsNullOrEmpty(this.Description))
                 field.Attributes.Append(doc.CreateAttribute("Description")).Value = this.Description;
+            if (!string.IsNullOrEmpty(this.Alias))
+                field.Attributes.Append(doc.CreateAttribute("Alias")).Value = this.Alias;
             field.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
 
             if (this.IsHidden)
@@ -524,12 +547,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     field.Attributes.Append(doc.CreateAttribute("FillInChoice")).Value = "true";
 
                 XmlElement choices = doc.CreateElement("Choices");
-                foreach (string choice in this.Choices)
-                {
-                    XmlElement c = doc.CreateElement("Choice");
-                    c.InnerText = choice;
-                    choices.AppendChild(c);
-                }
+                foreach (Choice choice in this.Choices)
+                    choices.AppendChild(doc.ImportNode(choice.ToSpml(), true));
                 field.AppendChild(choices);
             }
 

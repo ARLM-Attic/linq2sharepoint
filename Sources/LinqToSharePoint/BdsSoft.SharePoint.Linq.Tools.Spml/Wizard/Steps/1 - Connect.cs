@@ -55,7 +55,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         #region Constructors
 
         /// <summary>
-        /// Creates a new instance of the welcome step.
+        /// Creates a new instance of the connect step.
         /// </summary>
         /// <param name="context">Wizard context.</param>
         public Connect(WizardContext context)
@@ -112,6 +112,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void Connect_Load(object sender, EventArgs e)
         {
             //
+            // Pre-populate fields if information present.
+            //
+            txtUser.Text = ctx.ResultContext.Connection.User ?? "";
+            txtDomain.Text = ctx.ResultContext.Connection.Domain ?? "";
+
+            //
             // Start input on txtUrl TextBox.
             //
             txtUrl.Focus();
@@ -137,7 +143,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 // Clear error message and signal working.
                 //
                 lblError.Visible = false;
-                panel.Enabled = false;
+                //panel.Enabled = false;
                 if (Working != null)
                     Working(this, new EventArgs());
 
@@ -174,22 +180,25 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void bgConnect_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            //
-            // If no error has occurred, we can proceed to the next step; otherwise, an error will be displayed.
-            //
-            if (e.Error == null)
+            if (!e.Cancelled)
             {
-                _next = true;
-                if (StateChanged != null)
-                    StateChanged(this, new EventArgs());
+                //
+                // If no error has occurred, we can proceed to the next step; otherwise, an error will be displayed.
+                //
+                if (e.Error == null)
+                {
+                    _next = true;
+                    if (StateChanged != null)
+                        StateChanged(this, new EventArgs());
+                }
+                else
+                    lblError.Visible = true;
             }
-            else
-                lblError.Visible = true;
 
             //
             // Signal background work completed.
             //
-            panel.Enabled = true;
+            //panel.Enabled = true;
             if (WorkCompleted != null)
                 WorkCompleted(this, new EventArgs());
         }

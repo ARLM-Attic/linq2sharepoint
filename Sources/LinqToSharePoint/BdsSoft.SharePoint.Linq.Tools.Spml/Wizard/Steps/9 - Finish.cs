@@ -23,16 +23,75 @@ using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
+    /// <summary>
+    /// Finish step of the entity generator wizard.
+    /// </summary>
     partial class Finish : UserControl, IWizardStep
     {
+        #region Private members
+
+        /// <summary>
+        /// Wizard context.
+        /// </summary>
         private WizardContext ctx;
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new instance of the finish step.
+        /// </summary>
+        /// <param name="context">Wizard context.</param>
         public Finish(WizardContext context)
         {
             this.ctx = context;
 
             InitializeComponent();
         }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Title of the wizard step.
+        /// </summary>
+        public string Title
+        {
+            get { return "Entity mapping generation completed"; }
+        }
+
+        /// <summary>
+        /// Indicates whether the step allows to go to the next step currently.
+        /// </summary>
+        public bool CanNext
+        {
+            get { return false; }
+        }
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Event raised when the state of the step has changed, e.g. when CanNext has changed.
+        /// </summary>
+        public event EventHandler StateChanged;
+
+        /// <summary>
+        /// Event raised when the step is performing work.
+        /// </summary>
+        public event EventHandler Working;
+
+        /// <summary>
+        /// Event raised when the step has completed its work.
+        /// </summary>
+        public event EventHandler WorkCompleted;
+
+        #endregion
+
+        #region Event handlers
 
         private void Finish_Load(object sender, EventArgs e)
         {
@@ -45,22 +104,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             txtSummary.Select(0, 0);
         }
 
-        public string Title
-        {
-            get { return "Entity mapping generation completed"; }
-        }
+        #endregion
 
-        public bool CanNext
-        {
-            get { return false; }
-        }
+        #region Methods
 
-        public event EventHandler StateChanged;
-        public event EventHandler Working;
-        public event EventHandler WorkCompleted;
-
+        /// <summary>
+        /// Instructs the step to try to cancel a pending operation. This will try to stop a pending background connection operation, if any.
+        /// </summary>
         public void Cancel()
         {
         }
+
+        #endregion
     }
 }

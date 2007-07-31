@@ -19,6 +19,7 @@ using EnvDTE;
 using System.Xml;
 using System.IO;
 using System.Reflection;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
@@ -71,7 +72,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             {
                 _tool = replacementsDictionary["$CustomTool$"];
 
-                Wizard start = new Wizard();
+                string name = null;
+                if (replacementsDictionary.ContainsKey("$rootname$"))
+                {
+                    name = replacementsDictionary["$rootname$"];
+                    if (name.ToLower().EndsWith(".spml"))
+                        name = name.Substring(0, name.Length - ".spml".Length);
+                }
+
+                Context ctx = new Context();
+                ctx.Name = name;
+                ctx.Connection = new Connection();
+                ctx.Connection.CustomAuthentication = false;
+                ctx.Connection.User = replacementsDictionary.ContainsKey("$username$") ? replacementsDictionary["$username$"] : null;
+                ctx.Connection.Domain = replacementsDictionary.ContainsKey("$userdomain$") ? replacementsDictionary["$userdomain$"] : null;
+
+                Wizard start = new Wizard(ctx);
                 DialogResult res = start.ShowDialog(window);
                 _ok = res == DialogResult.OK;
 
