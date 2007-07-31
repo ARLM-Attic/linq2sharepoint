@@ -159,7 +159,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                             if (field.FieldType == FieldType.Lookup || field.FieldType == FieldType.LookupMulti)
                             {
                                 List lookupList = List.FromCaml(GetListDefinition(field.LookupList));
-                                if (!closure.ContainsKey(list.Id))
+                                if (!closure.ContainsKey(lookupList.Id))
                                     closure.Add(lookupList.Id, lookupList);
                             }
                         }

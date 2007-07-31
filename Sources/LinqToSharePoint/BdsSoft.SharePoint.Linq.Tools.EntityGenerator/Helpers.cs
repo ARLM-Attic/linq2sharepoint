@@ -13,6 +13,7 @@
  * 
  * 0.2.1 - Creation as part of refactoring
  * 0.2.2 - New entity model
+ * 0.2.3 - Pluralization
  */
 
 #region Namespace imports
@@ -31,6 +32,36 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     internal static class Helpers
     {
+        #region Static members
+
+        /// <summary>
+        /// Depluralization map.
+        /// </summary>
+        private static Dictionary<string, string> Plurals;
+
+        #endregion
+
+        #region Static constructor
+
+        /// <summary>
+        /// Type initializer.
+        /// </summary>
+        static Helpers()
+        {
+            Plurals = new Dictionary<string, string>();
+            Plurals.Add("ies", "y");
+            Plurals.Add("oes", "o");
+            Plurals.Add("ves", "f");
+            Plurals.Add("ges", "ge");
+            Plurals.Add("ses", "se");
+            Plurals.Add("es", "");
+            Plurals.Add("s", "");
+        }
+
+        #endregion
+
+        #region Static methods
+
         /// <summary>
         /// Get a friendly name for a field, usable in C# or VB as a property name.
         /// </summary>
@@ -109,12 +140,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <returns>Singularized name.</returns>
         public static string Singularize(string listName)
         {
-            if (listName.EndsWith("ies"))
-                return listName.Substring(0, listName.Length - "ies".Length) + "y";
-            else if (listName.EndsWith("s"))
-                return listName.Substring(0, listName.Length - "s".Length);
-            else
-                return listName;
+            foreach (string plural in Plurals.Keys)
+                if (listName.EndsWith(plural))
+                    listName = listName.Substring(0, listName.Length - plural.Length) + Plurals[plural];
+            return listName;
         }
+
+        #endregion
     }
 }

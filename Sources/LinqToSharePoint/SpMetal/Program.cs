@@ -180,6 +180,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             else if ((a.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
             {
                 //
+                // Pluralization setting.
+                //
+                List.AutoPluralize = a.Pluralize;
+
+                //
                 // Generate code in the appropriate language.
                 //
                 CodeCompileUnit compileUnit;
@@ -324,20 +329,21 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Console.WriteLine("  -password:<password>  Password for connection to SharePoint site");
             Console.WriteLine("  -domain:<domain>      Domain for connection to SharePoint site");
             Console.WriteLine("  -list:<list>          Name of the list to export (* = all lists)");
-            Console.WriteLine("  -context:<ctx>        Name of the context to create");
+            Console.WriteLine("  -context:<context>    Name of the context to create");
             Console.WriteLine("  -in:<file>            Input file with SPML for code generation");
             Console.WriteLine("  -xml:<file>           Output file for SPML generation");
             Console.WriteLine("  -code:<file>          Output file for code generation (= -out:<file>)");
             Console.WriteLine("  -language:<lang>      Code language used for output: VB or CS (default)");
             Console.WriteLine("  -namespace:<ns>       Namespace to put generated code in");
+            Console.WriteLine("  -pluralize            Auto-(de)pluralize list entity names");
             Console.WriteLine();
             Console.WriteLine("Syntax:");
             Console.WriteLine("  {0} [{{online}}|{{offline}}]", file);
-            Console.WriteLine("  {online}  := -url:<url> -list:<list> [-context:<ctx>] {connect} {option}");
+            Console.WriteLine("  {online}  := -url:<url> -list:<list> [-context:<context>] {connect} {option}");
             Console.WriteLine("  {offline} := -in:<file> {codegen}");
             Console.WriteLine("  {connect} := [-user:<user> -password:<password> [-domain:<domain>]]");
             Console.WriteLine("  {option}  := [{codegen}|{export}]");
-            Console.WriteLine("  {codegen} := [-code:<file>] [-language:<lang>] [-namespace:<ns>]");
+            Console.WriteLine("  {codegen} := [-code:<file>] [-language:<lang>] [-namespace:<ns>] [-pluralize]");
             Console.WriteLine("  {export}  := [-xml:<file>]");
             Console.WriteLine();
             Console.WriteLine("Samples:");

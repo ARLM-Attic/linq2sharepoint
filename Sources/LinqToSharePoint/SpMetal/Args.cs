@@ -99,6 +99,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// </summary>
         public string Language { get; set; }
 
+        /// <summary>
+        /// Auto-(de)pluralization of entity names.
+        /// </summary>
+        public bool Pluralize { get; set; }
+
         #endregion
 
         #region {offline}
@@ -293,6 +298,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 string ns;
                 arguments.TryGetValue("namespace", out ns);
                 res.Namespace = ns;
+
+                //
+                // Auto-(de)pluralization.
+                //
+                res.Pluralize = arguments.ContainsKey("pluralize");
             }
 
             return res;
@@ -312,7 +322,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         {
             Dictionary<string, string> res = new Dictionary<string, string>();
 
-            Regex r = new Regex(@"[-/](?<option>\w+):(""(?<value>.*)""|(?<value>.*))", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+            Regex r = new Regex(@"[-/](?<option>\w+)(:(""(?<value>.*)""|(?<value>.*)))?", RegexOptions.CultureInvariant | RegexOptions.Compiled);
             foreach (string arg in args)
                 foreach (Match m in r.Matches(arg))
                     res.Add(m.Groups["option"].Value.ToLower(), m.Groups["value"].Value);
