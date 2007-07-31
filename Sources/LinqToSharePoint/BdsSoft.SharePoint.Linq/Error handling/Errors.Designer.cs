@@ -475,7 +475,7 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Query operator {0} is not supported..
+        ///   Looks up a localized string similar to Query operator {0} or used query operator overload is not supported..
         /// </summary>
         internal static string UnsupportedQueryOperator {
             get {

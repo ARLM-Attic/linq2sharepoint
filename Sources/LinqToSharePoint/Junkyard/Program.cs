@@ -21,10 +21,17 @@ namespace Junkyard
     {
         static void Main(string[] args)
         {
-            SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
+            NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
+            //var res1 = from p in ctx.Products group p by p.Category;
+            //var res2 = from p in ctx.Products group p by p.Category into g select g;
+            var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
+            //foreach (var p in res)
+            //    ;
+            string s = "";
+            //SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
 
-            var lst = new SharePointList<UrlTest>(ctx);
-            UrlValue url = new UrlValue("http://www.bartdesmet.net", "Bart's homepage");
+            //var lst = new SharePointList<UrlTest>(ctx);
+            //UrlValue url = new UrlValue("http://www.bartdesmet.net", "Bart's homepage");
             //var res = from u in lst where u.Homepage.Url != url.Url select u; //OK
             //var res = from u in lst where u.Homepage == url select u; //OK (just compare by Url value)
             //var res = from u in lst where u.Homepage == new UrlValue(null, null) select u; //OK
@@ -34,8 +41,8 @@ namespace Junkyard
             //var res = from u in lst where u.Homepage.Url.StartsWith(url.Url) select u; //OK
 
             //var res = from u in lst where u.Homepage.Description.Equals(url.Url) select u;
-            var res = from u in lst where u.Homepage.Description == "Test" select u;
-            SharePointListQueryVisualizer.TestShowVisualizer(res);
+            //var res = from u in lst where u.Homepage.Description == "Test" select u;
+            //SharePointListQueryVisualizer.TestShowVisualizer(res);
 
             /*
             int fkey = 1;
@@ -689,4 +696,925 @@ namespace Junkyard
         }
     }
      */
+
+    /// <summary>
+    /// Products
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("Products", Id = "d6be2daa-f0c3-48fe-ae0b-3d3bd6b860ef", Version = 17, Path = "/Lists/Products")]
+    public partial class Product : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private string _Title;
+
+        private string _ProductName;
+
+        private string _QuantityPerUnit;
+
+        private global::System.Nullable<double> _UnitPrice;
+
+        private global::System.Nullable<double> _UnitsInStock;
+
+        private global::System.Nullable<double> _UnitsOnOrder;
+
+        private global::System.Nullable<double> _ReorderLevel;
+
+        private global::System.Nullable<bool> _Discontinued;
+
+        private global::BdsSoft.SharePoint.Linq.EntityRef<Category> _Category;
+
+        private global::BdsSoft.SharePoint.Linq.EntityRef<Supplier> _Supplier;
+
+        private int _ID = default(int);
+
+        private string _ContentType = default(string);
+
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
+
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
+
+        private string _Version = default(string);
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ProductName
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ProductName", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "38d0b85f-fa6d-4888-83c3-1a2a1a05d944", Storage = "_ProductName")]
+        public string ProductName
+        {
+            get
+            {
+                return this._ProductName;
+            }
+            set
+            {
+                if ((this._ProductName != value))
+                {
+                    this.OnPropertyChanging("ProductName");
+                    this._ProductName = value;
+                    this.OnPropertyChanged("ProductName");
+                }
+            }
+        }
+
+        /// <summary>
+        /// QuantityPerUnit
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("QuantityPerUnit", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "b418ce10-53e8-4bc5-823c-1fe199b3df70", Storage = "_QuantityPerUnit")]
+        public string QuantityPerUnit
+        {
+            get
+            {
+                return this._QuantityPerUnit;
+            }
+            set
+            {
+                if ((this._QuantityPerUnit != value))
+                {
+                    this.OnPropertyChanging("QuantityPerUnit");
+                    this._QuantityPerUnit = value;
+                    this.OnPropertyChanged("QuantityPerUnit");
+                }
+            }
+        }
+
+        /// <summary>
+        /// UnitPrice
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("UnitPrice", global::BdsSoft.SharePoint.Linq.FieldType.Currency, Id = "8daebd3b-9fbf-4858-9f05-1e88f62a0417", Storage = "_UnitPrice")]
+        public global::System.Nullable<double> UnitPrice
+        {
+            get
+            {
+                return this._UnitPrice;
+            }
+            set
+            {
+                if ((this._UnitPrice != value))
+                {
+                    this.OnPropertyChanging("UnitPrice");
+                    this._UnitPrice = value;
+                    this.OnPropertyChanged("UnitPrice");
+                }
+            }
+        }
+
+        /// <summary>
+        /// UnitsInStock
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("UnitsInStock", global::BdsSoft.SharePoint.Linq.FieldType.Number, Id = "82117b89-5115-42dc-82e5-ec494cb93258", Storage = "_UnitsInStock")]
+        public global::System.Nullable<double> UnitsInStock
+        {
+            get
+            {
+                return this._UnitsInStock;
+            }
+            set
+            {
+                if ((this._UnitsInStock != value))
+                {
+                    this.OnPropertyChanging("UnitsInStock");
+                    this._UnitsInStock = value;
+                    this.OnPropertyChanged("UnitsInStock");
+                }
+            }
+        }
+
+        /// <summary>
+        /// UnitsOnOrder
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("UnitsOnOrder", global::BdsSoft.SharePoint.Linq.FieldType.Number, Id = "68a03a4e-9b42-4437-a38b-33f6ed69ad4d", Storage = "_UnitsOnOrder")]
+        public global::System.Nullable<double> UnitsOnOrder
+        {
+            get
+            {
+                return this._UnitsOnOrder;
+            }
+            set
+            {
+                if ((this._UnitsOnOrder != value))
+                {
+                    this.OnPropertyChanging("UnitsOnOrder");
+                    this._UnitsOnOrder = value;
+                    this.OnPropertyChanged("UnitsOnOrder");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ReorderLevel
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ReorderLevel", global::BdsSoft.SharePoint.Linq.FieldType.Number, Id = "c63ef5b7-d6b6-4246-967d-a60c41018ed9", Storage = "_ReorderLevel")]
+        public global::System.Nullable<double> ReorderLevel
+        {
+            get
+            {
+                return this._ReorderLevel;
+            }
+            set
+            {
+                if ((this._ReorderLevel != value))
+                {
+                    this.OnPropertyChanging("ReorderLevel");
+                    this._ReorderLevel = value;
+                    this.OnPropertyChanged("ReorderLevel");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Discontinued
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Discontinued", global::BdsSoft.SharePoint.Linq.FieldType.Boolean, Id = "4df879f5-7a2f-4db0-baac-7593c0fdc112", Storage = "_Discontinued")]
+        public global::System.Nullable<bool> Discontinued
+        {
+            get
+            {
+                return this._Discontinued;
+            }
+            set
+            {
+                if ((this._Discontinued != value))
+                {
+                    this.OnPropertyChanging("Discontinued");
+                    this._Discontinued = value;
+                    this.OnPropertyChanged("Discontinued");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Category
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Category", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "081784b3-2bba-4456-a25c-2fc1f6c4d492", LookupDisplayField = "CategoryName", Storage = "_Category")]
+        public Category Category
+        {
+            get
+            {
+                return this._Category.Entity;
+            }
+            set
+            {
+                if ((this._Category.Entity != value))
+                {
+                    this.OnPropertyChanging("Category");
+                    this._Category.Entity = value;
+                    this.OnPropertyChanged("Category");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Supplier
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Supplier", global::BdsSoft.SharePoint.Linq.FieldType.Lookup, Id = "e6fd6cbc-e50e-486c-89c5-8fb65e5099a1", LookupDisplayField = "CompanyName", Storage = "_Supplier")]
+        public Supplier Supplier
+        {
+            get
+            {
+                return this._Supplier.Entity;
+            }
+            set
+            {
+                if ((this._Supplier.Entity != value))
+                {
+                    this.OnPropertyChanging("Supplier");
+                    this._Supplier.Entity = value;
+                    this.OnPropertyChanged("Supplier");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Categories
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("Categories", Id = "2f5a24e6-43dd-4af0-b28f-dfb75c96c380", Version = 4, Path = "/Lists/Categories")]
+    public partial class Category : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private string _Title;
+
+        private string _CategoryName;
+
+        private string _Description;
+
+        private int _ID = default(int);
+
+        private string _ContentType = default(string);
+
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
+
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
+
+        private string _Version = default(string);
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// CategoryName
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("CategoryName", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "6a41acdd-f021-417e-9a39-2c687381de56", Storage = "_CategoryName")]
+        public string CategoryName
+        {
+            get
+            {
+                return this._CategoryName;
+            }
+            set
+            {
+                if ((this._CategoryName != value))
+                {
+                    this.OnPropertyChanging("CategoryName");
+                    this._CategoryName = value;
+                    this.OnPropertyChanged("CategoryName");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Description
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Description", global::BdsSoft.SharePoint.Linq.FieldType.Note, Id = "b78064ae-3482-4e31-aa4a-bb26db5e506d", Storage = "_Description")]
+        public string Description
+        {
+            get
+            {
+                return this._Description;
+            }
+            set
+            {
+                if ((this._Description != value))
+                {
+                    this.OnPropertyChanging("Description");
+                    this._Description = value;
+                    this.OnPropertyChanged("Description");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Suppliers
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("Suppliers", Id = "287cc088-9e8f-4c34-b3a0-e8a9d89f3f39", Version = 12, Path = "/Lists/Suppliers")]
+    public partial class Supplier : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private string _Title;
+
+        private string _CompanyName;
+
+        private string _ContactName;
+
+        private string _ContactTitle;
+
+        private string _Address;
+
+        private string _City;
+
+        private string _Region;
+
+        private string _PostalCode;
+
+        private string _Country;
+
+        private string _Phone;
+
+        private string _Fax;
+
+        private int _ID = default(int);
+
+        private string _ContentType = default(string);
+
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
+
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
+
+        private string _Version = default(string);
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// CompanyName
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("CompanyName", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "cd52757f-2870-497f-ba88-1285fab4c7e1", Storage = "_CompanyName")]
+        public string CompanyName
+        {
+            get
+            {
+                return this._CompanyName;
+            }
+            set
+            {
+                if ((this._CompanyName != value))
+                {
+                    this.OnPropertyChanging("CompanyName");
+                    this._CompanyName = value;
+                    this.OnPropertyChanged("CompanyName");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ContactName
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContactName", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "8d821f90-796f-49f2-9278-0784d6f95ee6", Storage = "_ContactName")]
+        public string ContactName
+        {
+            get
+            {
+                return this._ContactName;
+            }
+            set
+            {
+                if ((this._ContactName != value))
+                {
+                    this.OnPropertyChanging("ContactName");
+                    this._ContactName = value;
+                    this.OnPropertyChanged("ContactName");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ContactTitle
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContactTitle", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "196b85f9-10da-4f87-9332-dfb52a9603c1", Storage = "_ContactTitle")]
+        public string ContactTitle
+        {
+            get
+            {
+                return this._ContactTitle;
+            }
+            set
+            {
+                if ((this._ContactTitle != value))
+                {
+                    this.OnPropertyChanging("ContactTitle");
+                    this._ContactTitle = value;
+                    this.OnPropertyChanged("ContactTitle");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Address
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Address", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "cc2a010d-e22e-498a-a85a-8d32af374d58", Storage = "_Address")]
+        public string Address
+        {
+            get
+            {
+                return this._Address;
+            }
+            set
+            {
+                if ((this._Address != value))
+                {
+                    this.OnPropertyChanging("Address");
+                    this._Address = value;
+                    this.OnPropertyChanged("Address");
+                }
+            }
+        }
+
+        /// <summary>
+        /// City
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("City", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "cc559100-d7e6-4817-8f31-ff89333e5860", Storage = "_City")]
+        public string City
+        {
+            get
+            {
+                return this._City;
+            }
+            set
+            {
+                if ((this._City != value))
+                {
+                    this.OnPropertyChanging("City");
+                    this._City = value;
+                    this.OnPropertyChanged("City");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Region
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Region", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "6d0af8b5-2735-4e19-8806-dfd3eaf6aeca", Storage = "_Region")]
+        public string Region
+        {
+            get
+            {
+                return this._Region;
+            }
+            set
+            {
+                if ((this._Region != value))
+                {
+                    this.OnPropertyChanging("Region");
+                    this._Region = value;
+                    this.OnPropertyChanged("Region");
+                }
+            }
+        }
+
+        /// <summary>
+        /// PostalCode
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("PostalCode", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "3e84ea38-ae73-4387-8c91-09972eb3b7d2", Storage = "_PostalCode")]
+        public string PostalCode
+        {
+            get
+            {
+                return this._PostalCode;
+            }
+            set
+            {
+                if ((this._PostalCode != value))
+                {
+                    this.OnPropertyChanging("PostalCode");
+                    this._PostalCode = value;
+                    this.OnPropertyChanged("PostalCode");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Country
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Country", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "04f6dc29-0884-42ac-99eb-aac3bb1326bd", Storage = "_Country")]
+        public string Country
+        {
+            get
+            {
+                return this._Country;
+            }
+            set
+            {
+                if ((this._Country != value))
+                {
+                    this.OnPropertyChanging("Country");
+                    this._Country = value;
+                    this.OnPropertyChanged("Country");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Phone
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Phone", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "82015708-da95-45b5-b1b2-77426e4e33d9", Storage = "_Phone")]
+        public string Phone
+        {
+            get
+            {
+                return this._Phone;
+            }
+            set
+            {
+                if ((this._Phone != value))
+                {
+                    this.OnPropertyChanging("Phone");
+                    this._Phone = value;
+                    this.OnPropertyChanged("Phone");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fax
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Fax", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "61f037f4-f780-4b21-a8e3-b60cfed1c4d2", Storage = "_Fax")]
+        public string Fax
+        {
+            get
+            {
+                return this._Fax;
+            }
+            set
+            {
+                if ((this._Fax != value))
+                {
+                    this.OnPropertyChanging("Fax");
+                    this._Fax = value;
+                    this.OnPropertyChanged("Fax");
+                }
+            }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+
+    public partial class NorthwindSharePointDataContext : global::BdsSoft.SharePoint.Linq.SharePointDataContext
+    {
+
+        /// <summary>
+        /// Connect to SharePoint using the SharePoint web services.
+        /// </summary>
+        /// <param name="wsUri">URI to the SharePoint site.</param>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public NorthwindSharePointDataContext(System.Uri wsUri)
+            :
+                base(wsUri)
+        {
+        }
+
+        /// <summary>
+        /// Connect to SharePoint using the SharePoint object model.
+        /// </summary>
+        /// <param name="site">SharePoint site object.</param>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public NorthwindSharePointDataContext(Microsoft.SharePoint.SPSite site)
+            :
+                base(site)
+        {
+        }
+
+        /// <summary>
+        /// Connect to the http://wss3demo SharePoint site using the SharePoint web services.
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public NorthwindSharePointDataContext()
+            :
+                base(new global::System.Uri("http://wss3demo"))
+        {
+        }
+
+        /// <summary>
+        /// Products list.
+        /// </summary>
+        public global::BdsSoft.SharePoint.Linq.SharePointList<Product> Products
+        {
+            get
+            {
+                return this.GetList<Product>();
+            }
+        }
+
+        /// <summary>
+        /// Categories list.
+        /// </summary>
+        public global::BdsSoft.SharePoint.Linq.SharePointList<Category> Categories
+        {
+            get
+            {
+                return this.GetList<Category>();
+            }
+        }
+
+        /// <summary>
+        /// Suppliers list.
+        /// </summary>
+        public global::BdsSoft.SharePoint.Linq.SharePointList<Supplier> Suppliers
+        {
+            get
+            {
+                return this.GetList<Supplier>();
+            }
+        }
+    }
 }

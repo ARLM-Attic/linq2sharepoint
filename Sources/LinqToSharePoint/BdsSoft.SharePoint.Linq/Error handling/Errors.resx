@@ -300,7 +300,7 @@
     <comment>SP0099</comment>
   </data>
   <data name="UnsupportedQueryOperator" xml:space="preserve">
-    <value>Query operator {0} is not supported.</value>
+    <value>Query operator {0} or used query operator overload is not supported.</value>
     <comment>SP0001</comment>
   </data>
   <data name="UnsupportedStringMethodCall" xml:space="preserve">

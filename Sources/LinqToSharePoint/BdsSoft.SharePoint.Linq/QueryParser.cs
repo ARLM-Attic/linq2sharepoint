@@ -124,19 +124,26 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Check the extension method called during query creation.
                 //
+                bool error = false;
                 switch (mce.Method.Name)
                 {
                     //
                     // Query expression for filtering.
                     //
                     case "Where":
-                        //
-                        // Original call = Queryable::Where(source, predicate)
-                        //                 where predicate is of type Expression<Func<TSource, bool>>
-                        // Parse the query based on the Func<TSource, bool> predicate expression tree.
-                        //
-                        ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
-                        break;
+                        {
+                            //
+                            // Original call = Queryable::Where(source, predicate)
+                            //                 where predicate is of type Expression<Func<TSource, bool>>
+                            // Parse the query based on the Func<TSource, bool> predicate expression tree.
+                            //
+                            Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
+                            if (expressionFunc.GetGenericArguments().Length == 2)
+                                ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                            else
+                                error = true;
+                            break;
+                        }
                     //
                     // Query expression for sorting. Multiple possibilities exist and can act cumulatively.
                     //
@@ -144,53 +151,73 @@ namespace BdsSoft.SharePoint.Linq
                     case "OrderByDescending":
                     case "ThenBy":
                     case "ThenByDescending":
-                        //
-                        // Original call = Queryable::{OrderBy|ThenBy}[Descending](source, keySelector)
-                        //                 where keySelector is of type Expression<Func<TSource, TKey>>
-                        // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
-                        //
-                        ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1 + mce.Method.Name.Length + 1, ppE - 1);
-                        break;
+                        {
+                            //
+                            // Original call = Queryable::{OrderBy|ThenBy}[Descending](source, keySelector)
+                            //                 where keySelector is of type Expression<Func<TSource, TKey>>
+                            // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
+                            //
+                            if (mce.Method.GetParameters().Length == 2)
+                                ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1 + mce.Method.Name.Length + 1, ppE - 1);
+                            else
+                                error = true;
+                            break;
+                        }
                     //
                     // Query expression for projection.
                     //
                     case "Select":
-                        //
-                        // Original call = Queryable::Select(source, selector)
-                        //                 where selector is of type Expression<Func<TSource, TResult>>
-                        // Parse the query based on the Expression<Func<TSource, TResult>> selector.
-                        //
-                        ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
-                        break;
+                        {
+                            //
+                            // Original call = Queryable::Select(source, selector)
+                            //                 where selector is of type Expression<Func<TSource, TResult>>
+                            // Parse the query based on the Expression<Func<TSource, TResult>> selector.
+                            //
+                            Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
+                            if (expressionFunc.GetGenericArguments().Length == 2)
+                                ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                            else
+                                error = true;
+                            break;
+                        }
                     //
                     // Query expression for result restriction ("TOP").
                     //
                     case "Take":
-                        //
-                        // Original call = Queryable::Take(source, count)
-                        // Parse the query based on the count value obtained by compilation and dynamic invocation of the count argument to the call.
-                        //
-                        SetResultRestriction((int)Expression.Lambda<Func<int>>(mce.Arguments[1]).Compile().DynamicInvoke());
-                        break;
+                        {
+                            //
+                            // Original call = Queryable::Take(source, count)
+                            // Parse the query based on the count value obtained by compilation and dynamic invocation of the count argument to the call.
+                            //
+                            SetResultRestriction((int)Expression.Lambda<Func<int>>(mce.Arguments[1]).Compile().DynamicInvoke());
+                            break;
+                        }
                     //
                     // First and FirstOrDefault are based on the Take(1) operation (row number restriction).
                     //
                     case "First":
                     case "FirstOrDefault":
-                        //
-                        // Original call = Queryable::First(source)
-                        //                 Queryable::FirstOrDefault(source)
-                        // Set row restriction (first = 1 row only).
-                        //
-                        SetResultRestriction(1);
-                        break;
+                        {
+                            //
+                            // Original call = Queryable::First(source)
+                            //                 Queryable::FirstOrDefault(source)
+                            // Set row restriction (first = 1 row only).
+                            //
+                            if (mce.Method.GetParameters().Length == 1)
+                                SetResultRestriction(1);
+                            else
+                                error = true;
+                            break;
+                        }
                     //
                     // Currently we don't support additional query operators in LINQ to SharePoint.
                     //
                     default:
-                        this.UnsupportedQueryOperator(mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE); /* PARSE ERROR */
-                        return;
+                        error = true;
+                        break;
                 }
+                if (error)
+                    this.UnsupportedQueryOperator(mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE); /* PARSE ERROR */
             }
             //
             // Constant expression represents the source of the query.

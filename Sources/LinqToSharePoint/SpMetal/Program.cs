@@ -102,6 +102,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                                      );
 
             //
+            // Pluralization setting.
+            //
+            List.AutoPluralize = a.Pluralize;
+
+            //
             // Get SPML first.
             //
             XmlDocument spml = new XmlDocument();
@@ -179,11 +184,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             else if ((a.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
             {
-                //
-                // Pluralization setting.
-                //
-                List.AutoPluralize = a.Pluralize;
-
                 //
                 // Generate code in the appropriate language.
                 //
