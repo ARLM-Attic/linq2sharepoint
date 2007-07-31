@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AfterGrouping" xml:space="preserve">
+    <value>Can't add another expression to the query after the grouping operation.</value>
+    <comment>SP0028</comment>
+  </data>
+  <data name="AfterProjection" xml:space="preserve">
+    <value>Can't add another expression to the query after the projection operation.</value>
+    <comment>SP0003</comment>
+  </data>
   <data name="CamlMethodsInvalidUse" xml:space="preserve">
     <value>This method is not intended to be called directly; use it in LINQ query predicates only.</value>
   </data>
@@ -227,6 +235,10 @@
     <value>Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.</value>
     <comment>SP0024</comment>
   </data>
+  <data name="MultipleGroupings" xml:space="preserve">
+    <value>Multiple grouping clauses detected in query expression.</value>
+    <comment>SP0026</comment>
+  </data>
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>
     <comment>SP0002</comment>
@@ -250,10 +262,6 @@
   <data name="NullValuedLookupField" xml:space="preserve">
     <value>The Lookup field {0} has a null-valued LookupField: {1}. Did you mean a null-check on the Lookup field instead?</value>
     <comment>SP0023</comment>
-  </data>
-  <data name="PredicateAfterProjection" xml:space="preserve">
-    <value>Can't add another predicate expression to the query.</value>
-    <comment>SP0003</comment>
   </data>
   <data name="PredicateContainsNonEntityMethodCall" xml:space="preserve">
     <value>Query predicate contains a method call on a non-entity property: {0}.</value>
@@ -286,6 +294,10 @@
   <data name="UnsupportedBinary" xml:space="preserve">
     <value>Unsupported binary expression detected in query predicate: {0}.</value>
     <comment>SP0013</comment>
+  </data>
+  <data name="UnsupportedGrouping" xml:space="preserve">
+    <value>Unsupported grouping expression detected. Grouping expressions should only contain individual entity property expressions.</value>
+    <comment>SP0027</comment>
   </data>
   <data name="UnsupportedMethodCall" xml:space="preserve">
     <value>Unsupported method call detected in query predicate: {0}.</value>

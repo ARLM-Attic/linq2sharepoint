@@ -131,7 +131,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="where">Query predicate.</param>
         /// <param name="order">Ordering clause.</param>
         /// <param name="projection">Projection clause.</param>
-        internal static void LogTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
+        /// <param name="group">Grouping clause.</param>
+        internal static void LogTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection, XmlElement group)
         {
             Debug.Assert(output != null);
 
@@ -149,6 +150,8 @@ namespace BdsSoft.SharePoint.Linq
                 where.WriteTo(xw);
             if (order != null)
                 order.WriteTo(xw);
+            if (group != null)
+                group.WriteTo(xw);
             xw.WriteEndElement();
 
             //

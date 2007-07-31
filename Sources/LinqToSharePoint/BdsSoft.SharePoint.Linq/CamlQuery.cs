@@ -19,6 +19,7 @@
  *         Refactoring of parser functionality into QueryParser.
  * 0.2.2 - New entity model; changes to property assignment and lazy loading.
  *         Provider model for data retrieval.
+ * 0.2.3 - Grouping support.
  */
 
 #region Namespace imports
@@ -177,22 +178,91 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Logging gathered query information.
             //
-            DoLogging(_listAttribute.List, _results.Where, _results.Order, _results.Projection);
+            DoLogging(_listAttribute.List, _results.Where, _results.Order, _results.Projection, _results.Grouping);
 
             //
-            // Still an entity?
+            // Determine top-level call to Execute<IGrouping<K,T>> for queries with grouping clause.
             //
-            object lst = null;
-            MethodInfo fromCache = null;
-            MethodInfo toCache = null;
-            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
+            if (_results.Grouping != null && typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IGrouping<,>))
+            {
+                //
+                // Self-invocation for underlying (entity) results. Will trigger the other if-branch to be taken.
+                //
+                IEnumerator results = (IEnumerator)typeof(CamlQuery).GetMethod("Execute").MakeGenericMethod(_results.EntityType).Invoke(this, null);
 
-            //
-            // Perform query via the provider.
-            //
-            DataTable results = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
-            foreach (DataRow row in results.Rows)
-                yield return GetItem<T>(row, lst, fromCache, toCache);
+                //
+                // Gather information needed to create result objects.
+                //
+                Type groupType = typeof(Grouping<,>).MakeGenericType(_results.GroupKeyType, _results.EntityType);
+                ConstructorInfo groupCtor = groupType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance)[0];
+                MethodInfo groupAdd = groupType.GetMethod("Add", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                //
+                // Prepare further fetching; get the first item.
+                //
+                object currentKey = null;
+                object currentGroup = null;
+                if (results.MoveNext())
+                {
+                    object item;
+                    object key;
+
+                    //
+                    // Get first key and create first group.
+                    //
+                    item = results.Current;
+                    currentKey = _results.Group.DynamicInvoke(item);
+                    currentGroup = groupCtor.Invoke(new object[] { currentKey });
+                    groupAdd.Invoke(currentGroup, new object[] { results.Current });
+
+                    while (results.MoveNext())
+                    {
+                        //
+                        // Get item and select key using dynamic invocation of the pre-compiled key selector.
+                        //
+                        item = results.Current;
+                        key = _results.Group.DynamicInvoke(item);
+
+                        //
+                        // New key found?
+                        //
+                        if (!object.Equals(currentKey, key))
+                        {
+                            yield return (T)currentGroup;
+                            currentGroup = groupCtor.Invoke(new object[] { currentKey = key });
+                        }
+                        
+                        //
+                        // Add item to the current group.
+                        //
+                        groupAdd.Invoke(currentGroup, new object[] { results.Current });
+                    }
+
+                    //
+                    // Return last group.
+                    //
+                    yield return (T)currentGroup;
+                }
+                else
+                    yield break;
+            }
+            else
+            {
+                //
+                // Still an entity?
+                //
+                object lst = null;
+                MethodInfo fromCache = null;
+                MethodInfo toCache = null;
+                GetEntityAccessors<T>(out lst, out fromCache, out toCache);
+
+                //
+                // Perform query via the provider.
+                //
+                DataTable results = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
+                foreach (DataRow row in results.Rows)
+                    yield return GetItem<T>(row, lst, fromCache, toCache);
+            }
         }
 
         #region Enumeration helpers
@@ -313,7 +383,7 @@ namespace BdsSoft.SharePoint.Linq
                         query.Where.InnerXml = caml;
                         query.Projection = _factory.ViewFields();
                         query.Projection.AppendChild(_factory.FieldRef("ID"));
-                        DoLogging(innerList, query.Where, query.Order, query.Projection);
+                        DoLogging(innerList, query.Where, query.Order, query.Projection, query.Grouping);
 
                         //
                         // Execute subquery and retrieve the ids.
@@ -545,7 +615,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="where">Query predicate.</param>
         /// <param name="order">Ordering clause.</param>
         /// <param name="projection">Projection clause.</param>
-        private void DoLogging(string list, XmlElement where, XmlElement order, XmlElement projection)
+        /// <param name="group">Grouping clause.</param>
+        private void DoLogging(string list, XmlElement where, XmlElement order, XmlElement projection, XmlElement group)
         {
             //
             // Check whether logging is enabled or not.
@@ -561,7 +632,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Do the remainder of the logging (CAML).
                 //
-                Helpers.LogTo(log, where, order, projection);
+                Helpers.LogTo(log, where, order, projection, group);
 
                 //
                 // Spacing to distinguish between subsequent queries.
@@ -580,11 +651,11 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="toCache">Accessor method to store entity in list entity cache.</param>
         /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
         /// <remarks>Either item or row should be null.</remarks>
-        //private T GetItem<T>(SPListItem item, DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
         private T GetItem<T>(DataRow row, object lst, MethodInfo fromCache, MethodInfo toCache)
         {
-            //Debug.Assert(item != null ^ row != null);
-
+            //
+            // Generate entity objects if the result is stored in a list object.
+            //
             bool isEntity = lst != null;
             int? id = null;
 
@@ -615,7 +686,7 @@ namespace BdsSoft.SharePoint.Linq
             // Get the collection of properties that have to be set on the entity.
             // Only in case the result type is still an entity, we'll set all properties; otherwise, we'll set the properties from the projection.
             //
-            IEnumerable<PropertyInfo> props = (!isEntity ? (IEnumerable<PropertyInfo>)_results.ProjectionProperties : typeof(T).GetProperties());
+            IEnumerable<PropertyInfo> props = (isEntity ? _results.EntityType.GetProperties() : (IEnumerable<PropertyInfo>)_results.ProjectionProperties);
 
             //
             // Assign properties.
@@ -642,7 +713,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
         /// <param name="property">Property to set on the entity object.</param>
         /// <param name="target">Entity object to set the property for.</param>
-        //private void AssignResultProperty<T>(SPListItem item, DataRow row, PropertyInfo property, object target)
         private void AssignResultProperty<T>(DataRow row, PropertyInfo property, object target)
         {
             //
@@ -1034,7 +1104,7 @@ namespace BdsSoft.SharePoint.Linq
             XmlTextWriter writer = new XmlTextWriter(sw);
             writer.Formatting = Formatting.Indented;
 
-            Helpers.LogTo(sw, _results.Where, _results.Order, _results.Projection);
+            Helpers.LogTo(sw, _results.Where, _results.Order, _results.Projection, _results.Grouping);
             return caml.ToString();
         }
 

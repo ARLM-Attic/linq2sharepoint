@@ -146,6 +146,11 @@ namespace BdsSoft.SharePoint.Linq
             return _doc.CreateElement("OrderBy");
         }
 
+        public XmlElement GroupBy()
+        {
+            return _doc.CreateElement("GroupBy");
+        }
+
         public XmlElement ViewFields()
         {
             return _doc.CreateElement("ViewFields");

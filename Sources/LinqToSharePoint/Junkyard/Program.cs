@@ -21,15 +21,36 @@ namespace Junkyard
     {
         static void Main(string[] args)
         {
+            //Parser warnings
+
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
-            //var res1 = from p in ctx.Products group p by p.Category;
+            //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
+            //var res3 = (from p in ctx.Products group p by p.Category into g select g).Take(1);
             //var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
             //foreach (var p in res)
             //    ;
 
-            var product = ctx.Products.Where(p => p.UnitsInStock > 0).First(p => p.Discontinued.Value);
-            string s = "";
+            var res1 = from s in ctx.Suppliers group s by s.Country into g select g;
+            foreach (var p in res1)
+            {
+                Console.WriteLine(p.Key ?? "(null)");
+                foreach (var s in p)
+                    Console.WriteLine("- " + s.CompanyName);
+                Console.WriteLine();
+            }
+
+            var res2 = from p in ctx.Products group p by p.Category;
+            foreach (var p in res2)
+            {
+                Console.WriteLine(p.Key.CategoryName);
+                foreach (var s in p)
+                    Console.WriteLine("- " + s.ProductName);
+                Console.WriteLine();
+            }
+
+            //var product = ctx.Products.Where(p => p.UnitsInStock > 0).First(p => p.Discontinued.Value);
+            string ss = "";
             //SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
 
             //var lst = new SharePointList<UrlTest>(ctx);

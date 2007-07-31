@@ -70,6 +70,7 @@
     <Compile Include="Error handling\ParseError.cs" />
     <Compile Include="Error handling\RuntimeErrors.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Grouping.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="ISharePointDataProvider.cs" />
     <Compile Include="Lists.cs">

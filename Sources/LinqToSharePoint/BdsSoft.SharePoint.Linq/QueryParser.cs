@@ -90,15 +90,9 @@ namespace BdsSoft.SharePoint.Linq
         public QueryInfo Parse()
         {
             //
-            // Initialize position tracking.
-            //
-            int ppS = 0;
-            int ppE = _expression.ToString().Length - 1;
-
-            //
             // Do the recursive parsing.
             //
-            Parse(_expression, ppS, ppE);
+            Parse(_expression);
 
             //
             // Return parser results.
@@ -106,10 +100,16 @@ namespace BdsSoft.SharePoint.Linq
             return _results;
         }
 
-        private void Parse(Expression expression, int ppS, int ppE)
+        private void Parse(Expression expression)
         {
             MethodCallExpression mce = expression as MethodCallExpression;
             ConstantExpression ce = expression as ConstantExpression;
+
+            //
+            // Initialize position tracking.
+            //
+            int ppS;
+            int ppE = expression.ToString().Length - 1;
 
             //
             // Method call expression represents a query operator from the System.Linq.Queryable type.
@@ -119,12 +119,13 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Depth-first parsing of the expression tree.
                 //
-                Parse(mce.Arguments[0], 0, mce.Arguments[0].ToString().Length - 1);
+                Parse(mce.Arguments[0]);
 
                 //
                 // Check the extension method called during query creation.
                 //
                 bool error = false;
+                ppS = mce.Arguments[0].ToString().Length + 1;
                 switch (mce.Method.Name)
                 {
                     //
@@ -139,7 +140,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
                             if (expressionFunc.GetGenericArguments().Length == 2)
-                                ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                                ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
                             else
                                 error = true;
                             break;
@@ -158,7 +159,7 @@ namespace BdsSoft.SharePoint.Linq
                             // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
                             //
                             if (mce.Method.GetParameters().Length == 2)
-                                ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), mce.Arguments[0].ToString().Length + 1 + mce.Method.Name.Length + 1, ppE - 1);
+                                ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), ppS + mce.Method.Name.Length + 1, ppE - 1);
                             else
                                 error = true;
                             break;
@@ -175,7 +176,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
                             if (expressionFunc.GetGenericArguments().Length == 2)
-                                ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                                ParseProjection((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
                             else
                                 error = true;
                             break;
@@ -185,6 +186,8 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case "Take":
                         {
+                            GuardGrouping(ppS, ppE);
+
                             //
                             // Original call = Queryable::Take(source, count)
                             // Parse the query based on the count value obtained by compilation and dynamic invocation of the count argument to the call.
@@ -198,6 +201,8 @@ namespace BdsSoft.SharePoint.Linq
                     case "First":
                     case "FirstOrDefault":
                         {
+                            GuardGrouping(ppS, ppE);
+
                             //
                             // Original call = Queryable::First(source[, predicate])
                             //                 Queryable::FirstOrDefault(source[, predicate])
@@ -206,13 +211,24 @@ namespace BdsSoft.SharePoint.Linq
                             {
                                 Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
                                 if (expressionFunc.GetGenericArguments().Length == 2)
-                                    ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                                    ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
                             }
 
                             //
                             // Set row restriction (first = 1 row only).
                             //
                             SetResultRestriction(1);
+                            break;
+                        }
+                    //
+                    // Grouping support.
+                    //
+                    case "GroupBy":
+                        {
+                            if (mce.Method.GetParameters().Length == 2)
+                                ParseGrouping((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
+                            else
+                                error = true;
                             break;
                         }
                     //
@@ -223,7 +239,7 @@ namespace BdsSoft.SharePoint.Linq
                         break;
                 }
                 if (error)
-                    this.UnsupportedQueryOperator(mce.Method.Name, ppS + mce.Arguments[0].ToString().Length + 1, ppE); /* PARSE ERROR */
+                    this.UnsupportedQueryOperator(mce.Method.Name, ppS, ppE); /* PARSE ERROR */
             }
             //
             // Constant expression represents the source of the query.
@@ -241,7 +257,7 @@ namespace BdsSoft.SharePoint.Linq
                 }
             }
             else
-                this.UnsupportedQueryExpression(ppS, ppE); /* PARSE ERROR */
+                this.UnsupportedQueryExpression(0, ppE); /* PARSE ERROR */
         }
 
         #endregion
@@ -254,14 +270,10 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="predicate">Lambda expression of the query predicate to parse.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
-        /// <remarks>Only one filter expression can be parsed per query.</remarks>
         private void ParsePredicate(LambdaExpression predicate, int ppS, int ppE)
         {
-            //
-            // We can support multiple predicates as long no projection operation was carried out.
-            //
-            if (_results.Projection != null)
-                this.PredicateAfterProjection(ppS, ppE); /* PARSE ERROR */
+            GuardProjection(ppS, ppE);
+            GuardGrouping(ppS, ppE);
 
             //
             // Calculcate expression body parser positions.
@@ -1729,6 +1741,9 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Multiple ordering expressions per query are supported.</remarks>
         private void ParseOrdering(LambdaExpression ordering, bool descending, int ppS, int ppE)
         {
+            GuardProjection(ppS, ppE);
+            GuardGrouping(ppS, ppE);
+
             //
             // If no ordering expression has been encountered before, construct the OrderBy CAML element.
             //
@@ -1796,9 +1811,13 @@ namespace BdsSoft.SharePoint.Linq
         {
             //
             // Equiprojections (u => u) can be ignored.
+            // Will take care of continuations in groupby constructs too (group #1 by <grouping> into #2).
+            //                                                                                   -------
             //
             if (projection.Parameters[0] == projection.Body)
                 return;
+
+            GuardGrouping(ppS, ppE);
 
             //
             // If no projection has been encountered before, construct the ViewFields CAML element.
@@ -1861,6 +1880,82 @@ namespace BdsSoft.SharePoint.Linq
             // If no top value has been set yet, take the specified value; otherwise, take the minimum of the current value and the specified value.
             //
             _results.Top = (_results.Top == null ? limit : Math.Min(_results.Top.Value, limit));
+        }
+
+        #endregion
+
+        #region Query grouping parsing (GroupBy)
+
+        /// <summary>
+        /// Parses a query grouping expression, resulting in a CAML GroupBy element.
+        /// </summary>
+        /// <param name="keySelector">Lambda expression of the grouping key selection.</param>
+        /// <param name="ppS">Start position for parser error tracking.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
+        /// <remarks>Only one grouping expression can be parsed per query.</remarks>
+        private void ParseGrouping(LambdaExpression keySelector, int ppS, int ppE)
+        {
+            GuardProjection(ppS, ppE);
+
+            //
+            // Only one grouping expression is supported.
+            //
+            if (_results.Grouping != null)
+                this.MultipleGroupings(ppS, ppE); /* PARSE ERROR */
+
+            //
+            // Construct the GroupBy CAML element.
+            //
+            _results.Grouping = _factory.GroupBy();
+
+            int ppS2 = ppS + keySelector.Parameters[0].Name.Length + " => ".Length;
+            int ppE2 = ppE;
+
+            //
+            // Trim ToString() calls for grouping expressions on textual fields. Allows more flexibility.
+            //
+            Expression groupExpression = DropToString(keySelector.Body, ref ppE2);
+
+            //
+            // Convert the grouping expression as a MemberExpression.
+            //
+            MemberExpression me = groupExpression as MemberExpression;
+
+            bool? isHasValue;
+            me = (MemberExpression)CheckForNullableType(me, out isHasValue);
+
+            //
+            // Make sure the expression is a MemberExpression and points to a property on the entity type.
+            //
+            if (me != null && me.Member.DeclaringType == _results.EntityType && me.Member is PropertyInfo
+                //
+                // If nullable, it shouldn't be a call to HasValue.
+                //
+                && (!isHasValue.HasValue || (isHasValue.HasValue && !isHasValue.Value))
+                )
+            {
+                //
+                // Obtain a FieldRef element for the property on the entity type being referred to.
+                //
+                XmlElement fieldRef = GetFieldRef((PropertyInfo)me.Member);
+
+                //
+                // Append the FieldRef element to the GroupBy ordering clause.
+                //
+                _results.Grouping.AppendChild(fieldRef);
+
+                //
+                // Pre-compile the grouping key selector for use during result yielding.
+                //
+                _results.Group = keySelector.Compile();
+
+                //
+                // Set grouping key type.
+                //
+                _results.GroupKeyType = ((PropertyInfo)me.Member).PropertyType;
+            }
+            else
+                _results.Grouping.AppendChild(this.UnsupportedGrouping(ppS, ppE)); /* PARSE ERROR */
         }
 
         #endregion
@@ -2356,6 +2451,32 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
+        #region Query composition guards
+
+        /// <summary>
+        /// Guards entry to a parse method. Checks that no projection has been carried out previously.
+        /// </summary>
+        /// <param name="ppS">Start position for parser error tracking.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
+        private void GuardProjection(int ppS, int ppE)
+        {
+            if (_results.Projection != null)
+                this.AfterProjection(ppS, ppE); /* PARSE ERROR */
+        }
+
+        /// <summary>
+        /// Guards entry to a parse method. Checks that no grouping has been carried out previously.
+        /// </summary>
+        /// <param name="ppS">Start position for parser error tracking.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
+        private void GuardGrouping(int ppS, int ppE)
+        {
+            if (_results.Grouping != null)
+                this.AfterGrouping(ppS, ppE); /* PARSE ERROR */
+        }
+
+        #endregion
+
         #endregion
     }
 
@@ -2398,6 +2519,21 @@ namespace BdsSoft.SharePoint.Linq
         /// Ordering clause of the query, based on the CAML query format's OrderBy element.
         /// </summary>
         public XmlElement Order { get; set; }
+
+        /// <summary>
+        /// Delegate for the grouping key selector, generated by compiling the grouping's lambda expression (e.g. u => u.Country). Takes an object of the original entity type used in the query.
+        /// </summary>
+        public Delegate Group { get; set; }
+
+        /// <summary>
+        /// Type of the grouping key.
+        /// </summary>
+        public Type GroupKeyType { get; set; }
+
+        /// <summary>
+        /// Grouping clause of the query, based on the CAML query format's GroupBy element.
+        /// </summary>
+        public XmlElement Grouping { get; set; }
 
         /// <summary>
         /// Optional number of "top" rows to query for, with the semantics of the TOP construct in SQL. Gathered by parsing Take(n) calls.

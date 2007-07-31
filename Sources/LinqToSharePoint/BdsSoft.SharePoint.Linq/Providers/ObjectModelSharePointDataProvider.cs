@@ -118,6 +118,8 @@ namespace BdsSoft.SharePoint.Linq.Providers
                     query.Where.WriteTo(xw);
                 if (query.Order != null)
                     query.Order.WriteTo(xw);
+                if (query.Grouping != null)
+                    query.Grouping.WriteTo(xw);
                 xw.Flush();
             }
 

@@ -39,9 +39,9 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 2, Errors.NonBoolConstantValueInPredicate, start, end);
         }
 
-        public static XmlElement PredicateAfterProjection(this QueryParser parser, int start, int end)
+        public static XmlElement AfterProjection(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(parser, 3, Errors.PredicateAfterProjection, start, end);
+            return KeepOrThrow(parser, 3, Errors.AfterProjection, start, end);
         }
 
         public static XmlElement DateRangesOverlapInvalidValueArgument(this QueryParser parser, int start, int end)
@@ -152,6 +152,21 @@ namespace BdsSoft.SharePoint.Linq
         public static XmlElement NonUrlCallOnUrlValue(this QueryParser parser, int start, int end)
         {
             return KeepOrThrow(parser, 25, Errors.NonUrlCallOnUrlValue, start, end);
+        }
+
+        public static XmlElement MultipleGroupings(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 26, Errors.MultipleGroupings, start, end);
+        }
+
+        public static XmlElement UnsupportedGrouping(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 27, Errors.UnsupportedGrouping, start, end);
+        }
+
+        public static XmlElement AfterGrouping(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 28, Errors.AfterGrouping, start, end);
         }
 
         public static XmlElement UnsupportedQueryExpression(this QueryParser parser, int start, int end)

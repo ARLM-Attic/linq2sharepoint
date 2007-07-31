@@ -127,6 +127,8 @@ namespace BdsSoft.SharePoint.Linq.Providers
                 q.AppendChild(doc.ImportNode(query.Where, true));
             if (query.Order != null)
                 q.AppendChild(doc.ImportNode(query.Order, true));
+            if (query.Grouping != null)
+                q.AppendChild(doc.ImportNode(query.Grouping, true));
 
             //
             // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).

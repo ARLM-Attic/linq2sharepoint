@@ -61,6 +61,24 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Can&apos;t add another expression to the query after the grouping operation..
+        /// </summary>
+        internal static string AfterGrouping {
+            get {
+                return ResourceManager.GetString("AfterGrouping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Can&apos;t add another expression to the query after the projection operation..
+        /// </summary>
+        internal static string AfterProjection {
+            get {
+                return ResourceManager.GetString("AfterProjection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This method is not intended to be called directly; use it in LINQ query predicates only..
         /// </summary>
         internal static string CamlMethodsInvalidUse {
@@ -313,6 +331,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Multiple grouping clauses detected in query expression..
+        /// </summary>
+        internal static string MultipleGroupings {
+            get {
+                return ResourceManager.GetString("MultipleGroupings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Non-boolean constant values are not supported in query predicates..
         /// </summary>
         internal static string NonBoolConstantValueInPredicate {
@@ -363,15 +390,6 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string NullValuedLookupField {
             get {
                 return ResourceManager.GetString("NullValuedLookupField", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Can&apos;t add another predicate expression to the query..
-        /// </summary>
-        internal static string PredicateAfterProjection {
-            get {
-                return ResourceManager.GetString("PredicateAfterProjection", resourceCulture);
             }
         }
         
@@ -444,6 +462,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string UnsupportedBinary {
             get {
                 return ResourceManager.GetString("UnsupportedBinary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported grouping expression detected. Grouping expressions should only contain individual entity property expressions..
+        /// </summary>
+        internal static string UnsupportedGrouping {
+            get {
+                return ResourceManager.GetString("UnsupportedGrouping", resourceCulture);
             }
         }
         
