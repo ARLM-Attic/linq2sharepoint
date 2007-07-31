@@ -20,6 +20,10 @@ using System;
 using System.ComponentModel;
 using System.Text;
 using System.Xml;
+using System.Drawing.Design;
+using System.Windows.Forms.Design;
+using System.Collections.Generic;
+using System.Windows.Forms;
 
 #endregion
 
@@ -150,4 +154,41 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
 
         #endregion
     }
+
+    /// <summary>
+    /// Custom editor for Choice collection editing.
+    /// </summary>
+    [Serializable]
+    public class ChoiceEditor : UITypeEditor
+    {
+        #region Overrides
+
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
+        {
+            if (context != null && context.Instance != null)
+                return UITypeEditorEditStyle.Modal;
+            else
+                return base.GetEditStyle(context);
+        }
+
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
+        {
+            if (provider != null)
+            {
+                IWindowsFormsEditorService editorService = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
+                List<Choice> choices = value as List<Choice>;
+                if (editorService != null && choices != null)
+                {
+                    ChoiceEditorForm form = new ChoiceEditorForm(choices);
+                    if (editorService.ShowDialog(form) == DialogResult.OK)
+                        value = form.Choices;
+                }
+            }
+
+            return value;
+        }
+
+        #endregion
+    }
+
 }

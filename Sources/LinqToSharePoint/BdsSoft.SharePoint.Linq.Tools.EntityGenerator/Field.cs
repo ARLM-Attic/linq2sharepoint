@@ -24,6 +24,7 @@ using System.Text;
 using System.Xml;
 using System.CodeDom;
 using System.ComponentModel;
+using System.Drawing.Design;
 
 #endregion
 
@@ -178,6 +179,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [Browsable(true)]
         [ReadOnly(true)]
         [Category("Choices")]
+        [Editor(typeof(ChoiceEditor), typeof(UITypeEditor))]
         [Description("List of choices for Choice and MultiChoice fields.")]
         public List<Choice> Choices { get; set; }
 

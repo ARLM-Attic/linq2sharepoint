@@ -41,7 +41,10 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Design" />
     <Reference Include="System.Web.Services" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -51,6 +54,12 @@
   <ItemGroup>
     <Compile Include="Args.cs" />
     <Compile Include="Choice.cs" />
+    <Compile Include="ChoiceEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ChoiceEditorForm.Designer.cs">
+      <DependentUpon>ChoiceEditorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Context.cs" />
     <Compile Include="EntityGenerator.cs" />
     <Compile Include="Events.cs" />
@@ -70,6 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />
+    <EmbeddedResource Include="ChoiceEditorForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ChoiceEditorForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SPML.xsd">
       <SubType>
       </SubType>
