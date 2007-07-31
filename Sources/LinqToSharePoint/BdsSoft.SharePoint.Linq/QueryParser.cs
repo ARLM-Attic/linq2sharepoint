@@ -199,14 +199,20 @@ namespace BdsSoft.SharePoint.Linq
                     case "FirstOrDefault":
                         {
                             //
-                            // Original call = Queryable::First(source)
-                            //                 Queryable::FirstOrDefault(source)
+                            // Original call = Queryable::First(source[, predicate])
+                            //                 Queryable::FirstOrDefault(source[, predicate])
+                            //
+                            if (mce.Method.GetParameters().Length == 2)
+                            {
+                                Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
+                                if (expressionFunc.GetGenericArguments().Length == 2)
+                                    ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Arguments[0].ToString().Length + 1, ppE);
+                            }
+
+                            //
                             // Set row restriction (first = 1 row only).
                             //
-                            if (mce.Method.GetParameters().Length == 1)
-                                SetResultRestriction(1);
-                            else
-                                error = true;
+                            SetResultRestriction(1);
                             break;
                         }
                     //

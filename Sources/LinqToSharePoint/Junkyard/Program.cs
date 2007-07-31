@@ -24,9 +24,11 @@ namespace Junkyard
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
             //var res1 = from p in ctx.Products group p by p.Category;
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
-            var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
+            //var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
             //foreach (var p in res)
             //    ;
+
+            var product = ctx.Products.Where(p => p.UnitsInStock > 0).First(p => p.Discontinued.Value);
             string s = "";
             //SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
 
