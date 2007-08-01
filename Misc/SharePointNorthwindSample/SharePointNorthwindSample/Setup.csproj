@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.20404</ProductVersion>
+    <ProductVersion>9.0.20706</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{183AD993-2C06-4084-9571-FB7082CCE132}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -68,12 +68,17 @@
       <Generator>MSLinqToSQLGenerator</Generator>
       <LastGenOutput>Northwind.designer.cs</LastGenOutput>
     </None>
-    <None Include="Northwind.dbml.diagram">
-      <DependentUpon>Northwind.dbml</DependentUpon>
-    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Northwind.dbml.layout">
+      <DependentUpon>Northwind.dbml</DependentUpon>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

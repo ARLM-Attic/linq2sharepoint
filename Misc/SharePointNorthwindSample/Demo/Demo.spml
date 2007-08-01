@@ -1,5 +1,0 @@
-﻿<SharePointDataContext Name="Demo" Url="http://wss3demo">
-	<Lists>
-    <List Name="Products" />
-	</Lists>
-</SharePointDataContext>

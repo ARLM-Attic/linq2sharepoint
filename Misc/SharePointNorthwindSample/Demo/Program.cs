@@ -10,8 +10,8 @@ namespace Demo
     {
         static void Main(string[] args)
         {
-            var f = MyCompiledQuery.Compile((DemoSharePointDataContext ctx) => from p in ctx.Products select p );
-            var res = f(new DemoSharePointDataContext(new Uri("http://wss3demo")));
+            //var f = MyCompiledQuery.Compile((DemoSharePointDataContext ctx) => from p in ctx.Products select p );
+            //var res = f(new DemoSharePointDataContext(new Uri("http://wss3demo")));
 
             /*
             NorthwindDataContext nw = new NorthwindDataContext();

@@ -36,7 +36,6 @@ namespace BdsSoft.SharePoint.Linq
     /// <typeparam name="T">Entity type for the underlying SharePoint list.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
     public class SharePointList<T> : IOrderedQueryable<T>
-        //where T : SharePointListEntity
         where T : class
     {
         #region Private members
@@ -106,6 +105,17 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
+        /// Gets the query provider for LINQ support.
+        /// </summary>
+        public IQueryProvider Provider
+        {
+            get
+            {
+                return SharePointListQueryProvider.GetInstance(_context);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets whether the actual SharePoint list version should be matched against the list version as indicated by the metadata on the list entity type.
         /// If null, this setting is ignored and the entity type's ListAttribute setting is taken.
         /// </summary>
@@ -120,19 +130,19 @@ namespace BdsSoft.SharePoint.Linq
 
         #region IQuerable<T> implementation
 
-        /// <summary>
-        /// Creates a query for the list source.
-        /// </summary>
-        /// <typeparam name="TElement">Type of the query result objects.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Query object representing the list query.</returns>
-        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        {
-            if (expression == null)
-                throw new ArgumentNullException("expression");
+        ///// <summary>
+        ///// Creates a query for the list source.
+        ///// </summary>
+        ///// <typeparam name="TElement">Type of the query result objects.</typeparam>
+        ///// <param name="expression">Expression representing the query.</param>
+        ///// <returns>Query object representing the list query.</returns>
+        //public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
+        //{
+        //    if (expression == null)
+        //        throw new ArgumentNullException("expression");
 
-            return new SharePointListQuery<TElement>(_context, expression);
-        }
+        //    return new SharePointListQuery<TElement>(_context, expression);
+        //}
 
         /// <summary>
         /// Gets all entity objects from the SharePoint list.
@@ -152,37 +162,37 @@ namespace BdsSoft.SharePoint.Linq
             return _context.ExecuteQuery<T>(this.Expression);
         }
 
-        /// <summary>
-        /// Executes the query and returns a single result of the specified type.
-        /// </summary>
-        /// <typeparam name="TResult">Type of the query result object.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Singleton query result object.</returns>
-        public TResult Execute<TResult>(Expression expression)
-        {
-            if (expression == null)
-                throw new ArgumentNullException("expression");
+        ///// <summary>
+        ///// Executes the query and returns a single result of the specified type.
+        ///// </summary>
+        ///// <typeparam name="TResult">Type of the query result object.</typeparam>
+        ///// <param name="expression">Expression representing the query.</param>
+        ///// <returns>Singleton query result object.</returns>
+        //public TResult Execute<TResult>(Expression expression)
+        //{
+        //    if (expression == null)
+        //        throw new ArgumentNullException("expression");
 
-            IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
-            if (res.MoveNext())
-                return res.Current;
-            else
-                throw new InvalidOperationException("Query did not return any results.");
-        }
+        //    IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
+        //    if (res.MoveNext())
+        //        return res.Current;
+        //    else
+        //        throw new InvalidOperationException("Query did not return any results.");
+        //}
 
-        #region Not implemented
+        //#region Not implemented
 
-        public IQueryable CreateQuery(Expression expression)
-        {
-            throw new NotImplementedException();
-        }
+        //public IQueryable CreateQuery(Expression expression)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public object Execute(Expression expression)
-        {
-            throw new NotImplementedException();
-        }
+        //public object Execute(Expression expression)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        #endregion
+        //#endregion
 
         #endregion
 

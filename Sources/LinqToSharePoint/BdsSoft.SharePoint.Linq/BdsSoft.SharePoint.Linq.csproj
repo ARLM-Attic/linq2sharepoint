@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.20404</ProductVersion>
+    <ProductVersion>9.0.20706</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -102,6 +102,7 @@
     <Compile Include="Debugger visualizer\SharePointListQueryVisualizerForm.Designer.cs">
       <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="SharePointListQueryProvider.cs" />
     <Compile Include="Url.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -130,7 +131,7 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>"$(ProgramFiles)\Microsoft Visual Studio 8\SDK\v2.0\Bin\gacutil.exe" /if "$(TargetPath)"</PostBuildEvent>
+    <PostBuildEvent>"$(ProgramFiles)\Microsoft SDKs\Windows\v6.0A\bin\gacutil.exe" /if "$(TargetPath)"</PostBuildEvent>
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>

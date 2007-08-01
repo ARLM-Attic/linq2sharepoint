@@ -2160,8 +2160,9 @@ namespace BdsSoft.SharePoint.Linq
             else if ((lie = e as ListInitExpression) != null)
             {
                 bool res = EnsureLambdaFree(lie.NewExpression, parameter, ppS, ppE);
-                foreach (Expression ex in lie.Expressions)
-                    res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                foreach (ElementInit init in lie.Initializers)
+                    foreach (Expression ex in init.Arguments)
+                        res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
                 return res;
             }
             //
@@ -2192,8 +2193,9 @@ namespace BdsSoft.SharePoint.Linq
                     if (ma != null)
                         res = res && EnsureLambdaFree(ma.Expression, parameter, ppS, ppE);
                     else if (mlb != null)
-                        foreach (Expression ex in mlb.Expressions)
-                            res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
+                        foreach (ElementInit init in mlb.Initializers)
+                            foreach (Expression ex in init.Arguments)
+                                res = res && EnsureLambdaFree(ex, parameter, ppS, ppE);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //
@@ -2396,8 +2398,9 @@ namespace BdsSoft.SharePoint.Linq
             else if ((lie = e as ListInitExpression) != null)
             {
                 FindEntityProperties(lie.NewExpression, parameter, output);
-                foreach (Expression ex in lie.Expressions)
-                    FindEntityProperties(ex, parameter, output);
+                foreach (ElementInit init in lie.Initializers)
+                    foreach (Expression ex in init.Arguments)
+                        FindEntityProperties(ex, parameter, output);
             }
             //
             // Member initialization expression requires recursive processing of MemberBinding objects.
@@ -2427,8 +2430,9 @@ namespace BdsSoft.SharePoint.Linq
                     if ((ma = b as MemberAssignment) != null)
                         FindEntityProperties(ma.Expression, parameter, output);
                     else if ((mlb = b as MemberListBinding) != null)
-                        foreach (Expression ex in mlb.Expressions)
-                            FindEntityProperties(ex, parameter, output);
+                        foreach (ElementInit init in mlb.Initializers)
+                            foreach (Expression ex in init.Arguments)
+                                FindEntityProperties(ex, parameter, output);
                     //
                     // Recursion if a MemberBinding contains other bindings.
                     //

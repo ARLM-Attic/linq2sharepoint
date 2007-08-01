@@ -94,20 +94,31 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        /// <summary>
+        /// Gets the query provider for LINQ support.
+        /// </summary>
+        public IQueryProvider Provider
+        {
+            get
+            {
+                return SharePointListQueryProvider.GetInstance(_context);
+            }
+        }
+
         #endregion
 
         #region Methods
 
-        /// <summary>
-        /// Creates a query on top of the existing query. Allows incremental query definition as done in LINQ.
-        /// </summary>
-        /// <typeparam name="TElement">Type of the query result objects.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Query object representing the combined list query.</returns>
-        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        {
-            return new SharePointListQuery<TElement>(_context, expression);
-        }
+        ///// <summary>
+        ///// Creates a query on top of the existing query. Allows incremental query definition as done in LINQ.
+        ///// </summary>
+        ///// <typeparam name="TElement">Type of the query result objects.</typeparam>
+        ///// <param name="expression">Expression representing the query.</param>
+        ///// <returns>Query object representing the combined list query.</returns>
+        //public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
+        //{
+        //    return new SharePointListQuery<TElement>(_context, expression);
+        //}
 
         /// <summary>
         /// Triggers the query and fetches results.
@@ -127,68 +138,68 @@ namespace BdsSoft.SharePoint.Linq
             return _context.ExecuteQuery<T>(_expression);
         }
 
-        /// <summary>
-        /// Executes the query and returns a single result of the specified type.
-        /// </summary>
-        /// <typeparam name="TResult">Type of the query result object.</typeparam>
-        /// <param name="expression">Expression representing the query.</param>
-        /// <returns>Singleton query result object.</returns>
-        public TResult Execute<TResult>(Expression expression)
-        {
-            //
-            // We expect a method call expression.
-            //
-            MethodCallExpression mc = expression as MethodCallExpression;
-            if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
-            {
-                //
-                // First and FirstOrDefault query operators.
-                //
-                if (mc.Method.Name == "First" || mc.Method.Name == "FirstOrDefault")
-                {
-                    //
-                    // Execute the query. The parser will take care of the retrieval of only one item.
-                    //
-                    IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
+        ///// <summary>
+        ///// Executes the query and returns a single result of the specified type.
+        ///// </summary>
+        ///// <typeparam name="TResult">Type of the query result object.</typeparam>
+        ///// <param name="expression">Expression representing the query.</param>
+        ///// <returns>Singleton query result object.</returns>
+        //public TResult Execute<TResult>(Expression expression)
+        //{
+        //    //
+        //    // We expect a method call expression.
+        //    //
+        //    MethodCallExpression mc = expression as MethodCallExpression;
+        //    if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
+        //    {
+        //        //
+        //        // First and FirstOrDefault query operators.
+        //        //
+        //        if (mc.Method.Name == "First" || mc.Method.Name == "FirstOrDefault")
+        //        {
+        //            //
+        //            // Execute the query. The parser will take care of the retrieval of only one item.
+        //            //
+        //            IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
 
-                    //
-                    // Return the first element of the sequence, if it exists.
-                    //
-                    if (res.MoveNext())
-                        return res.Current;
-                    //
-                    // Empty sequence is valid for FirstOrDefault call. Return the default value of TResult.
-                    //
-                    else if (mc.Method.Name.EndsWith("OrDefault", StringComparison.Ordinal))
-                        return default(TResult);
-                    //
-                    // Empty sequence is invalid for First call.
-                    //
-                    else
-                        throw RuntimeErrors.EmptySequence();
-                }
-                else
-                    throw RuntimeErrors.UnsupportedQueryOperator(mc.Method.Name);
-            }
+        //            //
+        //            // Return the first element of the sequence, if it exists.
+        //            //
+        //            if (res.MoveNext())
+        //                return res.Current;
+        //            //
+        //            // Empty sequence is valid for FirstOrDefault call. Return the default value of TResult.
+        //            //
+        //            else if (mc.Method.Name.EndsWith("OrDefault", StringComparison.Ordinal))
+        //                return default(TResult);
+        //            //
+        //            // Empty sequence is invalid for First call.
+        //            //
+        //            else
+        //                throw RuntimeErrors.EmptySequence();
+        //        }
+        //        else
+        //            throw RuntimeErrors.UnsupportedQueryOperator(mc.Method.Name);
+        //    }
 
-            throw RuntimeErrors.FatalError();
-        }
-
-        #endregion
-
-        #region Not implemented
-
-        public IQueryable CreateQuery(Expression expression)
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
-
-        public object Execute(Expression expression)
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
+        //    throw RuntimeErrors.FatalError();
+        //}
 
         #endregion
+
+        //#region Not implemented
+
+        //public IQueryable CreateQuery(Expression expression)
+        //{
+        //    throw new NotImplementedException("The method or operation is not implemented.");
+        //}
+
+        //public object Execute(Expression expression)
+        //{
+        //    throw new NotImplementedException("The method or operation is not implemented.");
+        //}
+
+        //#endregion
 
         #region Debugger visualizer support
 

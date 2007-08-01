@@ -11,14 +11,16 @@
 #region Namespace imports
 
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.SharePoint;
+using BdsSoft.SharePoint.Linq;
+using Test = Tests.SharePointListEntityTest;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Net;
-using BdsSoft.SharePoint.Linq;
-using Microsoft.SharePoint;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Test = Tests.SharePointListEntityTest;
 
 #endregion
 
@@ -596,17 +598,17 @@ namespace Tests
                     var res = (from p in src
                                where p.Age == 24
                                select new
-                               {
-                                   p.FirstName,
-                                   Ages = new double[] { p.Age },
-                                   Ages2 = new List<double>() { p.Age },
-                                   DoubleAge = p.Age * 2,
-                                   Member = p.IsMember ? p.IsMember : p.IsMember,
-                                   NoMember = !p.IsMember,
-                                   NameLower = (p.FirstName + " " + p.LastName).ToLower(),
-                                   LastName = new String(p.LastName.ToCharArray()),
-                                   CharactersInBio = Helper(p.ShortBiography)
-                               }).AsEnumerable().First();
+                                      {
+                                          p.FirstName,
+                                          Ages = new double[] { p.Age },
+                                          Ages2 = new List<double>() { p.Age },
+                                          DoubleAge = p.Age * 2,
+                                          Member = p.IsMember ? p.IsMember : p.IsMember,
+                                          NoMember = !p.IsMember,
+                                          NameLower = (p.FirstName + " " + p.LastName).ToLower(),
+                                          LastName = new String(p.LastName.ToCharArray()),
+                                          CharactersInBio = Helper(p.ShortBiography)
+                                      }).AsEnumerable().First();
                     Assert.IsTrue(res.FirstName == "Bart" && res.Ages[0] == 24 && res.Ages2[0] == 24 && res.DoubleAge == 48 && res.Member == true && res.NoMember == false && res.NameLower == "bart de smet" && res.LastName == "De Smet" && res.CharactersInBio == 15);
                 }
             }
