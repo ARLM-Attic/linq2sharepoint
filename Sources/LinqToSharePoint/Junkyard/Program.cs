@@ -26,7 +26,7 @@ namespace Junkyard
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
             //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
-            //var res3 = (from p in ctx.Products group p by p.Category into g select g).Take(1);
+            var res3 = (from p in ctx.Products group p by p.Category into g select g).Take(1);
             //var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
             //foreach (var p in res)
             //    ;

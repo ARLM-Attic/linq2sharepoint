@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Threading;
 
 #endregion
 
@@ -340,8 +341,22 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (txtLinq.Cursor == Cursors.Hand && currentError != null)
             {
-                // TODO: Show additional info about the error.
-                MessageBox.Show(currentError.ErrorCode + ": " + currentError.Message);
+                new Thread(delegate()
+                    {
+                        try
+                        {
+                            //
+                            // Obtain reference to the Help2 object and display help associated with the SP**** error code.
+                            //
+                            EnvDTE.DTE dte = (EnvDTE.DTE)System.Runtime.InteropServices.Marshal.GetActiveObject("VisualStudio.DTE.9.0");
+                            Microsoft.VisualStudio.VSHelp80.Help2 help2 = (Microsoft.VisualStudio.VSHelp80.Help2)dte.GetObject("Help2");
+                            help2.DisplayTopicFromKeyword(currentError.ErrorCode);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Couldn't load help information.\n\n" + ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }).Start();
             }
         }
 
