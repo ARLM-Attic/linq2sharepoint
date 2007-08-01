@@ -11,7 +11,7 @@
 /*
  * Version history:
  *
- * 0.2.3 - Orcas Beta 2 changes.
+ * 0.2.3 - Orcas Beta 2 changes
  */
 
 #region Namespace imports

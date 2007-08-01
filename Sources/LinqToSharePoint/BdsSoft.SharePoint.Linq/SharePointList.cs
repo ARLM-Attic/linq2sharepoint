@@ -13,6 +13,7 @@
  *
  * 0.2.1 - Introduction of SharePointList<T>
  * 0.2.2 - New entity model
+ * 0.2.3 - Orcas Beta 2 changes
  */
 
 #region Namespace imports
