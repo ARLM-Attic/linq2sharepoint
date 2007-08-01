@@ -1769,7 +1769,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Make sure the expression is a MemberExpression and points to a property on the entity type.
             //
-            if (me != null && me.Member.DeclaringType == _results.EntityType && me.Member is PropertyInfo
+            PropertyInfo property;
+            if (me != null && me.Member.DeclaringType == _results.EntityType && (property = (me.Member as PropertyInfo)) != null
                 //
                 // If nullable, it shouldn't be a call to HasValue.
                 //
@@ -1777,9 +1778,18 @@ namespace BdsSoft.SharePoint.Linq
                 )
             {
                 //
+                // Check presence of field attribute.
+                //
+                FieldAttribute fa = Helpers.GetFieldAttribute(property);
+                if (fa == null)
+                    _results.Order.AppendChild(this.MissingFieldMappingAttribute(property.Name)); /* PARSE ERROR */
+                else if (fa.FieldType == FieldType.Counter || fa.FieldType == FieldType.LookupMulti || fa.FieldType == FieldType.MultiChoice)
+                    _results.Order.AppendChild(this.UnsupportedOrdering(ppS, ppE)); /* PARSE ERROR */
+
+                //
                 // Obtain a FieldRef element for the property on the entity type being referred to.
                 //
-                XmlElement fieldRef = GetFieldRef((PropertyInfo)me.Member);
+                XmlElement fieldRef = GetFieldRef(property);
 
                 //
                 // For descending orderings, an Ascending="FALSE" attribute should be added to the FieldRef elements.
@@ -1927,7 +1937,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Make sure the expression is a MemberExpression and points to a property on the entity type.
             //
-            if (me != null && me.Member.DeclaringType == _results.EntityType && me.Member is PropertyInfo
+            PropertyInfo property;
+            if (me != null && me.Member.DeclaringType == _results.EntityType && (property = (me.Member as PropertyInfo)) != null
                 //
                 // If nullable, it shouldn't be a call to HasValue.
                 //
@@ -1935,9 +1946,18 @@ namespace BdsSoft.SharePoint.Linq
                 )
             {
                 //
+                // Check presence of field attribute.
+                //
+                FieldAttribute fa = Helpers.GetFieldAttribute(property);
+                if (fa == null)
+                    _results.Grouping.AppendChild(this.MissingFieldMappingAttribute(property.Name)); /* PARSE ERROR */
+                else if (fa.FieldType == FieldType.Counter || fa.FieldType == FieldType.LookupMulti || fa.FieldType == FieldType.MultiChoice)
+                    _results.Grouping.AppendChild(this.UnsupportedGrouping(ppS, ppE)); /* PARSE ERROR */
+
+                //
                 // Obtain a FieldRef element for the property on the entity type being referred to.
                 //
-                XmlElement fieldRef = GetFieldRef((PropertyInfo)me.Member);
+                XmlElement fieldRef = GetFieldRef(property);
 
                 //
                 // Append the FieldRef element to the GroupBy ordering clause.
@@ -1952,7 +1972,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Set grouping key type.
                 //
-                _results.GroupKeyType = ((PropertyInfo)me.Member).PropertyType;
+                _results.GroupKeyType = property.PropertyType;
             }
             else
                 _results.Grouping.AppendChild(this.UnsupportedGrouping(ppS, ppE)); /* PARSE ERROR */

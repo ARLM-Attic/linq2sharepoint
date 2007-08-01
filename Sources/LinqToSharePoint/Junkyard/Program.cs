@@ -31,6 +31,8 @@ namespace Junkyard
             //foreach (var p in res)
             //    ;
 
+            var res = from p in ctx.Products orderby p.UnitPrice.Value descending select p;
+
             var res1 = from s in ctx.Suppliers group s by s.Country into g select g;
             foreach (var p in res1)
             {
