@@ -32,7 +32,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// <summary>
     /// Represents a field value for a Choice or MultiChoice list field.
     /// </summary>
-    public class Choice
+    public class Choice : ICloneable
     {
         #region Properties
 
@@ -152,6 +152,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             return choice;
         }
 
+        /// <summary>
+        /// Clones the Choice object.
+        /// </summary>
+        /// <returns>Clone of the Choice object.</returns>
+        public object Clone()
+        {
+            Choice clone = new Choice();
+            clone.Alias = this.Alias;
+            clone.Description = this.Description;
+            clone.Name = this.Name;
+            return clone;
+        }
+
         #endregion
     }
 
@@ -179,9 +192,23 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 List<Choice> choices = value as List<Choice>;
                 if (editorService != null && choices != null)
                 {
-                    ChoiceEditorForm form = new ChoiceEditorForm(choices);
+                    //
+                    // Clone the choices.
+                    //
+                    List<Choice> choices2 = new List<Choice>();
+                    foreach (Choice c in choices)
+                        choices2.Add((Choice)c.Clone());
+
+                    //
+                    // Show dialog and store results if dialog responded OK.
+                    //
+                    ChoiceEditorForm form = new ChoiceEditorForm(choices2);
                     if (editorService.ShowDialog(form) == DialogResult.OK)
+                    {
+                        choices.Clear();
+                        choices.AddRange(choices2);
                         value = form.Choices;
+                    }
                 }
             }
 
