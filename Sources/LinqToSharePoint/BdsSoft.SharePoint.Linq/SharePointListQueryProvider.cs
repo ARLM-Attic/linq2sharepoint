@@ -20,13 +20,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Collections.Specialized;
 
 #endregion
 
 namespace BdsSoft.SharePoint.Linq
 {
     /// <summary>
-    /// 
+    /// Query provider for SharePoint list query construction.
     /// </summary>
     class SharePointListQueryProvider : IQueryProvider
     {
@@ -39,15 +40,45 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
+        #region Singleton implementation
+
+        /// <summary>
+        /// Dictionary mapping contexts on query providers.
+        /// </summary>
+        static HybridDictionary providers;
+
+        /// <summary>
+        /// Type initializer.
+        /// </summary>
+        static SharePointListQueryProvider()
+        {
+            providers = new HybridDictionary();
+        }
+
+        /// <summary>
+        /// Internal constructor for the query provider.
+        /// </summary>
+        /// <param name="context">Data context to create a query provider for.</param>
         internal SharePointListQueryProvider(SharePointDataContext context)
         {
             _context = context;
+            providers.Add(context, this);
         }
 
+        /// <summary>
+        /// Gets a query provider for the specified data context.
+        /// </summary>
+        /// <param name="context">Data context to get a query provider for.</param>
+        /// <returns>Query provider for the specified data context.</returns>
         public static SharePointListQueryProvider GetInstance(SharePointDataContext context)
         {
-            return new SharePointListQueryProvider(context);
+            if (providers.Contains(context))
+                return (SharePointListQueryProvider)providers[context];
+            else
+                return new SharePointListQueryProvider(context);
         }
+
+        #endregion
 
         #region IQueryProvider implementation
 

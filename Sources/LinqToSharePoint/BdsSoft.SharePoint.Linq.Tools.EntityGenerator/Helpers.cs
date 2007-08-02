@@ -146,6 +146,25 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             return listName;
         }
 
+        /// <summary>
+        /// Parses a boolean value.
+        /// </summary>
+        /// <param name="value">A string containing the value to convert.</param>
+        /// <returns>Boolean value for the specified string value.</returns>
+        /// <remarks>Supports "true", "false", "1", "0"</remarks>
+        public static bool ParseBool(string value)
+        {
+            bool b;
+            if (bool.TryParse(value, out b))
+                return b;
+            else if (value == "true" || value == "1")
+                return true;
+            else if (value == "false" || value == "0")
+                return false;
+            else
+                throw new FormatException("String was not recognized as a valid Boolean.");
+        }
+
         #endregion
     }
 }

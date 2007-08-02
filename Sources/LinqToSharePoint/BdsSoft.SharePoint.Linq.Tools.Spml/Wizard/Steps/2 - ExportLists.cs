@@ -129,6 +129,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void lists_SelectedIndexChanged(object sender, EventArgs e)
         {
+            DoListSelect();
+        }
+
+        private void DoListSelect()
+        {
             //
             // Make sure an item has been selected; single-select mode should be on.
             //
@@ -221,6 +226,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void fields_SelectedIndexChanged(object sender, EventArgs e)
         {
+            DoFieldSelect();
+        }
+
+        private void DoFieldSelect()
+        {
             //
             // Make sure an item has been selected; single-select mode should be on.
             //
@@ -284,6 +294,28 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             // Set context name.
             //
             ctx.ResultContext.Name = txtContext.Text;
+        }
+
+        private void lists_Enter(object sender, EventArgs e)
+        {
+            if (lists.SelectedItems.Count == 1)
+            {
+                ListListViewItem list = lists.SelectedItems[0] as ListListViewItem;
+                Debug.Assert(list != null);
+
+                properties.SelectedObject = list.List;
+            }
+        }
+
+        private void fields_Enter(object sender, EventArgs e)
+        {
+            if (fields.SelectedItems.Count == 1)
+            {
+                FieldListViewItem field = fields.SelectedItems[0] as FieldListViewItem;
+                Debug.Assert(field != null);
+
+                properties.SelectedObject = field.Field;
+            }
         }
 
         #endregion

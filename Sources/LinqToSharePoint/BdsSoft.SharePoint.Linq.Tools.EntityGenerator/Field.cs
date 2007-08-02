@@ -354,26 +354,26 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             XmlAttribute hidden = spml.Attributes["Hidden"];
             if (hidden != null)
-                field.IsHidden = hidden.Value == "true";
+                field.IsHidden = Helpers.ParseBool(hidden.Value);
             XmlAttribute readOnly = spml.Attributes["ReadOnly"];
             if (readOnly != null)
-                field.IsReadOnly = readOnly.Value == "true";
+                field.IsReadOnly = Helpers.ParseBool(readOnly.Value);
             XmlAttribute primaryKey = spml.Attributes["PrimaryKey"];
             if (primaryKey != null)
-                field.IsPrimaryKey = primaryKey.Value == "true";
+                field.IsPrimaryKey = Helpers.ParseBool(primaryKey.Value);
             XmlAttribute calculated = spml.Attributes["Calculated"];
             if (calculated != null)
-                field.IsCalculated = calculated.Value == "true";
+                field.IsCalculated = Helpers.ParseBool(calculated.Value);
             XmlAttribute required = spml.Attributes["Required"];
             if (required != null)
-                field.IsRequired = required.Value == "true";
+                field.IsRequired = Helpers.ParseBool(required.Value);
 
             //
             // Choices.
             //
             XmlAttribute fillInChoice = spml.Attributes["FillInChoice"];
             if (fillInChoice != null)
-                field.FillInChoiceEnabled = fillInChoice.Value.ToLower() == "true";
+                field.FillInChoiceEnabled = Helpers.ParseBool(fillInChoice.Value);
 
             XmlElement choices = spml["Choices"];
             if (choices != null)

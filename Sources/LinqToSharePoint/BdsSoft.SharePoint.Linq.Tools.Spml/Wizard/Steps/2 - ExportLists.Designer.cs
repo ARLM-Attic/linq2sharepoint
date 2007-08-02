@@ -31,16 +31,16 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.label3 = new System.Windows.Forms.Label();
             this.fields = new System.Windows.Forms.ListView();
             this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
+            this.label4 = new System.Windows.Forms.Label();
             this.properties = new System.Windows.Forms.PropertyGrid();
             this.panel = new System.Windows.Forms.SplitContainer();
             this.lists = new System.Windows.Forms.ListView();
             this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
-            this.label3 = new System.Windows.Forms.Label();
             this.txtContext = new System.Windows.Forms.TextBox();
             this.chkContext = new System.Windows.Forms.CheckBox();
-            this.label4 = new System.Windows.Forms.Label();
             this.bgList = new System.ComponentModel.BackgroundWorker();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
@@ -87,6 +87,15 @@
             this.splitContainer2.SplitterDistance = 144;
             this.splitContainer2.TabIndex = 0;
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(0, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(37, 13);
+            this.label3.TabIndex = 0;
+            this.label3.Text = "Fields:";
+            // 
             // fields
             // 
             this.fields.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -107,6 +116,16 @@
             this.fields.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.fields_ItemChecked);
             this.fields.SelectedIndexChanged += new System.EventHandler(this.fields_SelectedIndexChanged);
             this.fields.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.fields_ItemCheck);
+            this.fields.Enter += new System.EventHandler(this.fields_Enter);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(0, 0);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(57, 13);
+            this.label4.TabIndex = 1;
+            this.label4.Text = "Properties:";
             // 
             // properties
             // 
@@ -157,15 +176,7 @@
             this.lists.View = System.Windows.Forms.View.Details;
             this.lists.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lists_ItemChecked);
             this.lists.SelectedIndexChanged += new System.EventHandler(this.lists_SelectedIndexChanged);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(0, 0);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(37, 13);
-            this.label3.TabIndex = 0;
-            this.label3.Text = "Fields:";
+            this.lists.Enter += new System.EventHandler(this.lists_Enter);
             // 
             // txtContext
             // 
@@ -189,15 +200,6 @@
             this.chkContext.Text = "Auto-generate data &context object with name:";
             this.chkContext.UseVisualStyleBackColor = true;
             this.chkContext.CheckedChanged += new System.EventHandler(this.chkContext_CheckedChanged);
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(0, 0);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(57, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "Properties:";
             // 
             // bgList
             // 
