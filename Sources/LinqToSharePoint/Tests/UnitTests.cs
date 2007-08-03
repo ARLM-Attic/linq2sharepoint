@@ -690,6 +690,55 @@ namespace Tests
         }
 
         [TestMethod]
+        public void Grouping()
+        {
+            //
+            // Create list People.
+            //
+            using (var lst = Test.Create<People>(site.RootWeb))
+            {
+                //
+                // Add items.
+                //
+                People p1 = new People() { FirstName = "Bart", LastName = "De Smet", Age = 24, IsMember = true, ShortBiography = "Project founder" };
+                People p2 = new People() { FirstName = "Bill", LastName = "Gates", Age = 52, IsMember = false, ShortBiography = "Microsoft Corporation founder" };
+                People p3 = new People() { FirstName = "Bart", LastName = "Simpson", Age = 15, IsMember = false, ShortBiography = "Funny guy" };
+                People p4 = new People() { FirstName = "Ray", LastName = "Ozzie", Age = 52, IsMember = false, ShortBiography = "Chief Software Architect at Microsoft Corporation" };
+                People p5 = new People() { FirstName = "Anders", LastName = "Hejlsberg", Age = 47, IsMember = true, ShortBiography = "C# language architect" };
+                Test.Add(lst, p1);
+                Test.Add(lst, p2);
+                Test.Add(lst, p3);
+                Test.Add(lst, p4);
+                Test.Add(lst, p5);
+
+                foreach (var ctx in GetContexts<People>())
+                {
+                    var src = ctx.List;
+
+                    //
+                    // Group without continuation.
+                    //
+                    var res1 = (from p in src group p by p.FirstName).AsEnumerable().OrderBy(g => g.Key).ToArray();
+                    Assert.IsTrue(res1.Count() == 4, "Grouping test failed: insufficient group count");
+                    Assert.IsTrue(res1[0].Key == "Anders" && res1[1].Key == "Bart" && res1[2].Key == "Bill" && res1[3].Key == "Ray", "Grouping test failed: invalid key values");
+
+                    //
+                    // Group with continuation.
+                    //
+                    var res2 = (from p in src group p by p.FirstName into g select g).AsEnumerable().OrderBy(g => g.Key).ToArray();
+                    Assert.IsTrue(res2.Count() == 4, "Grouping test with continuation failed: insufficient group count");
+                    Assert.IsTrue(res2[0].Key == "Anders" && res2[1].Key == "Bart" && res2[2].Key == "Bill" && res2[3].Key == "Ray", "Grouping test with continuation failed: invalid key values");
+
+                    //
+                    // Test result count and result values.
+                    //
+                    Assert.IsTrue(res2[0].Count() == 1 && (res2[0].First().FirstName == "Anders") && (res2[0].First().LastName == "Hejlsberg"), "Grouping test failed: invalid result (1)");
+                    Assert.IsTrue(res2[1].Count() == 2 && res2[1].All(p => p.FirstName == "Bart") && res2[1].Any(p => p.LastName == "Simpson") && res2[1].Any(p => p.LastName == "De Smet"), "Grouping test failed: invalid result (2)");
+                }
+            }
+        }
+
+        [TestMethod]
         public void AndOr()
         {
             //
