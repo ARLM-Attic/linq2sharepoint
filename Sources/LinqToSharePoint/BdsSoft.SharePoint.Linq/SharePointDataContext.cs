@@ -269,7 +269,7 @@ namespace BdsSoft.SharePoint.Linq
 
             CamlQuery query = CamlQuery.Parse(expression, false);
 
-            return query.Execute<T>();
+            return query.Execute<T>().GetEnumerator();
         }
 
         #endregion

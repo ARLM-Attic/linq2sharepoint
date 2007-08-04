@@ -113,7 +113,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <returns>Query results.</returns>
         /// <typeparam name="T">Type of the result objects.</typeparam>
-        public IEnumerator<T> Execute<T>()
+        public IEnumerable<T> Execute<T>()
         {
             //
             // Perform version check; the CheckListVersion method will figure out whether or not such a check is required.
@@ -172,7 +172,7 @@ namespace BdsSoft.SharePoint.Linq
                 // Predicate evaluates to false. No results will be fetched.
                 //
                 else
-                    yield break;
+                    return new T[0];
             }
 
             //
@@ -181,89 +181,188 @@ namespace BdsSoft.SharePoint.Linq
             DoLogging(_listAttribute.List, _results.Where, _results.Order, _results.Projection, _results.Grouping);
 
             //
-            // Determine top-level call to Execute<IGrouping<K,T>> for queries with grouping clause.
+            // Groupings.
             //
-            if (_results.Grouping != null && typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IGrouping<,>))
+            if (_results.Grouping != null)
             {
                 //
-                // Self-invocation for underlying (entity) results. Will trigger the other if-branch to be taken.
+                // Projection will originate from a continuation (support for .Key selection).
                 //
-                IEnumerator results = (IEnumerator)typeof(CamlQuery).GetMethod("Execute").MakeGenericMethod(_results.EntityType).Invoke(this, null);
-
-                //
-                // Gather information needed to create result objects.
-                //
-                Type groupType = typeof(Grouping<,>).MakeGenericType(_results.GroupKeyType, _results.EntityType);
-                ConstructorInfo groupCtor = groupType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance)[0];
-                MethodInfo groupAdd = groupType.GetMethod("Add", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                //
-                // Prepare further fetching; get the first item.
-                //
-                object currentKey = null;
-                object currentGroup = null;
-                if (results.MoveNext())
+                if (_results.Project != null)
                 {
-                    object item;
-                    object key;
+                    return GetGroupKeys<T>();
+                }
+                //
+                // No continuation; just plain groups.
+                //
+                else
+                {
+                    Debug.Assert(typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IGrouping<,>));
+                    return (IEnumerable<T>)typeof(CamlQuery).GetMethod("GetGroups", BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_results.GroupKeyType, _results.EntityType).Invoke(this, null);
+                }
+            }
+            //
+            // No groupings: return entities or projection results.
+            //
+            else
+            {
+                return GetItems<T>();
+            }
+        }
 
+        #region Helpers for result fetching
+
+        /// <summary>
+        /// Retrieves (projected) items.
+        /// </summary>
+        /// <typeparam name="T">Type of returned items.</typeparam>
+        /// <returns>Sequence of items.</returns>
+        private IEnumerable<T> GetItems<T>()
+        {
+            //
+            // Still an entity?
+            //
+            object lst = null;
+            MethodInfo fromCache = null;
+            MethodInfo toCache = null;
+            GetEntityAccessors<T>(out lst, out fromCache, out toCache);
+
+            //
+            // Perform query via the provider.
+            //
+            DataTable results = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
+            foreach (DataRow row in results.Rows)
+                yield return GetItem<T>(row, lst, fromCache, toCache);
+        }
+
+        /// <summary>
+        /// Retrieves groups.
+        /// </summary>
+        /// <typeparam name="K">Group key type.</typeparam>
+        /// <typeparam name="T">Entity type/</typeparam>
+        /// <returns>Sequence of groups.</returns>
+        private IEnumerable<IGrouping<K, T>> GetGroups<K, T>()
+        {
+            Debug.Assert(typeof(T) == _results.EntityType);
+
+            //
+            // Get the entities.
+            //
+            IEnumerator<T> results = GetItems<T>().GetEnumerator();
+
+            //
+            // Prepare further fetching; get the first item.
+            //
+            K currentKey = default(K);
+            Grouping<K, T> currentGroup = null;
+            if (results.MoveNext())
+            {
+                T item;
+                K key;
+
+                //
+                // Get first key and create first group.
+                //
+                item = results.Current;
+                currentKey = (K)_results.Group.DynamicInvoke(item);
+                currentGroup = new Grouping<K, T>(currentKey);
+                currentGroup.Add(results.Current);
+
+                while (results.MoveNext())
+                {
                     //
-                    // Get first key and create first group.
+                    // Get item and select key using dynamic invocation of the pre-compiled key selector.
                     //
                     item = results.Current;
-                    currentKey = _results.Group.DynamicInvoke(item);
-                    currentGroup = groupCtor.Invoke(new object[] { currentKey });
-                    groupAdd.Invoke(currentGroup, new object[] { results.Current });
+                    key = (K)_results.Group.DynamicInvoke(item);
 
-                    while (results.MoveNext())
+                    //
+                    // New key found?
+                    //
+                    if (!object.Equals(currentKey, key))
                     {
-                        //
-                        // Get item and select key using dynamic invocation of the pre-compiled key selector.
-                        //
-                        item = results.Current;
-                        key = _results.Group.DynamicInvoke(item);
-
-                        //
-                        // New key found?
-                        //
-                        if (!object.Equals(currentKey, key))
-                        {
-                            yield return (T)currentGroup;
-                            currentGroup = groupCtor.Invoke(new object[] { currentKey = key });
-                        }
-                        
-                        //
-                        // Add item to the current group.
-                        //
-                        groupAdd.Invoke(currentGroup, new object[] { results.Current });
+                        yield return currentGroup;
+                        currentKey = key;
+                        currentGroup = new Grouping<K, T>(currentKey);
                     }
 
                     //
-                    // Return last group.
+                    // Add item to the current group.
                     //
-                    yield return (T)currentGroup;
+                    currentGroup.Add(results.Current);
                 }
-                else
-                    yield break;
-            }
-            else
-            {
-                //
-                // Still an entity?
-                //
-                object lst = null;
-                MethodInfo fromCache = null;
-                MethodInfo toCache = null;
-                GetEntityAccessors<T>(out lst, out fromCache, out toCache);
 
                 //
-                // Perform query via the provider.
+                // Return last group.
                 //
-                DataTable results = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
-                foreach (DataRow row in results.Rows)
-                    yield return GetItem<T>(row, lst, fromCache, toCache);
+                yield return currentGroup;
             }
         }
+
+        /// <summary>
+        /// Retrieves group keys.
+        /// </summary>
+        /// <typeparam name="K">Type of group key.</typeparam>
+        /// <returns>Sequence of group keys.</returns>
+        private IEnumerable<K> GetGroupKeys<K>()
+        {
+            //
+            // Get the column that represents the grouping key.
+            //
+            string group = Helpers.GetFieldAttribute(_results.GroupField).Field;
+
+            //
+            // Perform query via the provider.
+            //
+            DataTable res = _results.Context.DataProvider.ExecuteQuery(_listAttribute.List, _results);
+            Debug.Assert(res.Columns.Contains(group));
+
+            //
+            // Get the results enumerator.
+            //
+            IEnumerator results = res.Rows.GetEnumerator();
+
+            //
+            // Prepare further fetching; get the first item.
+            //
+            K currentKey = default(K);
+            if (results.MoveNext())
+            {
+                K key;
+                DataRow item;
+
+                //
+                // Get first key.
+                //
+                item = (DataRow)results.Current;
+                currentKey = (K)item[group];
+
+                while (results.MoveNext())
+                {
+                    //
+                    // Get item and retrieve key.
+                    //
+                    item = (DataRow)results.Current;
+                    key = (K)item[group];
+
+                    //
+                    // New key found?
+                    //
+                    if (!object.Equals(currentKey, key))
+                    {
+                        yield return currentKey;
+                        currentKey = key;
+                    }
+                }
+
+                //
+                // Return last group.
+                //
+                yield return currentKey;
+            }
+        }
+
+        #endregion
 
         #region Enumeration helpers
 

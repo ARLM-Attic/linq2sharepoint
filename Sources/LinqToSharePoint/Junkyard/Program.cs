@@ -24,12 +24,16 @@ namespace Junkyard
             //Parser warnings
 
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
+            ctx.CheckListVersion = false;
             //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
-            var res3 = (from p in ctx.Products group p by p.Category into g select g).Take(1);
+            //var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
+            var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
             //var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
-            //foreach (var p in res)
-            //    ;
+            foreach (var p in res3)
+            {
+                Console.WriteLine(p);
+            }
 
             var res = from p in ctx.Products orderby p.UnitPrice.Value descending select p;
 

@@ -1827,8 +1827,6 @@ namespace BdsSoft.SharePoint.Linq
             if (projection.Parameters[0] == projection.Body)
                 return;
 
-            GuardGrouping(ppS, ppE);
-
             //
             // If no projection has been encountered before, construct the ViewFields CAML element.
             // There should only be one projection per query.
@@ -1847,10 +1845,43 @@ namespace BdsSoft.SharePoint.Linq
             _results.Project = projection.Compile();
 
             //
-            // Create the set with entity properties used in projection and populate it.
+            // Support for selection of grouping key inside a continuation (group #1 by <grouping> into #2 select #2.Key)
+            //                                                                                                    ------
             //
-            _results.ProjectionProperties = new HashSet<PropertyInfo>();
-            FindEntityProperties(projection.Body, projection.Parameters[0], _results.ProjectionProperties);
+            if (_results.Grouping != null)
+            {
+                //
+                // Look for IGrouping<,>.Key property.
+                //
+                MemberExpression me = projection.Body as MemberExpression;
+                if (me != null && me.Member is PropertyInfo && me.Member.DeclaringType.IsGenericType && me.Member.DeclaringType.GetGenericTypeDefinition() == typeof(IGrouping<,>) && me.Member.Name == "Key")
+                {
+                    //
+                    // The only view field required is the one that the grouping key is referring to.
+                    //
+                    _results.ProjectionProperties = new HashSet<PropertyInfo>();
+                    _results.ProjectionProperties.Add(_results.GroupField);
+                }
+                else
+                {
+                    //
+                    // Acts as barrier for groupings that are not of type .Key
+                    //
+                    _results.Projection.AppendChild(this.AfterGrouping(ppS, ppE)); /* PARSE ERROR */
+                    return;
+                }
+            }
+            //
+            // Regular projections.
+            //
+            else
+            {
+                //
+                // Create the set with entity properties used in projection and populate it.
+                //
+                _results.ProjectionProperties = new HashSet<PropertyInfo>();
+                FindEntityProperties(projection.Body, projection.Parameters[0], _results.ProjectionProperties);
+            }
 
             //
             // Populate the ViewFields element with FieldRef elements pointing to the properties used in the projection.
@@ -1973,6 +2004,11 @@ namespace BdsSoft.SharePoint.Linq
                 // Set grouping key type.
                 //
                 _results.GroupKeyType = property.PropertyType;
+
+                //
+                // Keep group field.
+                //
+                _results.GroupField = property;
             }
             else
                 _results.Grouping.AppendChild(this.UnsupportedGrouping(ppS, ppE)); /* PARSE ERROR */
@@ -2558,6 +2594,11 @@ namespace BdsSoft.SharePoint.Linq
         /// Grouping clause of the query, based on the CAML query format's GroupBy element.
         /// </summary>
         public XmlElement Grouping { get; set; }
+
+        /// <summary>
+        /// Grouping field of the grouping clause of the query.
+        /// </summary>
+        public PropertyInfo GroupField { get; set; }
 
         /// <summary>
         /// Optional number of "top" rows to query for, with the semantics of the TOP construct in SQL. Gathered by parsing Take(n) calls.

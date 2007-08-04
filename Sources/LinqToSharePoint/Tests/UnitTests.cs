@@ -734,6 +734,13 @@ namespace Tests
                     //
                     Assert.IsTrue(res2[0].Count() == 1 && (res2[0].First().FirstName == "Anders") && (res2[0].First().LastName == "Hejlsberg"), "Grouping test failed: invalid result (1)");
                     Assert.IsTrue(res2[1].Count() == 2 && res2[1].All(p => p.FirstName == "Bart") && res2[1].Any(p => p.LastName == "Simpson") && res2[1].Any(p => p.LastName == "De Smet"), "Grouping test failed: invalid result (2)");
+
+                    //
+                    // Grouping and projection to grouping key.
+                    //
+                    var res3 = (from p in src group p by p.FirstName into g select g.Key).AsEnumerable().OrderBy(g => g).ToArray();
+                    Assert.IsTrue(res3.Count() == 4, "Grouping test with key projection failed: insufficient group count");
+                    Assert.IsTrue(res3[0] == "Anders" && res3[1] == "Bart" && res3[2] == "Bill" && res3[3] == "Ray", "Grouping test with key projection failed: invalid key values");
                 }
             }
         }
