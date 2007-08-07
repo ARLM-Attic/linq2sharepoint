@@ -1,0 +1,3746 @@
+﻿/*
+ * LINQ-to-SharePoint
+ * http://www.codeplex.com/LINQtoSharePoint
+ * 
+ * Copyright Bart De Smet (C) 2007
+ * info@bartdesmet.net - http://blogs.bartdesmet.net/bart
+ * 
+ * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
+ */
+
+/*
+ * Version history:
+ * 
+ * 0.1.0 - Alpha
+ * 0.1.1 - Added language support for Visual Basic
+ *         Support for Nullable HasValue and Value properties
+ * 0.1.2 - Fixes for Visual Basic language support:
+ *         * CompareString and StrComp string equality check
+ *         * Nullable issues
+ *         * Enums, ConvertChecked and auto conversion of enums to integer values
+ *         Support for Nullable Value property in OrderBy* and ThenBy* clauses
+ *         Ignore equiprojections (u => u) in Select parsing
+ * 0.1.3 - Fixes for choice fields
+ * 0.2.0 - Support for entity types deriving from SharePointEntityType
+ *         Support for Counter field type for primary key values
+ *         GetEntityById method
+ *         Support for Lookup and LookupMulti fields
+ *         Optimizations for StartsWith, Contains calls with ""
+ *         Bug fixes for null-valued string operations in predicates
+ *         Predicate optimizations
+ *         Support for Take, First and FirstOrDefault query operators
+ *         Support for Now and Today elements
+ *         Support for DateRangesOverlap
+ *         Multiple where predicates are supported
+ * 0.2.1 - This class is obsolete. SharePointDataContext and SharePointDataList<T> replace it.
+ * 
+ * Known issues:
+ * 
+ * - Query predicates that match a Lookup field use the display field for comparison, not the primary key value.
+ *   This will cause problems when the display field hasn't a unique value or doesn't match the ID field.
+ *   SOLUTION: IsUnique property on FieldAttribute used to enforce uniqueness (should be set by the user for non-ID fields)
+ */
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Xml;
+
+using Microsoft.SharePoint;
+using Microsoft.SharePoint.Utilities;
+using System.Runtime.Serialization;
+using System.Web.Services.Protocols;
+using System.Security.Permissions;
+
+namespace BdsSoft.SharePoint.Linq
+{
+    /// <summary>
+    /// Query provider for SharePoint lists.
+    /// </summary>
+    /// <typeparam name="T">Entity type for the underlying SharePoint list items.</typeparam>
+    [DebuggerVisualizer(typeof(SharePointDataSourceVisualizer))]
+    [Serializable]
+    [Obsolete("As of 0.2.1 this class is obsolete. Use SharePointDataList<T> instead.", true)]
+    public sealed class SharePointDataSource<T> : IOrderedQueryable<T>, IDisposable, ISerializable
+    {
+        #region Private members
+
+        /// <summary>
+        /// XmlDocument object used to build query fragments; acts a the root for all XML elements used while parsing the query.
+        /// </summary>
+        private XmlDocument _doc = new XmlDocument();
+
+        #region Connection information
+
+        /// <summary>
+        /// SharePoint list to connect to. Should be null when web services are used.
+        /// </summary>
+        private SPList _list;
+
+        /// <summary>
+        /// Uri of the SharePoint site used to create other (web service) data sources for referenced "Lookup" lists.
+        /// </summary>
+        private Uri _uri;
+
+        /// <summary>
+        /// SharePoint site object used to create other (SharePoint object model) data sources for referenced "Lookup" lists.
+        /// </summary>
+        private SPSite _site;
+
+        /// <summary>
+        /// SharePoint web services proxy to work with lists.
+        /// </summary>
+        private Lists _ws;
+
+        /// <summary>
+        /// Name of the list accessed over web services.
+        /// </summary>
+        private string _wsList;
+
+        #endregion
+
+        #region Gathered query information
+
+        /// <summary>
+        /// Where clause of the query, based on the CAML query format's Where element.
+        /// </summary>
+        private XmlElement _where;
+
+        /// <summary>
+        /// Ordering clause of the query, based on the CAML query format's OrderBy element.
+        /// </summary>
+        private XmlElement _order;
+
+        #region Projection
+
+        /// <summary>
+        /// Fields required to perform the projection clause of the query, based on the CAML query format's ViewFields element. Can be empty in case no projection is done and/or all fields are required in the query result.
+        /// </summary>
+        private XmlElement _projection;
+
+        /// <summary>
+        /// Delegate for the projection logic, generated by compiling the projection's lambda expression (e.g. u => new { u.Name }). Takes an object of the original entity type used in the query (<see cref="_originalType"/>).
+        /// </summary>
+        private Delegate _project;
+
+        /// <summary>
+        /// Set of PropertyInfo objects for all the fields used in the projection portion of the query. Used to build the projection (<see cref="_projection"/>) without duplicates.
+        /// </summary>
+        private HashSet<PropertyInfo> _projectProps;
+
+        #endregion
+
+        /// <summary>
+        /// Optional number of "top" rows to query for, with the semantics of the TOP construct in SQL. Gathered by parsing Take(n) calls.
+        /// </summary>
+        private int? _top;
+
+        #endregion
+
+        /// <summary>
+        /// Original type of the query entity types, set to typeof(T) during construction of a new data source instance. Used when creating the pre-projection objects during query execution and to execute the projection delegate (<see cref="_project"/>).
+        /// </summary>
+        private Type _originalType;
+
+        /// <summary>
+        /// Logger object to report information about the query when executing.
+        /// </summary>
+        private TextWriter _log;
+
+        /// <summary>
+        /// Indicates whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
+        /// </summary>
+        private bool _checkVersion = true;
+
+        /// <summary>
+        /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
+        /// </summary>
+        private bool _enforceLookupFieldUniqueness = true;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new SharePoint data source using web services.
+        /// </summary>
+        /// <param name="siteUrl">URL to the root of the SharePoint site containing the list to connect to.</param>
+        public SharePointDataSource(Uri siteUrl)
+        {
+            if (siteUrl == null)
+                throw new ArgumentNullException("siteUrl");
+
+            //
+            // Record the original url for further reference (v0.2.0.0).
+            //
+            this._uri = siteUrl;
+
+            //
+            // Keep track of the original entity type involved in the query. Required for projection delegate execution.
+            //
+            this._originalType = typeof(T);
+
+            //
+            // Check presence of a ListAttribute on the entity type.
+            //
+            ListAttribute la = GetListAttribute();
+
+            //
+            // Configure the web service proxy object.
+            //
+            this._ws = new Lists();
+            this._ws.Credentials = CredentialCache.DefaultNetworkCredentials;
+            this._ws.Url = siteUrl.AbsoluteUri.TrimEnd('/') + "/_vti_bin/lists.asmx";
+            this._wsList = la.List;
+        }
+
+        /// <summary>
+        /// Creates a new SharePoint data source using web services.
+        /// </summary>
+        /// <param name="ws">Web service proxy for communication with SharePoint.</param>
+        /// <param name="list">Name of the SharePoint list to connect to.</param>
+        private SharePointDataSource(Lists ws, string list)
+        {
+            if (ws == null)
+                throw new ArgumentNullException("ws");
+            if (list == null)
+                throw new ArgumentNullException("list");
+
+            this._ws = ws;
+            this._wsList = list;
+
+            //
+            // Keep track of the original entity type involved in the query. Required for projection delegate execution.
+            //
+            this._originalType = typeof(T);
+        }
+
+        /// <summary>
+        /// Creates a new SharePoint data source using the SharePoint object model.
+        /// </summary>
+        /// <param name="site">SharePoint site object to use for connecting to the list represented by the entity type.</param>
+        [CLSCompliant(false)]
+        public SharePointDataSource(SPSite site)
+        {
+            if (site == null)
+                throw new ArgumentNullException("site");
+
+            //
+            // Record the original site for further reference (v0.2.0.0).
+            //
+            this._site = site;
+
+            //
+            // Keep track of the original entity type involved in the query. Required for projection delegate execution.
+            //
+            this._originalType = typeof(T);
+
+            //
+            // Check presence of a ListAttribute on the entity type.
+            //
+            ListAttribute la = GetListAttribute();
+
+            //
+            // Find list name.
+            //
+            string list = la.Path;
+            if (list == null)
+                list = la.Path;
+
+            //
+            // Get list.
+            //
+            this._list = site.RootWeb.GetList(list);
+        }
+
+        /// <summary>
+        /// Creates a new SharePoint data source using the SharePoint object model.
+        /// </summary>
+        /// <param name="list">SharePoint list object to connect to.</param>
+        /// <param name="performCheck">Indicates whether the ListAttribute should be checked.</param>
+        private SharePointDataSource(SPList list, bool performCheck)
+        {
+            if (list == null)
+                throw new ArgumentNullException("list");
+            this._list = list;
+
+            //
+            // Keep track of the original entity type involved in the query. Required for projection delegate execution.
+            //
+            this._originalType = typeof(T);
+
+            //
+            // Check presence of a ListAttribute on the entity type.
+            //
+            if (performCheck)
+                GetListAttribute();
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets a logger object to report information about the query when executing.
+        /// </summary>
+        public TextWriter Log
+        {
+            get { return _log; }
+            set { _log = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
+        /// </summary>
+        public bool CheckListVersion
+        {
+            get { return _checkVersion; }
+            set { _checkVersion = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the network credentials to connect to the SharePoint web services.
+        /// </summary>
+        public ICredentials Credentials
+        {
+            get
+            {
+                if (_ws == null)
+                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                else
+                    return _ws.Credentials;
+            }
+            set
+            {
+                if (_ws == null)
+                    throw new InvalidOperationException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                else
+                    _ws.Credentials = value;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique (on by default).
+        /// </summary>
+        /// <remarks>WARNING! Misuse of this property can cause invalid query results to be produced.</remarks>
+        public bool EnforceLookupFieldUniqueness
+        {
+            get { return _enforceLookupFieldUniqueness; }
+            set { _enforceLookupFieldUniqueness = value; }
+        }
+
+        #endregion
+
+        #region Query builder and parser
+
+        #region IQueryable<T>.ElementType and IQueryable<T>.Expression properties
+
+        /// <summary>
+        /// Gets the type of the elements held in the data source object.
+        /// </summary>
+        public Type ElementType
+        {
+            get { return typeof(T); }
+        }
+
+        /// <summary>
+        /// Gets the expression tree representation of the data source object.
+        /// </summary>
+        public Expression Expression
+        {
+            get
+            {
+                return Expression.Constant(this);
+            }
+        }
+
+        #endregion
+
+        #region IQueryable<T>.CreateQuery methods
+
+        /// <summary>
+        /// Creates/extends a query based on the given query expression.
+        /// </summary>
+        /// <param name="expression">Expression tree representing the query portion to be added.</param>
+        /// <returns>Query provider instance that allows further parsing and/or result fetching.</returns>
+        public IQueryable CreateQuery(Expression expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Creates/extends a query based on the given query expression.
+        /// </summary>
+        /// <typeparam name="TElement">Output type for items; will be different from T in case of projections.</typeparam>
+        /// <param name="expression">Expression tree representing the query portion to be added.</param>
+        /// <returns>Query provider instance that allows further parsing and/or result fetching.</returns>
+        public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
+        {
+            //
+            // Create a new SharePoint data source connecting to the same data source as the current one.
+            //
+            SharePointDataSource<TElement> res = (this._list != null ?
+                new SharePointDataSource<TElement>(this._list, false) :
+                new SharePointDataSource<TElement>(this._ws, this._wsList));
+
+            //
+            // Keep information about the connection to SharePoint (v0.2.0.0).
+            //
+            res._uri = this._uri;
+            res._site = this._site;
+
+            //
+            // Copy information gathered so far.
+            //
+            res._where = this._where;
+            res._order = this._order;
+            res._originalType = this._originalType;
+            res._project = this._project;
+            res._projection = this._projection;
+            res._projectProps = this._projectProps;
+            res._top = this._top;
+
+            //
+            // Maintain singleton XmlDocument instance for the query.
+            //
+            res._doc = this._doc;
+
+            //
+            // Keep settings.
+            //
+            res._log = this._log;
+            res._checkVersion = this._checkVersion;
+            res._enforceLookupFieldUniqueness = this._enforceLookupFieldUniqueness;
+
+            //
+            // The uppermost query expression nodes should be method call expressions on the System.Linq.Queryable type.
+            //
+            MethodCallExpression mc = expression as MethodCallExpression;
+            if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
+            {
+                //
+                // Check the extension method called during query creation.
+                //
+                switch (mc.Method.Name)
+                {
+                    //
+                    // Query expression for filtering.
+                    //
+                    case "Where":
+                        //
+                        // Original call = Queryable::Where(source, predicate)
+                        //                 where predicate is of type Expression<Func<TSource, bool>>
+                        // Parse the query based on the Func<TSource, bool> predicate expression tree.
+                        //
+                        res.ParsePredicate((LambdaExpression)((UnaryExpression)mc.Arguments[1]).Operand);
+                        break;
+                    //
+                    // Query expression for sorting. Multiple possibilities exist and can act cumulatively.
+                    //
+                    case "OrderBy":
+                    case "OrderByDescending":
+                    case "ThenBy":
+                    case "ThenByDescending":
+                        //
+                        // Original call = Queryable::{OrderBy|ThenBy}[Descending](source, keySelector)
+                        //                 where keySelector is of type Expression<Func<TSource, TKey>>
+                        // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
+                        //
+                        res.ParseOrdering((LambdaExpression)((UnaryExpression)mc.Arguments[1]).Operand, mc.Method.Name.EndsWith("Descending", StringComparison.Ordinal));
+                        break;
+                    //
+                    // Query expression for projection.
+                    //
+                    case "Select":
+                        //
+                        // Original call = Queryable::Select(source, selector)
+                        //                 where selector is of type Expression<Func<TSource, TResult>>
+                        // Parse the query based on the Expression<Func<TSource, TResult>> selector.
+                        //
+                        res.ParseProjection((LambdaExpression)((UnaryExpression)mc.Arguments[1]).Operand);
+                        break;
+                    //
+                    // Query expression for result restriction ("TOP").
+                    //
+                    case "Take":
+                        //
+                        // Original call = Queryable::Take(source, count)
+                        // Parse the query based on the count value obtained by compilation and dynamic invocation of the count argument to the call.
+                        //
+                        res.SetResultRestriction((int)Expression.Lambda<Func<int>>(mc.Arguments[1]).Compile().DynamicInvoke());
+                        break;
+                    //
+                    // Currently we don't support additional query operators in LINQ-to-SharePoint.
+                    //
+                    default:
+                        throw new NotSupportedException("Unsupported query construct encountered: " + mc.Method.Name + ".");
+                }
+            }
+
+            return res;
+        }
+
+        #endregion
+
+        #region Query predicate expression parsing (Where)
+
+        /// <summary>
+        /// Parses a query filter expression, resulting in a CAML Where element (<see cref="_where"/>).
+        /// </summary>
+        /// <param name="predicate">Lambda expression of the query predicate to parse.</param>
+        /// <remarks>Only one filter expression can be parsed per query.</remarks>
+        private void ParsePredicate(LambdaExpression predicate)
+        {
+            //
+            // We can support multiple predicates as long no projection operation was carried out.
+            //
+            if (_where != null && _projection != null)
+                throw new InvalidOperationException("Can't add another predicate expression to the query.");
+
+            //
+            // Parse the predicate recursively, starting without negation (last parameter "positive" set to true).
+            //
+            PropertyInfo lookup;
+            XmlElement pred = ParsePredicate(predicate.Body, predicate.Parameters[0], true, out lookup);
+
+            //
+            // Predicate can be null because of optimizations.
+            //
+            if (pred != null)
+            {
+                //
+                // Patches required for lookup fields?
+                //
+                if (lookup != null)
+                    PatchQueryExpressionNode(lookup, ref pred);
+
+                //
+                // If this is the first predicate, create a new <Where> element.
+                //
+                if (_where == null)
+                {
+                    _where = _doc.CreateElement("Where");
+                    _where.AppendChild(pred);
+                }
+                //
+                // Otherwise, add the new predicate to the existing one using an <And> element.
+                //
+                else
+                {
+                    XmlElement and = _doc.CreateElement("And");
+                    and.AppendChild(pred);
+                    and.AppendChild(_where.FirstChild);
+                    _where = _doc.CreateElement("Where");
+                    _where.AppendChild(and);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parses the given predicate recursively, building up the given query predicate element.
+        /// </summary>
+        /// <param name="predicate">Predicate expression to be parsed.</param>
+        /// <param name="predicateParameter">Parameter of the predicate lambda expression. Used to detect references to the entity type itself.</param>
+        /// <param name="isPositive">Indicates whether the predicate should be evaluated as a positive condition or not; serves boolean negation using De Morgan's law.</param>
+        /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
+        /// <returns>Output XML element representing the parsed predicate in CAML syntax.</returns>
+        private XmlElement ParsePredicate(Expression predicate, ParameterExpression predicateParameter, bool isPositive, out PropertyInfo lookup)
+        {
+            BinaryExpression be;
+            UnaryExpression ue;
+            MethodCallExpression mce;
+            MemberExpression me;
+            ConstantExpression ce;
+
+            //
+            // By default, no Lookup field will be referenced.
+            //
+            lookup = null;
+
+            //
+            // The given predicate can be a binary expression containing either boolean expressions or conditions that require further parsing.
+            //
+            if ((be = predicate as BinaryExpression) != null)
+            {
+                switch (predicate.NodeType)
+                {
+                    //
+                    // AndAlso boolean expression (&&, AndAlso)
+                    // And boolean expression     (&,  And)
+                    // OrElse boolean expression  (||, OrElse)
+                    // Or boolean expression      (|,  Or)
+                    //
+                    case ExpressionType.AndAlso:
+                    case ExpressionType.And:
+                    case ExpressionType.OrElse:
+                    case ExpressionType.Or:
+                        {
+                            XmlElement c;
+
+                            if (predicate.NodeType == ExpressionType.And || predicate.NodeType == ExpressionType.AndAlso)
+                                //
+                                // If not evaluated positively, apply De Morgan's law: !(a && b) == !a || !b
+                                //
+                                c = (isPositive ? _doc.CreateElement("And") : _doc.CreateElement("Or"));
+                            else
+                                //
+                                // If not evaluated positively, apply De Morgan's law: !(a || b) == !a && !b
+                                //
+                                c = (isPositive ? _doc.CreateElement("Or") : _doc.CreateElement("And")); // De Morgan
+
+                            PropertyInfo lookupLeft, lookupRight;
+                            XmlElement left = ParsePredicate(be.Left, predicateParameter, isPositive, out lookupLeft);
+                            XmlElement right = ParsePredicate(be.Right, predicateParameter, isPositive, out lookupRight);
+
+                            //
+                            // Optimizations could occur.
+                            //
+                            if (left != null && right != null)
+                            {
+                                //
+                                // If both lookups are the same (or both null), propagate the lookup query expression to the parent.
+                                //
+                                if (lookupLeft == lookupRight)
+                                {
+                                    lookup = lookupLeft;
+                                }
+                                //
+                                // If one of the lookups is different, apply a patch and don't propagate the lookup query expression to the parent.
+                                //
+                                else
+                                {
+                                    lookup = null;
+
+                                    if (lookupLeft != null)
+                                        PatchQueryExpressionNode(lookupLeft, ref left);
+                                    if (lookupRight != null)
+                                        PatchQueryExpressionNode(lookupRight, ref right);
+                                }
+
+                                //
+                                // Continue to compose the query expression tree.
+                                //
+                                c.AppendChild(left);
+                                c.AppendChild(right);
+
+                                return c;
+                            }
+                            //
+                            // In case of optimization, cut pruned condition children.
+                            //
+                            else
+                            {
+                                //
+                                // Only left hand side remains.
+                                //
+                                if (left != null)
+                                {
+                                    //
+                                    // If a lookup is found, it can be propagated now because we end up with a single node.
+                                    //
+                                    if (lookupLeft != null)
+                                    {
+                                        lookup = lookupLeft;
+                                        PatchQueryExpressionNode(lookupLeft, ref left);
+                                    }
+
+                                    return left;
+                                }
+                                //
+                                // Only right hand side remains.
+                                //
+                                else if (right != null)
+                                {
+                                    //
+                                    // If a lookup is found, it can be propagated now because we end up with a single node.
+                                    //
+                                    if (lookupRight != null)
+                                    {
+                                        lookup = lookupRight;
+                                        PatchQueryExpressionNode(lookupRight, ref right);
+                                    }
+
+                                    return right;
+                                }
+                                //
+                                // Both sides of the expression are optimized away.
+                                //
+                                else
+                                    return null;
+                            }
+                        }
+                    //
+                    // Remaining binary operations are parsed as conditions. Examples include ==, !=, >, <, >=, <=.
+                    //
+                    default:
+                        {
+                            PropertyInfo lookup1;
+                            XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1);
+
+                            //
+                            // If a Lookup reference was detected, propagate the lookup query expression to the parent.
+                            //
+                            if (lookup1 != null)
+                                lookup = lookup1;
+
+                            return c;
+                        }
+                }
+            }
+            //
+            // A unary expressions will occur for boolean negation.
+            //
+            else if ((ue = predicate as UnaryExpression) != null)
+            {
+                //
+                // CAML doesn't support boolean negation; therefore, we apply De Morgan's law by inverting the isPositive indicator.
+                //
+                if (predicate.NodeType == ExpressionType.Not)
+                {
+                    PropertyInfo lookup1;
+                    XmlElement c = ParsePredicate(ue.Operand, predicateParameter, !isPositive, out lookup1);
+
+                    //
+                    // Optimized away?
+                    //
+                    if (c != null)
+                    {
+                        //
+                        // If a Lookup reference was detected, propagate the lookup query expression to the parent.
+                        //
+                        if (lookup1 != null)
+                            lookup = lookup1;
+                    }
+
+                    return c;
+                }
+                else
+                    throw new NotSupportedException("Unsupported query expression detected: " + predicate.ToString() + ".");
+            }
+            //
+            // Converts the unary boolean evaluation like "where u.Member.Value select" or "where u.Age.HasValue select".
+            // 
+            else if ((me = predicate as MemberExpression) != null)
+            {
+                //
+                // Check for (and trim) Nullable wrapper.
+                //
+                bool? isNullableHasValue;
+                Expression res = CheckForNullableType(me, out isNullableHasValue);
+
+                //
+                // Did we find an entity reference?
+                //
+                if (IsEntityPropertyReference(res))
+                {
+                    MemberExpression mRes = res as MemberExpression;
+
+                    //
+                    // Check for lookup field to propagate lookup query expressions to parent.
+                    //
+                    if (mRes.Member.DeclaringType != _originalType)
+                    {
+                        MemberExpression outer = mRes.Expression as MemberExpression;
+                        if (!IsEntityPropertyReference(outer))
+                            throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+
+                        lookup = (PropertyInfo)outer.Member;
+                    }
+
+                    me = mRes;// (MemberExpression)res;
+
+                    XmlElement c;
+
+                    //
+                    // Call to .HasValue? If so, convert to IsNull or IsNotNull.
+                    //
+                    if (isNullableHasValue.HasValue && isNullableHasValue.Value)
+                        c = _doc.CreateElement(isPositive ? "IsNotNull" : "IsNull");
+                    //
+                    // No .HasValue should be either .Value or a non-Nullable boolean. Convert to <Eq> with the member's value.
+                    //
+                    else
+                    {
+                        c = _doc.CreateElement("Eq");
+                        c.AppendChild(GetValue(isPositive, GetFieldAttribute((PropertyInfo)me.Member)));
+                    }
+
+                    //
+                    // Append field reference.
+                    //
+                    c.AppendChild(GetFieldRef((PropertyInfo)me.Member));
+                    return c;
+                }
+                else
+                    throw new NotSupportedException("Unsupported query expression detected: " + me.ToString() + ".");
+            }
+            //
+            // Method calls are supported for a limited set of string operations and for LookupMulti fields.
+            //
+            else if ((mce = predicate as MethodCallExpression) != null)
+            {
+                //
+                // Check for CamlElements methods.
+                //
+                if (mce.Method.DeclaringType == typeof(CamlMethods))
+                {
+                    //
+                    // DateRangesOverlap support.
+                    //
+                    if (mce.Method.Name == "DateRangesOverlap")
+                    {
+                        //
+                        // Get value argument.
+                        //
+                        Expression valEx = mce.Arguments[0];
+
+                        bool? isNullableHasValue;
+                        valEx = CheckForNullableType(valEx, out isNullableHasValue);
+
+                        //
+                        // Value argument shouldn't be an entity property reference.
+                        //
+                        if (IsEntityPropertyReference(valEx))
+                            throw new NotSupportedException("A call to DateRangesOverlap should not have an entity property reference as its value argument.");
+
+                        //
+                        // Get value element.
+                        //
+                        XmlElement value = GetDateValue(valEx);
+
+                        //
+                        // Field references.
+                        //
+                        NewArrayExpression fields = mce.Arguments[1] as NewArrayExpression;
+                        if (fields == null)
+                            throw new InvalidOperationException("An unexpected error occurred in the predicate parser (DateRangesOverlap).");
+
+                        List<XmlElement> fieldRefs = new List<XmlElement>();
+
+                        //
+                        // Exception object for unsupported DateRangesOverlap constructs.
+                        //
+                        Exception drEx = new NotSupportedException("A call to DateRangesOverlap should have entity property references as its fields arguments, all referring to the same entity type.");
+
+                        //
+                        // Find all field expressions.
+                        //
+                        foreach (Expression fieldEx in fields.Expressions)
+                        {
+                            //
+                            // Clean-up the field expression.
+                            //
+                            Expression fEx = fieldEx;
+                            while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
+                                fEx = ((UnaryExpression)fEx).Operand;
+
+                            fEx = DropToString(fEx);
+                            fEx = CheckForNullableType(fEx, out isNullableHasValue);
+
+                            if (!IsEntityPropertyReference(fEx))
+                                throw drEx;
+
+                            MemberExpression mex = fEx as MemberExpression;
+                            if (mex == null || !(mex.Member is PropertyInfo))
+                                throw drEx;
+
+                            //
+                            // Lookup properties are supported only if all property references are of the same lookup type.
+                            //
+                            if (mex.Member.DeclaringType != _originalType)
+                            {
+                                MemberExpression outer = mex.Expression as MemberExpression;
+                                if (!IsEntityPropertyReference(outer))
+                                    throw drEx;
+
+                                PropertyInfo lookup1 = (PropertyInfo)outer.Member;
+
+                                //
+                                // We've already found field references; check that all of these refer to the same entity type.
+                                //
+                                if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
+                                    throw drEx;
+                                else
+                                    lookup = lookup1;
+                            }
+
+                            //
+                            // Add field reference element.
+                            //
+                            fieldRefs.Add(GetFieldRef((PropertyInfo)mex.Member));
+                        }
+
+                        //
+                        // Construct and return DateRangesOverlap element.
+                        //
+                        XmlElement dro = _doc.CreateElement("DateRangesOverlap");
+                        dro.AppendChild(value);
+                        foreach (XmlElement fieldRef in fieldRefs)
+                            dro.AppendChild(fieldRef);
+                        return dro;
+                    }
+                }
+
+                //
+                // Only method calls on entity type properties are supported.
+                //
+                Expression ex = DropToString(mce.Object);
+                MemberExpression o = ex as MemberExpression;
+                if (o == null || !(o.Member is PropertyInfo))
+                    throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+
+                //
+                // Check for lookup field to propagate lookup query expressions to parent.
+                //
+                if (o.Member.DeclaringType != _originalType)
+                {
+                    MemberExpression outer = o.Expression as MemberExpression;
+                    if (!IsEntityPropertyReference(outer))
+                        throw new NotSupportedException("Unsupported query expression detected: " + mce.ToString() + ". Only query expressions applied on entity properties can be translated.");
+
+                    lookup = (PropertyInfo)outer.Member;
+                }
+
+                PropertyInfo property = (PropertyInfo)o.Member;
+
+                //
+                // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
+                //
+                if (mce.Method.DeclaringType == typeof(string))
+                {
+                    //
+                    // Get the value of the method call argument and ensure it's lambda parameter free.
+                    //
+                    Expression arg = mce.Arguments[0];
+                    EnsureLambdaFree(arg, predicateParameter);
+
+                    //
+                    // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                    //
+                    object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+                    string sval = val as string;
+
+                    //
+                    // Build the condition.
+                    //
+                    XmlElement cond;
+                    switch (mce.Method.Name)
+                    {
+                        case "Contains":
+                            //
+                            // Contains "" is always true.
+                            //
+                            if (String.IsNullOrEmpty(sval))
+                                return null;
+
+                            if (!isPositive)
+                                throw new NotSupportedException("Can't negate a Contains query expression.");
+                            cond = _doc.CreateElement("Contains");
+                            break;
+                        case "StartsWith":
+                            //
+                            // StartsWith "" is always true.
+                            //
+                            if (String.IsNullOrEmpty(sval))
+                                return null;
+
+                            if (!isPositive)
+                                throw new NotSupportedException("Can't negate a StartsWith query expression.");
+                            cond = _doc.CreateElement("BeginsWith");
+                            break;
+                        case "Equals":
+                            if (val == null)
+                            {
+                                if (!isPositive)
+                                    cond = _doc.CreateElement("IsNotNull");
+                                else
+                                    cond = _doc.CreateElement("IsNull");
+
+                                cond.AppendChild(GetFieldRef(property));
+                                return cond;
+                            }
+                            else
+                            {
+                                if (!isPositive)
+                                    cond = _doc.CreateElement("Neq");
+                                else
+                                    cond = _doc.CreateElement("Eq");
+                            }
+                            break;
+                        default:
+                            throw new NotSupportedException("Unsupported string filtering query expression detected. Only the methods Contains and StartsWith are supported.");
+                    }
+                    cond.AppendChild(GetFieldRef(property));
+
+                    //
+                    // Set the value on the condition element.
+                    //
+                    if (val != null)
+                        cond.AppendChild(GetValue(val, GetFieldAttribute(property)));
+                    else
+                        return null;
+
+                    return cond;
+                }
+                //
+                // LookupMulti fields support the Contains method call.
+                //
+                else if (mce.Method.DeclaringType.IsGenericType
+                         && mce.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                         && mce.Method.Name == "Contains")
+                {
+                    if (!isPositive)
+                        throw new NotSupportedException("Can't negate a Contains query expression.");
+                    XmlElement cond = _doc.CreateElement("Contains");
+
+                    //
+                    // Get the value of the method call argument and ensure it's lambda parameter free.
+                    //
+                    Expression arg = mce.Arguments[0];
+                    EnsureLambdaFree(arg, predicateParameter);
+
+                    //
+                    // Find the value of the method call argument using lamda expression compilation and dynamic invocation.
+                    //
+                    object val = Expression.Lambda(arg).Compile().DynamicInvoke();
+
+                    //
+                    // Contains(null) is considered to be always true.
+                    //
+                    if (val == null)
+                        return null;
+
+                    //
+                    // Check type of the Contains parameter to match the entity type.
+                    //
+                    if (mce.Method.DeclaringType.GetGenericArguments()[0] != val.GetType())
+                        throw new NotSupportedException("Contains expressions for LookupMulti fields should match the referenced entity type.");
+
+                    //
+                    // Build condition based on the referenced field and the lookup key field.
+                    //
+                    cond.AppendChild(GetFieldRef(property));
+                    cond.AppendChild(GetValue(val, GetFieldAttribute(property)));
+
+                    return cond;
+                }
+            }
+            //
+            // Constant values are possible if the user writes clauses like "1 == 1" in the query's where predicate.
+            //
+            else if ((ce = predicate as ConstantExpression) != null)
+            {
+                //
+                // The value should be boolean-valued.
+                //
+                if (ce.Value is bool)
+                    return GetBooleanPatch((bool)ce.Value);
+                else
+                    throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+            }
+
+            //
+            // Fall-through case (shouldn't occur under normal circumstances).
+            //
+            throw new InvalidOperationException("An unexpected error occurred in the predicate parser.");
+        }
+
+        /// <summary>
+        /// Gets a Boolean patch for use in query predicates. These patches are invalid CAML elements and should be removed by the query parser prior to query execution.
+        /// </summary>
+        /// <param name="b">Boolean value of the patch.</param>
+        /// <returns>Patch representing the specified Boolean value.</returns>
+        private XmlElement GetBooleanPatch(bool b)
+        {
+            XmlElement e = _doc.CreateElement(b ? "TRUE" : "FALSE");
+            return e;
+        }
+
+        /// <summary>
+        /// Patches a query expression node by surrounding it with a Patch element so that it can be replaced with lookup field references upon execution.
+        /// </summary>
+        /// <param name="lookup">Lookup entity property to make a patch for.</param>
+        /// <param name="node">Node of the query expression to be patched.</param>
+        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node)
+        {
+            //
+            // Make sure the child entity field referenced in the lookup is unique.
+            //
+            if (_enforceLookupFieldUniqueness)
+            {
+                FieldAttribute fap = GetFieldAttribute(lookup);
+                if (fap == null || fap.LookupDisplayField == null)
+                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+
+                FieldAttribute fac = GetFieldAttribute(lookup.PropertyType.GetProperty(fap.LookupDisplayField));
+                if (fac == null)
+                    throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+
+                if (!fac.PrimaryKey && !fac.IsUnique)
+                    throw new NotSupportedException("Lookup field subqueries are only supported for lookup fields that are unique.");
+            }
+
+            //
+            // Apply the patch.
+            //
+            XmlElement p = _doc.CreateElement("Patch");
+            XmlAttribute a = _doc.CreateAttribute("Field");
+            a.Value = lookup.Name;
+            p.Attributes.Append(a);
+            p.AppendChild(node);
+            node = p;
+        }
+
+        /// <summary>
+        /// Helper method to check whether the given expression is Nullable type wrapper and removes it.
+        /// </summary>
+        /// <param name="e">Expression to check for Nullable occurrence.</param>
+        /// <param name="isHasValue">Output parameter that indicates that the Nullable usage on the given expression was a HasValue member access.</param>
+        /// <returns>Nullable-free expression.</returns>
+        private static Expression CheckForNullableType(Expression e, out bool? isHasValue)
+        {
+            MemberExpression me = e as MemberExpression;
+            if (me != null && me.Member is PropertyInfo)
+            {
+                Type t = me.Member.DeclaringType;
+                if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    isHasValue = (me.Member.Name == "HasValue");
+                    return me.Expression;
+                }
+            }
+
+            isHasValue = null;
+            return e;
+        }
+
+        /// <summary>
+        /// Detects the use of Microsoft.VisualBasic.CompilerServices.Operators.CompareString and Microsoft.VisualBasic.Strings.StrComp for string equality checks.
+        /// </summary>
+        /// <param name="condition">Condition to check for CompareString or StrComp presence.</param>
+        /// <param name="left">Left operand, will be rewritten by the CompareString or StrComp first parameter if CompareString or StrComp usage was detected.</param>
+        /// <param name="right">Right operand, will be rewritten by the CompareString or StrComp second parameter if CompareString or StrComp usage was detected.</param>
+        private static void FindVisualBasicCompareStringCondition(BinaryExpression condition, ref Expression left, ref Expression right)
+        {
+            //
+            // Right hand side should be 0 to indicate string equality.
+            //
+            ConstantExpression ce = condition.Right as ConstantExpression;
+            if (ce != null && ce.Value is int && (int)ce.Value == 0)
+            {
+                //
+                // Check for call to static method Microsoft.VisualBasic.CompilerServices.Operators.CompareString or Microsoft.VisualBasic.Strings.StrComp.
+                //
+                MethodCallExpression mce = condition.Left as MethodCallExpression;
+                if (mce != null && mce.Object == null &&
+                    (
+                         (mce.Method.Name == "CompareString" && mce.Method.DeclaringType.FullName == "Microsoft.VisualBasic.CompilerServices.Operators")
+                      || (mce.Method.Name == "StrComp" && mce.Method.DeclaringType.FullName == "Microsoft.VisualBasic.Strings")
+                    )
+                   )
+                {
+                    left = mce.Arguments[0];
+                    right = mce.Arguments[1];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the CAML representation for the specified condition.
+        /// </summary>
+        /// <param name="condition">Condition to translate into CAML.</param>
+        /// <param name="isPositive">Indicates whether the condition should be evaluated in a positive context or not; used for inversion of conditions using De Morgan's law.</param>
+        /// <param name="predicateParameter">Parameter of the predicate lambda expression. Used to detect references to the entity type itself.</param>
+        /// <param name="lookup">Output parameter for Lookup fields, used to build the query expression for a lookup field.</param>
+        private XmlElement GetCondition(BinaryExpression condition, bool isPositive, ParameterExpression predicateParameter, out PropertyInfo lookup)
+        {
+            //
+            // Normally, we don't face a lookup field so stick with the default of no lookup.
+            //
+            lookup = null;
+
+            Expression left = condition.Left;
+            Expression right = condition.Right;
+
+            //
+            // Detect use of Microsoft.VisualBasic.CompilerServices.Operators.CompareString or Microsoft.VisualBasic.Strings.StrComp.
+            //
+            FindVisualBasicCompareStringCondition(condition, ref left, ref right);
+
+            //
+            // Trim Convert nodes on the both operandi before examining the nodes further on and remove excessive ToString method calls at the end.
+            //
+            while (left.NodeType == ExpressionType.Convert || left.NodeType == ExpressionType.ConvertChecked)
+                left = ((UnaryExpression)left).Operand;
+            left = DropToString(left);
+
+            while (right is UnaryExpression && right.NodeType == ExpressionType.Convert || right.NodeType == ExpressionType.ConvertChecked)
+                right = ((UnaryExpression)right).Operand;
+            right = DropToString(right);
+
+            //
+            // Detect and trim Nullable wrappers on both arguments. Keep track of .HasValue calls.
+            //
+            bool? leftIsNullableHasValue;
+            left = CheckForNullableType(left, out leftIsNullableHasValue);
+            bool? rightIsNullableHasValue;
+            right = CheckForNullableType(right, out rightIsNullableHasValue);
+
+            //
+            // If the left operand is a member expression (pointing to an entity property), we'll assume "normal ordering".
+            // CAML queries always check the field 'f' against a value 'v' in the order f op v where 'op' is the operator.
+            //
+            bool correctOrder;
+            if (IsEntityPropertyReference(left))
+                correctOrder = true;
+            else if (IsEntityPropertyReference(right))
+                correctOrder = false;
+            else
+            {
+                //
+                // Check for references to entity properties. If none are found, the expression can be evaluated right away.
+                //
+                HashSet<PropertyInfo> eProps = new HashSet<PropertyInfo>();
+                FindEntityProperties(condition, predicateParameter, ref eProps);
+                if (eProps.Count == 0)
+                {
+                    object o = Expression.Lambda(condition).Compile().DynamicInvoke();
+                    if (o is bool)
+                        return GetBooleanPatch((bool)o);
+                    else
+                        throw new NotSupportedException("Non-boolean constant values are not supported in query predicates.");
+                }
+                else
+                    throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+            }
+
+            //
+            // Find the side of the condition that refers to an entity property (lhs).
+            //
+            MemberExpression lhs = (MemberExpression)(correctOrder ? left : right);
+            PropertyInfo entityProperty = (PropertyInfo)lhs.Member;
+
+            //
+            // Lookup field reference?
+            //
+            if (lhs.Member.DeclaringType != _originalType)
+            {
+                MemberExpression outer = lhs.Expression as MemberExpression;
+                if (!IsEntityPropertyReference(outer))
+                    throw new NotSupportedException("Unsupported query expression detected: " + condition.ToString() + ".");
+
+                lookup = (PropertyInfo)outer.Member;
+            }
+
+            //
+            // Ensure that the value side (rhs) of the condition is lambda parameter free.
+            //
+            Expression rhs = (correctOrder ? right : left);
+            EnsureLambdaFree(rhs, predicateParameter);
+
+            //
+            // Find DateTime values, possibly special ones including Today and Now.
+            //
+            XmlElement dateValue = null;
+            if (lhs.Type == typeof(DateTime) || lhs.Type == typeof(DateTime?))
+                dateValue = GetDateValue(rhs);
+
+            object value = null;
+            XmlElement c;
+
+            if (dateValue == null)
+            {
+                //
+                // Get the rhs value by dynamic execution.
+                //
+                value = Expression.Lambda(rhs).Compile().DynamicInvoke();
+
+                //
+                // Any Nullable.HasValue calls detected? Convert to IsNull or IsNotNull elements based on the rhs value, the context positivity and the node type.
+                //
+                if ((leftIsNullableHasValue.HasValue && leftIsNullableHasValue.Value) || (rightIsNullableHasValue.HasValue && rightIsNullableHasValue.Value))
+                {
+                    bool isEquality = condition.NodeType == ExpressionType.Equal;
+                    bool checkValue = (bool)value;
+                    bool isNull = !(checkValue ^ isEquality) ^ isPositive;
+
+                    c = _doc.CreateElement(isNull ? "IsNull" : "IsNotNull");
+                    c.AppendChild(GetFieldRef(entityProperty));
+
+                    return c;
+                }
+            }
+
+            //
+            // Variable that holds the CAML equivalent of the condition.
+            //
+            string camlQueryElement;
+
+            //
+            // Check the type of the node for CAML-supported operations.
+            //
+            switch (condition.NodeType)
+            {
+                //
+                // Equality is commutative, correctOrder doesn't matter.
+                //
+                case ExpressionType.Equal:
+                    camlQueryElement = isPositive ? "Eq" : "Neq";
+                    break;
+                //
+                // Non-equality is commutative, correctOrder doesn't matter.
+                //
+                case ExpressionType.NotEqual:
+                    camlQueryElement = isPositive ? "Neq" : "Eq";
+                    break;
+                //
+                // Less than <=(!correctOrder)=> Greater than
+                //
+                case ExpressionType.LessThan:
+                    if (!correctOrder)
+                        //
+                        // !(a > b) == a <= b
+                        //
+                        camlQueryElement = isPositive ? "Gt" : "Leq";
+                    else
+                        //
+                        // !(a < b) == a >= b
+                        //
+                        camlQueryElement = isPositive ? "Lt" : "Geq";
+                    break;
+                //
+                // Less than or equal <=(!correctOrder)=> Greater than or equal
+                //
+                case ExpressionType.LessThanOrEqual:
+                    if (!correctOrder)
+                        //
+                        // !(a >= b) == a < b
+                        //
+                        camlQueryElement = isPositive ? "Geq" : "Lt";
+                    else
+                        //
+                        // !(a <= b) == a > b
+                        //
+                        camlQueryElement = isPositive ? "Leq" : "Gt";
+                    break;
+                //
+                // Greater than <=(!correctOrder)=> Less than
+                //
+                case ExpressionType.GreaterThan:
+                    if (!correctOrder)
+                        //
+                        // !(a < b) == a >= b
+                        //
+                        camlQueryElement = isPositive ? "Lt" : "Geq";
+                    else
+                        //
+                        // !(a > b) == a <= b
+                        //
+                        camlQueryElement = isPositive ? "Gt" : "Leq";
+                    break;
+                //
+                // Greater than or equal <=(!correctOrder)=> Less than or equal
+                //
+                case ExpressionType.GreaterThanOrEqual:
+                    if (!correctOrder)
+                        //
+                        // !(a <= b) == a > b
+                        //
+                        camlQueryElement = isPositive ? "Leq" : "Gt";
+                    else
+                        //
+                        // !(a >= b) == a < b
+                        //
+                        camlQueryElement = isPositive ? "Geq" : "Lt";
+                    break;
+                //
+                // Currently no support for other binary operations (if any).
+                //
+                default:
+                    throw new NotSupportedException("Unsupported binary operation encountered in query: " + condition + ".");
+            }
+
+            //
+            // Special treatment for detected date values.
+            //
+            if (dateValue != null)
+            {
+                c = _doc.CreateElement(camlQueryElement);
+                c.AppendChild(dateValue);
+            }
+            //
+            // If the calculated value is null, we'll use a IsNull or IsNotNull (if isPositive == false) element for the condition in CAML.
+            //
+            else if (value == null)
+            {
+                //
+                // lhs == null  <=(!isPositive)=>  lhs != null
+                //   IsNull                         IsNotNull
+                //
+                if (condition.NodeType == ExpressionType.Equal)
+                    c = _doc.CreateElement(isPositive ? "IsNull" : "IsNotNull");
+                //
+                // lhs != null  <=(!isPositive)=>  lhs == null
+                //  IsNotNull                        IsNull
+                //
+                else if (condition.NodeType == ExpressionType.NotEqual)
+                    c = _doc.CreateElement(isPositive ? "IsNotNull" : "IsNull");
+                else
+                    throw new InvalidOperationException("Null value encountered in query condition. Only equality and non-equality null checks can be translated.");
+            }
+            //
+            // Type-specific processing required in translating the query to CAML.
+            //
+            else
+            {
+                Type enumCheck = entityProperty.PropertyType;
+                if (enumCheck.IsGenericType && enumCheck.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    enumCheck = Nullable.GetUnderlyingType(enumCheck);
+
+                //
+                // Enums represent Choice or MultiChoice fields.
+                //
+                if (enumCheck != null && enumCheck.IsSubclassOf(typeof(Enum))) //FIX v0.1.2
+                {
+                    //
+                    // Enums might be compiled to numeric values; reconstruct the enum back if needed.
+                    //
+                    if (!(value is Enum) && value is uint) // TODO: require uint base type for enums (spec)
+                        value = Enum.ToObject(enumCheck, (uint)value);
+
+                    //
+                    // Check whether the type of the value has been marked as [Flags].
+                    //
+                    FlagsAttribute[] fa = (FlagsAttribute[])value.GetType().GetCustomAttributes(typeof(FlagsAttribute), false);
+
+                    //
+                    // Choice type case.
+                    //
+                    if (fa == null || fa.Length == 0)
+                    {
+                        c = _doc.CreateElement(camlQueryElement);
+                        c.AppendChild(GetValue(value, GetFieldAttribute(entityProperty)));
+                    }
+                    //
+                    // MultiChoice type case.
+                    //
+                    else
+                    {
+                        //
+                        // Check for each value of the MultiChoice enum definition whether or not it is set for the given value.
+                        //
+                        Queue<XmlElement> values = new Queue<XmlElement>();
+                        uint enumValue = (uint)value;
+                        Type enumType = value.GetType();
+                        FieldAttribute f = GetFieldAttribute(entityProperty);
+
+                        foreach (uint o in Enum.GetValues(enumType))
+                            if ((enumValue & o) == o)
+                                values.Enqueue(GetValue(Enum.ToObject(enumType, o), f));
+
+                        //
+                        // If no flags values have been set, we're faced with an invalid value.
+                        //
+                        if (values.Count == 0)
+                            throw new InvalidOperationException("Unrecognized enumeration flags value: " + value + ".");
+                        else
+                        {
+                            //
+                            // For MultiChoice field queries we need to construct a CAML condition tree consisting of conjunctions.
+                            //
+                            // E.g. translation of e.X == MC.A | MC.B | MC.C (pseudo-CAML):
+                            //    <And>
+                            //       <Eq><FieldRef Name="X" /><Value>A</Value></Eq>
+                            //       <And>
+                            //          <Eq><FieldRef Name="X" /><Value>B</Value></Eq>
+                            //          <Eq><FieldRef Name="X" /><Value>C</Value></Eq>
+                            //       </And>
+                            //    </And>
+                            //
+                            // NOTE: This translation causes a semantic mismatch between SharePoint and C#. A condition like "e.X == MC.A | MC.B | MC.C"
+                            //       has an absolute equality characteristic in C# while CAML has a more relaxed evaluation where e.X == MC.A means that
+                            //       option A should be set on field X, while it doesn't say anything about possible other values being present.
+                            //       In LINQ-to-SharePoint, e.X == MC.A | MC.B | MC.C means that choices A, B and C should be set, but not necessarily
+                            //       exclusively; that is, other choices may be set and the MC.A | MC.B | MC.C represents a subset of the actual value.
+                            //
+                            c = null;
+                            while (values.Count > 0)
+                                c = AppendMultiChoiceCondition(camlQueryElement, entityProperty, values.Dequeue(), c);
+                        }
+
+                        return c;
+                    }
+                }
+                //
+                // Other fields can be processed in a generic fashion.
+                //
+                else
+                {
+                    c = _doc.CreateElement(camlQueryElement);
+                    c.AppendChild(GetValue(value, GetFieldAttribute(entityProperty)));
+                }
+            }
+
+            //
+            // Append the FieldRef element to the condition element and return the condition.
+            //
+            c.AppendChild(GetFieldRef(entityProperty));
+            return c;
+        }
+
+        /// <summary>
+        /// Retrieves the XM -representation for the DateTime value represented in the specified expression.
+        /// </summary>
+        /// <param name="dateValue">Expression containing a DateTime value to be converted to XML.</param>
+        /// <returns>XML representation for the specified DateTime value expression.</returns>
+        private XmlElement GetDateValue(Expression dateValue)
+        {
+            /*
+             * KNOWN ISSUES: see work item 2032
+             */
+
+            bool isNow = false;
+            bool isToday = false;
+
+            MemberExpression me = dateValue as MemberExpression;
+            if (me != null && me.Type == typeof(DateTime))
+            {
+                Type dt = me.Member.DeclaringType;
+                if (dt == typeof(DateTime) || dt == typeof(CamlMethods))
+                {
+                    isNow = me.Member.Name == "Now";
+                    isToday = me.Member.Name == "Today";
+                }
+            }
+
+            //
+            // Value element.
+            //
+            XmlElement valueElement = _doc.CreateElement("Value");
+            XmlAttribute type = _doc.CreateAttribute("Type");
+            type.Value = "DateTime";
+            valueElement.Attributes.Append(type);
+
+            //
+            // [DateTime|CamlElements].Now and [DateTime|CamlElements].Today calls require special treatment.
+            //
+            if (isNow || isToday)
+                valueElement.AppendChild(_doc.CreateElement(isNow ? "Now" : "Today"));
+            else
+            {
+                object value = Expression.Lambda(dateValue).Compile().DynamicInvoke();
+                valueElement.InnerText = SPUtility.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
+            }
+
+            return valueElement;
+        }
+
+        /// <summary>
+        /// Helper method to support MultiChoice field conditions by building a tree of And CAML elements.
+        /// </summary>
+        /// <param name="condition">Condition node textual representation, e.g. Eq.</param>
+        /// <param name="field">Entity property to construct the MultiChoice condition node for.</param>
+        /// <param name="value">Value for the MultiChoice condition.</param>
+        /// <param name="parent">Current tree of MultiChoice conditions to add the new condition node to. Should be null to start creating a condition tree.</param>
+        /// <returns></returns>
+        /// <example>
+        /// If parent == null:
+        /// <![CDATA[
+        /// <condition>
+        ///    value
+        ///    <FieldRef Name="field" />
+        /// </condition>
+        /// ]]>
+        /// 
+        /// If parent != null:
+        /// <![CDATA[
+        /// <And>
+        ///    <condition>
+        ///       value
+        ///       <FieldRef Name="field" />
+        ///    </condition>
+        ///    parent
+        /// </And>
+        /// ]]>
+        /// </example>
+        private XmlElement AppendMultiChoiceCondition(string condition, PropertyInfo field, XmlElement value, XmlElement parent)
+        {
+            //
+            // Create condition element with the child tree and the FieldRef element.
+            //
+            XmlElement cond = _doc.CreateElement(condition);
+            cond.AppendChild(value);
+            cond.AppendChild(GetFieldRef(field));
+
+            //
+            // If no parent is present yet, we'll just return the condition element.
+            //
+            if (parent == null)
+                return cond;
+            //
+            // If we're deeper in the tree, we'll take the current parent and lift it to a new And element together with the newly created condition.
+            //
+            else
+            {
+                XmlElement c = _doc.CreateElement("And");
+                c.AppendChild(cond);
+                c.AppendChild(parent);
+                return c;
+            }
+        }
+
+        /// <summary>
+        /// Get a CAML Value element that represents the given value for the given field.
+        /// </summary>
+        /// <param name="value">Field value to get a Value element for.</param>
+        /// <param name="field">Field to get a Value element for.</param>
+        /// <returns>CAML Value element representing the given value for the given field.</returns>
+        private XmlElement GetValue(object value, FieldAttribute field)
+        {
+            //
+            // Create Value element and set the Type attribute.
+            //
+            XmlElement valueElement = _doc.CreateElement("Value");
+            XmlAttribute type = _doc.CreateAttribute("Type");
+            type.Value = field.FieldType.ToString();
+            valueElement.Attributes.Append(type);
+
+            //
+            // Null-check
+            //
+            if (value == null)
+                return valueElement;
+
+            //
+            // DateTime fields should be converted to ISO 8601 date/time representation in SharePoint.
+            //
+            if (value is DateTime)
+                valueElement.InnerText = SPUtility.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
+            //
+            // Boolean fields in SharePoint are represented as 1 or 0.
+            //
+            else if (value is bool)
+                valueElement.InnerText = ((bool)value ? "1" : "0");
+            //
+            // For enums, we should get the name of the field value which can be mapped using a ChoiceAttribute.
+            // Only single-valued enum objects should occur here (i.e. no flag combinations).
+            //
+            else if (value is Enum)
+            {
+                string choice = Enum.GetName(value.GetType(), value);
+                valueElement.InnerText = GetChoiceName(value.GetType(), choice);
+            }
+            //
+            // Support for lookup fields (v0.2.0.0).
+            //
+            else if (value is SharePointListEntity)
+            {
+                if (field.LookupDisplayField == null)
+                    throw new InvalidOperationException("The Lookup field " + field.Field + " doesn't have an associated LookupField attribute property set.");
+
+                //
+                // Find the property used in the Lookup display.
+                //
+                PropertyInfo lookupField = value.GetType().GetProperty(field.LookupDisplayField);
+                if (lookupField == null)
+                    throw new InvalidOperationException("The Lookup field " + field.Field + " links to a non-existing LookupField " + field.LookupDisplayField + ".");
+
+                //
+                // Get value of the Lookup field property.
+                //
+                object o = lookupField.GetValue(value, null);
+                if (o == null)
+                    throw new InvalidOperationException("The Lookup field " + field.Field + " has a null-valued LookupField " + field.LookupDisplayField + ". Did you mean a null-check on the Lookup field instead?");
+
+                valueElement.InnerText = o.ToString();
+            }
+            //
+            // Other types will be converted to a string.
+            // TODO: I18n issues might occur for numeric values; this should be checked.
+            //
+            else
+                valueElement.InnerText = value.ToString();
+
+            return valueElement;
+        }
+
+        /// <summary>
+        /// Gets the SharePoint CHOICE value for a given enum field.
+        /// </summary>
+        /// <param name="enumType">Enum type to map the specified field for.</param>
+        /// <param name="field">Enum field name to map to a SharePoint CHOICE value.</param>
+        /// <returns>SharePoint CHOICE value corresponding with the given enum field.</returns>
+        private static string GetChoiceName(Type enumType, string field)
+        {
+            FieldInfo fi = enumType.GetField(field);
+
+            //
+            // Check whether a ChoiceAttribute is applied on the field of the enum. If so, return the mapped name, otherwise take the field name itself.
+            //
+            ChoiceAttribute[] ca = fi.GetCustomAttributes(typeof(ChoiceAttribute), false) as ChoiceAttribute[];
+            if (ca != null && ca.Length != 0 && ca[0] != null)
+                return ca[0].Choice;
+            else
+                return field;
+        }
+
+        #endregion
+
+        #region Query ordering expression parsing (OrderBy*, ThenBy*)
+
+        /// <summary>
+        /// Parses a query ordering expression, resulting in a CAML OrderBy element (<see crf="_order"/>).
+        /// </summary>
+        /// <param name="ordering">Lambda expression of the query ordering key selector to parse.</param>
+        /// <param name="descending">Indicates whether or not the ordering should be descending.</param>
+        /// <remarks>Multiple ordering expressions per query are supported.</remarks>
+        private void ParseOrdering(LambdaExpression ordering, bool descending)
+        {
+            //
+            // If no ordering epxression has been encountered before, construct the OrderBy CAML element.
+            //
+            if (_order == null)
+                _order = _doc.CreateElement("OrderBy");
+
+            //
+            // Trim ToString() calls for ordering expressions on textual fields. Allows more flexibility.
+            //
+            Expression orderExpression = DropToString(ordering.Body);
+
+            //
+            // Convert the ordering expression as a MemberExpression.
+            //
+            MemberExpression me = orderExpression as MemberExpression;
+
+            bool? isHasValue;
+            me = (MemberExpression)CheckForNullableType(me, out isHasValue);
+
+            //
+            // Make sure the expression is a MemberExpression and points to a property on the entity type.
+            //
+            if (me != null && me.Member.DeclaringType == _originalType && me.Member is PropertyInfo
+                //
+                // If nullable, it shouldn't be a call to HasValue.
+                //
+                && (!isHasValue.HasValue || (isHasValue.HasValue && !isHasValue.Value))
+                )
+            {
+                //
+                // Obtain a FieldRef element for the property on the entity type being referred to.
+                //
+                XmlElement fieldRef = GetFieldRef((PropertyInfo)me.Member);
+
+                //
+                // For descending orderings, an Ascending="FALSE" attribute should be added to the FieldRef elements.
+                //
+                if (descending)
+                {
+                    XmlAttribute ascending = _doc.CreateAttribute("Ascending");
+                    ascending.Value = "FALSE";
+                    fieldRef.Attributes.Append(ascending);
+                }
+
+                //
+                // Append the FieldRef element to the OrderBy ordering clause.
+                //
+                _order.AppendChild(fieldRef);
+            }
+            else
+                throw new NotSupportedException("Unsupported ordering expression detected: " + ordering.Body + ". Ordering expressions should only contain individual entity property expressions.");
+        }
+
+        #endregion
+
+        #region Query projection expression parsing (Select)
+
+        /// <summary>
+        /// Parses a query projection expression, resulting in a CAML ViewFields element (<see crf="_projection"/>).
+        /// </summary>
+        /// <param name="projection">Lambda expression of the query projection to parse.</param>
+        /// <remarks>Only one projection expression can be parsed per query.</remarks>
+        private void ParseProjection(LambdaExpression projection)
+        {
+            //
+            // Equiprojections (u => u) can be ignored.
+            //
+            if (projection.Parameters[0] == projection.Body)
+                return;
+
+            //
+            // If no projection has been encountered before, construct the ViewFields CAML element.
+            // There should only be one projection per query.
+            //
+            if (_projection == null)
+                _projection = _doc.CreateElement("ViewFields");
+            else
+                throw new InvalidOperationException("Second projection expression encountered during parsing. Only one projection expression can be translated for each query. Did you use LINQ query syntax?");
+
+            //
+            // Compile the projection for execution during query result fetching.
+            //
+            _project = projection.Compile();
+
+            //
+            // Create the set with entity properties used in projection and populate it.
+            //
+            _projectProps = new HashSet<PropertyInfo>();
+            FindEntityProperties(projection.Body, projection.Parameters[0], ref _projectProps);
+
+            //
+            // Populate the ViewFields element with FieldRef elements pointing to the properties used in the projection.
+            //
+            HashSet<string> fields = new HashSet<string>();
+            foreach (PropertyInfo property in _projectProps)
+            {
+                //
+                // Get the field and field name corresponding to the current entity property.
+                //
+                XmlElement field = GetFieldRef(property);
+                string fieldName = field.Attributes["Name"].Value;
+
+                //
+                // Filter for duplicates that can occur because of multi-choice values with fill-in choices.
+                //
+                if (field != null && !fields.Contains(fieldName))
+                {
+                    fields.Add(fieldName);
+                    _projection.AppendChild(field);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recursive method to find all references to entity properties in a projection expression.
+        /// </summary>
+        /// <param name="e">Expression to search for references to entity properties.</param>
+        /// <param name="parameter">Lambda parameter used by the expression. Used to detect references to the entity type itself.</param>
+        /// <param name="result">HashSet to store results in. Marked explicitly as a ref parameter to indicate its output characteristic.</param>
+        private void FindEntityProperties(Expression e, ParameterExpression parameter, ref HashSet<PropertyInfo> result)
+        {
+            #region Local variables
+
+            //
+            // These variables are kept to avoid needless casting which would occur in constructs like this:
+            //   if (e is Abc)
+            //   {
+            //      Abc abc = (Abc)e;
+            //      ...
+            //   }
+            //
+
+            MemberExpression me;
+            ParameterExpression pe;
+            BinaryExpression be;
+            UnaryExpression ue;
+            ConditionalExpression ce;
+            InvocationExpression ie;
+            LambdaExpression le;
+            ListInitExpression lie;
+            MemberInitExpression mie;
+            MethodCallExpression mce;
+            NewExpression ne;
+            NewArrayExpression nae;
+            TypeBinaryExpression tbe;
+
+            #endregion
+
+            //
+            // Base case - member expression is candidate for entity property reference.
+            //
+            if ((me = e as MemberExpression) != null)
+            {
+                bool? isHasValue;
+                me = (MemberExpression)CheckForNullableType(me, out isHasValue);
+
+                //
+                // Check that the member expression refers to a property on the entity type of the original query.
+                //
+                PropertyInfo prop = me.Member as PropertyInfo;
+                if (prop != null && me.Member.DeclaringType == _originalType && GetFieldAttribute(prop) != null)
+                    result.Add(prop);
+            }
+            //
+            // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
+            //
+            else if ((pe = e as ParameterExpression) != null)
+            {
+                //
+                // Check that the parameter matches the projection lambda expression's parameter.
+                //
+                if (pe == parameter)
+                    foreach (PropertyInfo prop in _originalType.GetProperties())
+                        if (GetFieldAttribute(prop) != null)
+                            result.Add(prop);
+            }
+            //
+            // b.Method(b.Left, b.Right)
+            //
+            else if ((be = e as BinaryExpression) != null)
+            {
+                FindEntityProperties(be.Left, parameter, ref result);
+                FindEntityProperties(be.Right, parameter, ref result);
+            }
+            //
+            // u.Method(u.Operand)
+            //
+            else if ((ue = e as UnaryExpression) != null)
+            {
+                FindEntityProperties(ue.Operand, parameter, ref result);
+            }
+            //
+            // (c.Test ? c.IfTrue : c.IfFalse)
+            //
+            else if ((ce = e as ConditionalExpression) != null)
+            {
+                FindEntityProperties(ce.IfFalse, parameter, ref result);
+                FindEntityProperties(ce.IfTrue, parameter, ref result);
+                FindEntityProperties(ce.Test, parameter, ref result);
+            }
+            //
+            // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
+            //
+            else if ((ie = e as InvocationExpression) != null)
+            {
+                FindEntityProperties(ie.Expression, parameter, ref result);
+                foreach (Expression ex in ie.Arguments)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            //
+            // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
+            //
+            else if ((le = e as LambdaExpression) != null)
+            {
+                FindEntityProperties(le.Body, parameter, ref result);
+                foreach (Expression ex in le.Parameters)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            //
+            // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
+            //
+            else if ((lie = e as ListInitExpression) != null)
+            {
+                FindEntityProperties(lie.NewExpression, parameter, ref result);
+                foreach (Expression ex in lie.Expressions)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            //
+            // Member initialization expression requires recursive processing of MemberBinding objects.
+            //
+            else if ((mie = e as MemberInitExpression) != null)
+            {
+                FindEntityProperties(mie.NewExpression, parameter, ref result);
+
+                //
+                // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
+                //
+                Queue<MemberBinding> memberBindings = new Queue<MemberBinding>();
+                foreach (MemberBinding b in mie.Bindings)
+                    memberBindings.Enqueue(b);
+
+                MemberAssignment ma;
+                MemberListBinding mlb;
+                MemberMemberBinding mmb;
+
+                //
+                // Process all bindings.
+                //
+                while (memberBindings.Count > 0)
+                {
+                    MemberBinding b = memberBindings.Dequeue();
+
+                    if ((ma = b as MemberAssignment) != null)
+                        FindEntityProperties(ma.Expression, parameter, ref result);
+                    else if ((mlb = b as MemberListBinding) != null)
+                        foreach (Expression ex in mlb.Expressions)
+                            FindEntityProperties(ex, parameter, ref result);
+                    //
+                    // Recursion if a MemberBinding contains other bindings.
+                    //
+                    else if ((mmb = b as MemberMemberBinding) != null)
+                        foreach (MemberBinding mb in mmb.Bindings)
+                            memberBindings.Enqueue(mb);
+                }
+            }
+            //
+            // mc.Object->mc.Method(mc.Arguments[0], ..., mc.Arguments[mc.Arguments.Count - 1])
+            //
+            else if ((mce = e as MethodCallExpression) != null)
+            {
+                if (mce.Object != null)
+                    FindEntityProperties(mce.Object, parameter, ref result);
+                foreach (Expression ex in mce.Arguments)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            //
+            // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
+            //
+            else if ((ne = e as NewExpression) != null)
+            {
+                foreach (Expression ex in ne.Arguments)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            //
+            // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
+            //
+            else if ((nae = e as NewArrayExpression) != null)
+            {
+                foreach (Expression ex in nae.Expressions)
+                    FindEntityProperties(ex, parameter, ref result);
+            }
+            else if ((tbe = e as TypeBinaryExpression) != null)
+            {
+                FindEntityProperties(tbe.Expression, parameter, ref result);
+            }
+        }
+
+        #endregion
+
+        #region Query result restriction (Take)
+
+        /// <summary>
+        /// Sets the restriction on the number of results returned by the query, with semantics like "TOP" in SQL.
+        /// </summary>
+        /// <param name="limit">Restriction on the number of results returned by the query.</param>
+        /// <remarks>Multiple restrictions per query are supported and will result in the mimimum of all restrictions to be effective.</remarks>
+        private void SetResultRestriction(int limit)
+        {
+            //
+            // If no top value has been set yet, take the specified value; otherwise, take the minimum of the current value and the specified value.
+            //
+            _top = (_top == null ? limit : Math.Min(_top.Value, limit));
+        }
+
+        #endregion
+
+        #region Helper methods to work with conditions and entity property expressions.
+
+        /// <summary>
+        /// Checks whether an expression is a reference to an entity property or not.
+        /// </summary>
+        /// <param name="e">Expression to be checked.</param>
+        /// <returns>True if the expression refers to an entity property; otherwise false.</returns>
+        private static bool IsEntityPropertyReference(Expression e)
+        {
+            MemberExpression me = e as MemberExpression;
+
+            if (me != null && me.Member is PropertyInfo)
+            {
+                FieldAttribute field = GetFieldAttribute((PropertyInfo)me.Member);
+                if (field != null)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to drop excessive tail ToString calls on string instances for a given expression.
+        /// </summary>
+        /// <param name="e">Expression to drop excessive tail ToString calls for.</param>
+        /// <returns>Expression without tail ToString calls on string instances.</returns>
+        private static Expression DropToString(Expression e)
+        {
+            while (true)
+            {
+                //
+                // Only look for ToString calls on the root level, as MethodCallExpression objects.
+                //
+                MethodCallExpression mc = e as MethodCallExpression;
+
+                //
+                // Only parameterless ToString() calls on strings should be trimmed off.
+                //
+                if (mc != null && mc.Object != null && mc.Object.Type == typeof(string) && mc.Method.Name == "ToString" && mc.Method.GetParameters().Length == 0)
+                    e = mc.Object;
+                else
+                    break;
+            }
+            return e;
+        }
+
+        /// <summary>
+        /// Recursive method to ensure that a given expression doesn't contain a dependency on a given lambda parameter.
+        /// </summary>
+        /// <param name="e">Expression to validate.</param>
+        /// <param name="parameter">Forbidden lambda parameter to look for.</param>
+        /// <exception cref="NotSupportedException">Occurs when the specified lambda parameter is found in the expression.</exception>
+        private void EnsureLambdaFree(Expression e, ParameterExpression parameter)
+        {
+            #region Local variables
+
+            //
+            // These variables are kept to avoid needless casting which would occur in constructs like this:
+            //   if (e is Abc)
+            //   {
+            //      Abc abc = (Abc)e;
+            //      ...
+            //   }
+            //
+
+            MemberExpression me;
+            ParameterExpression pe;
+            BinaryExpression be;
+            UnaryExpression ue;
+            ConditionalExpression ce;
+            InvocationExpression ie;
+            LambdaExpression le;
+            ListInitExpression lie;
+            MemberInitExpression mie;
+            MethodCallExpression mce;
+            NewExpression ne;
+            NewArrayExpression nae;
+            TypeBinaryExpression tbe;
+
+            #endregion
+
+            //
+            // Base case - member expression is candidate for entity property reference.
+            //
+            if ((me = e as MemberExpression) != null)
+            {
+                EnsureLambdaFree(me.Expression, parameter);
+            }
+            //
+            // Base case - reference to lambda expression parameter is candidate for a reference to the whole entity type.
+            //
+            else if ((pe = e as ParameterExpression) != null)
+            {
+                //
+                // Check that the parameter matches the projection lambda expression's parameter.
+                //
+                if (pe == parameter)
+                    throw new NotSupportedException("Invalid query condition detected. Make sure references to entity type properties only occur on one side of a condition.");
+            }
+            //
+            // b.Method(b.Left, b.Right)
+            //
+            else if ((be = e as BinaryExpression) != null)
+            {
+                EnsureLambdaFree(be.Left, parameter);
+                EnsureLambdaFree(be.Right, parameter);
+            }
+            //
+            // u.Method(u.Operand)
+            //
+            else if ((ue = e as UnaryExpression) != null)
+            {
+                EnsureLambdaFree(ue.Operand, parameter);
+            }
+            //
+            // (c.Test ? c.IfTrue : c.IfFalse)
+            //
+            else if ((ce = e as ConditionalExpression) != null)
+            {
+                EnsureLambdaFree(ce.IfFalse, parameter);
+                EnsureLambdaFree(ce.IfTrue, parameter);
+                EnsureLambdaFree(ce.Test, parameter);
+            }
+            //
+            // i.Expression(i.Arguments[0], ..., i.Arguments[i.Argument.Count - 1])
+            //
+            else if ((ie = e as InvocationExpression) != null)
+            {
+                EnsureLambdaFree(ie.Expression, parameter);
+                foreach (Expression ex in ie.Arguments)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            //
+            // (l.Parameters[0], ..., l.Parameters[l.Parameters.Count - 1]) => l.Body
+            //
+            else if ((le = e as LambdaExpression) != null)
+            {
+                EnsureLambdaFree(le.Body, parameter);
+                foreach (Expression ex in le.Parameters)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            //
+            // li.NewExpression { li.Expressions[0], ..., li.Expressions[li.Expressions.Count - 1] }
+            //
+            else if ((lie = e as ListInitExpression) != null)
+            {
+                EnsureLambdaFree(lie.NewExpression, parameter);
+                foreach (Expression ex in lie.Expressions)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            //
+            // Member initialization expression requires recursive processing of MemberBinding objects.
+            //
+            else if ((mie = e as MemberInitExpression) != null)
+            {
+                EnsureLambdaFree(mie.NewExpression, parameter);
+
+                //
+                // Maintain a queue to mimick recursion on MemberBinding objects. Enqueue the original bindings.
+                //
+                Queue<MemberBinding> memberBindings = new Queue<MemberBinding>();
+                foreach (MemberBinding b in mie.Bindings)
+                    memberBindings.Enqueue(b);
+
+                //
+                // Process all bindings.
+                //
+                while (memberBindings.Count > 0)
+                {
+                    MemberBinding b = memberBindings.Dequeue();
+
+                    MemberAssignment ma = (MemberAssignment)b;
+                    MemberListBinding mlb = (MemberListBinding)b;
+                    MemberMemberBinding mmb = (MemberMemberBinding)b;
+
+                    if (ma != null)
+                        EnsureLambdaFree(ma.Expression, parameter);
+                    else if (mlb != null)
+                        foreach (Expression ex in mlb.Expressions)
+                            EnsureLambdaFree(ex, parameter);
+                    //
+                    // Recursion if a MemberBinding contains other bindings.
+                    //
+                    else if (mmb != null)
+                        foreach (MemberBinding mb in mmb.Bindings)
+                            memberBindings.Enqueue(mb);
+                }
+            }
+            //
+            // mc.Object->mc.Method(mc.Arguments[0], ..., mc.Arguments[mc.Arguments.Count - 1])
+            //
+            else if ((mce = e as MethodCallExpression) != null)
+            {
+                if (mce.Object != null)
+                    EnsureLambdaFree(mce.Object, parameter);
+                foreach (Expression ex in mce.Arguments)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            //
+            // new n.Constructor(n.Arguments[0], ..., n.Arguments[n.Arguments.Count - 1])
+            //
+            else if ((ne = e as NewExpression) != null)
+            {
+                foreach (Expression ex in ne.Arguments)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            //
+            // { na.Expressions[0], ..., na.Expressions[n.Expressions.Count - 1] }
+            //
+            else if ((nae = e as NewArrayExpression) != null)
+            {
+                foreach (Expression ex in nae.Expressions)
+                    EnsureLambdaFree(ex, parameter);
+            }
+            else if ((tbe = e as TypeBinaryExpression) != null)
+            {
+                EnsureLambdaFree(tbe.Expression, parameter);
+            }
+        }
+
+        #endregion
+
+        #region Helper methods for FieldRef element creation
+
+        /// <summary>
+        /// Gets a CAML FieldRef element for the specified entity property.
+        /// </summary>
+        /// <param name="property">Entity property to get the FieldRef element for.</param>
+        /// <returns>FieldRef element for the specified entity property.</returns>
+        private XmlElement GetFieldRef(PropertyInfo property)
+        {
+            //
+            // Get mapping attribute and make sure it has been set.
+            //
+            FieldAttribute fld = GetFieldAttribute(property);
+            if (fld == null)
+                throw new InvalidOperationException("Missing field mapping attribute for entity property " + property.Name + ".");
+
+            XmlElement fieldRef = _doc.CreateElement("FieldRef");
+            XmlAttribute fieldName = _doc.CreateAttribute("Name");
+            fieldName.Value = XmlConvert.EncodeName(fld.Field);
+            fieldRef.Attributes.Append(fieldName);
+            return fieldRef;
+        }
+
+        /// <summary>
+        /// Retrieves the FieldAttribute applied on the specified entity property, if one is set.
+        /// </summary>
+        /// <param name="member">Entity property to examine for a FieldAttribute.</param>
+        /// <returns>The FieldAttribute applied on the specified entity property; null if not set.</returns>
+        private static FieldAttribute GetFieldAttribute(PropertyInfo member)
+        {
+            //
+            // Get custom attributes of type FieldAttribute that are applied on the member.
+            //
+            FieldAttribute[] fa = member.GetCustomAttributes(typeof(FieldAttribute), false) as FieldAttribute[];
+            if (fa != null && fa.Length != 0 && fa[0] != null)
+                return fa[0];
+            else
+                return null;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Direct query execution (not implemented)
+
+        /// <summary>
+        /// Executes the query represented by the specified expression tree.
+        /// </summary>
+        /// <param name="expression">The System.Linq.Expressions.Expression representing the query to be executed.</param>
+        /// <returns>An System.Object representing the result of the specified query.</returns>
+        /// <remarks>Currently not implemented for LINQ-to-SharePoint.</remarks>
+        public object Execute(Expression expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Executes the query represented by the specified expression tree.
+        /// </summary>
+        /// <typeparam name="TResult">Object type of the result.</typeparam>
+        /// <param name="expression">The System.Linq.Expressions.Expression that represents the query to be executed.</param>
+        /// <returns>A value of type TResult representing the result of the specified query.</returns>
+        /// <remarks>Currently not implemented for LINQ-to-SharePoint.</remarks>
+        public TResult Execute<TResult>(Expression expression)
+        {
+            /*
+             * Support candidates:
+             * - First (!)
+             * 
+             * Following operators are not supported due to CAML restrictions. Users should insert AsEnumerable() call:
+             * - Sum
+             * - Max
+             * - Min
+             * - Average
+             * - Count
+             * - LongCount
+             */
+
+            MethodCallExpression mc = expression as MethodCallExpression;
+            if (mc != null && mc.Method.DeclaringType == typeof(Queryable))
+            {
+                switch (mc.Method.Name)
+                {
+                    //
+                    // First and FirstOrDefault are based on the Take(1) operation (row number restriction).
+                    //
+                    case "First":
+                    case "FirstOrDefault":
+                        {
+                            //
+                            // At least one parameter (the 'this' extension parameter).
+                            //
+                            if (mc.Arguments.Count >= 1)
+                            {
+                                //
+                                // Lhs should be referring to the SharePointDataSource object.
+                                //
+                                ConstantExpression ce = mc.Arguments[0] as ConstantExpression;
+                                if (ce != null)
+                                {
+                                    SharePointDataSource<TResult> src = ce.Value as SharePointDataSource<TResult>;
+                                    if (src != null)
+                                    {
+                                        //
+                                        // One method parameter: no additional predicate parameter supplied. Only this overload is supported.
+                                        //
+                                        if (mc.Arguments.Count == 1)
+                                        {
+                                            //
+                                            // Set row restriction (first = 1 row only).
+                                            //
+                                            src.SetResultRestriction(1);
+
+                                            //
+                                            // Call appropriate Enumerable extension method on the retrieved result.
+                                            //
+                                            if (mc.Method.Name == "First")
+                                                return src.AsEnumerable().First();
+                                            else
+                                                return src.AsEnumerable().FirstOrDefault();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException("Unsupported query operator detected (" + mc.Method.Name + ").");
+                }
+            }
+
+            throw new NotSupportedException("Unsupported query operator detected.");
+        }
+
+        #endregion
+
+        #region Query execution and enumeration
+
+        /// <summary>
+        /// Triggers the query and fetches results.
+        /// </summary>
+        /// <returns>Query results.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            //
+            // Version check required for the list?
+            //
+            if (_checkVersion)
+                _CheckVersion();
+
+            //
+            // We don't want the default view, so we'll make an exhaustive list of all the properties to retrieve.
+            //
+            if (_projection == null)
+            {
+                _projection = _doc.CreateElement("ViewFields");
+
+                HashSet<string> fields = new HashSet<string>();
+                foreach (PropertyInfo property in _originalType.GetProperties())
+                {
+                    if (GetFieldAttribute(property) != null)
+                    {
+                        //
+                        // Get the field and field name corresponding to the current entity property.
+                        //
+                        XmlElement field = GetFieldRef(property);
+                        string fieldName = field.Attributes["Name"].Value;
+
+                        //
+                        // Filter for duplicates that can occur because of multi-choice values with fill-in choices.
+                        //
+                        if (field != null && !fields.Contains(fieldName))
+                        {
+                            fields.Add(fieldName);
+                            _projection.AppendChild(field);
+                        }
+                    }
+                }
+            }
+
+            //
+            // Patch the query for possible Lookup field references.
+            //
+            bool? optimized = PatchQueryPredicate();
+            if (optimized != null)
+            {
+                //
+                // Predicate evaluates to true. Remove the query predicate.
+                //
+                if (optimized.Value)
+                    _where = null;
+                //
+                // Predicate evaluates to false. No results will be fetched.
+                //
+                else
+                    return VoidResult();
+            }
+
+            //
+            // Perform query via the SharePoint Object Model or via SharePoint web services.
+            //
+            if (_list != null)
+                return GetEnumeratorSp();
+            else
+                return GetEnumeratorWs();
+        }
+
+        /// <summary>
+        /// Helper method to return a void result if the query predicate evaluates to a constant false value.
+        /// </summary>
+        /// <returns>Empty sequence.</returns>
+        private IEnumerator<T> VoidResult()
+        {
+            yield break;
+        }
+
+        /// <summary>
+        /// Non-generic IEnumerable implementation. This will trigger the query and fetch results.
+        /// </summary>
+        /// <returns>Query results.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        #region Enumeration helpers
+
+        /// <summary>
+        /// Performs a list version check to make sure that the exported list definition matches the online list version.
+        /// </summary>
+        private void _CheckVersion()
+        {
+            int version;
+
+            //
+            // Check version via the SharePoint Object Model or via SharePoint web services.
+            //
+            if (_list != null)
+                version = _list.Version;
+            else
+            {
+                XmlNode lst = _ws.GetList(_wsList);
+                version = int.Parse(lst.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
+            }
+
+            //
+            // Find the list attribute, which is required to perform a list version match check.
+            //
+            if (GetListAttribute().Version != version)
+                throw new InvalidOperationException("List version mismatch between entity type and list definition on the server.");
+        }
+
+        /// <summary>
+        /// Helper method to get the ListAttribute applied on the entity object. An InvalidOperationException will be thrown if no ListAttribute is found.
+        /// </summary>
+        /// <returns>ListAttribute applied on the entity object.</returns>
+        private ListAttribute GetListAttribute()
+        {
+            return GetListAttribute(_originalType);
+        }
+
+        /// <summary>
+        /// Helper method to get the ListAttribute applied for the given entity type. An InvalidOperationException will be thrown if no ListAttribute is found.
+        /// </summary>
+        /// <param name="type">Type to get the ListAttribute for.</param>
+        /// <returns>ListAttribute applied on the entity object.</returns>
+        private static ListAttribute GetListAttribute(Type type)
+        {
+            ListAttribute[] la = type.GetCustomAttributes(typeof(ListAttribute), false) as ListAttribute[];
+            if (la != null && la.Length != 0)
+                return la[0];
+            else
+                throw new InvalidOperationException("Missing ListAttribute on the entity type.");
+        }
+
+        /// <summary>
+        /// Patches the query predicate to eliminate Lookup field references by subqueries.
+        /// </summary>
+        /// <returns>Null if the query predicate wasn't optimized away; a Boolean value with the constant query predicate value if the whole query was optimized to one single constant.</returns>
+        private bool? PatchQueryPredicate()
+        {
+            //
+            // Patch Lookup field references.
+            //
+            Patch(_where);
+
+            //
+            // Eliminate Boolean patches by tree pruning.
+            //
+            return Prune(_where);
+        }
+
+        /// <summary>
+        /// Patches the query predicate represented by the given node to eliminate Lookup field references by subqueries.
+        /// </summary>
+        /// <param name="node">Query predicate node to be patched.</param>
+        private void Patch(XmlNode node)
+        {
+            //
+            // Any work to do?
+            //
+            if (node == null)
+                return;
+
+            foreach (XmlNode child in node.ChildNodes)
+            {
+                XmlElement e = child as XmlElement;
+                if (e != null)
+                {
+                    //
+                    // Find <Patch> tags.
+                    //
+                    if (e.Name == "Patch")
+                    {
+                        //
+                        // Get information about the Lookup field.
+                        //
+                        string field = e.Attributes["Field"].Value;
+                        PropertyInfo lookupField = _originalType.GetProperty(field);
+                        FieldAttribute lookup = GetFieldAttribute(lookupField);
+                        if (lookup.FieldType != FieldType.Lookup)
+                            throw new InvalidOperationException("An unexpected error has occurred in the query parser (Lookup field patcher).");
+
+                        //
+                        // Get information about the Lookup list.
+                        //
+                        ListAttribute innerListAttribute = GetListAttribute(lookupField.PropertyType);
+                        string innerList = innerListAttribute.List;
+
+                        //
+                        // Get the CAML from the patch.
+                        //
+                        string caml = e.InnerXml;
+
+                        //
+                        // Only retrieve the lookup column value (display column).
+                        //
+                        XmlElement viewFields = _doc.CreateElement("ViewFields");
+
+                        XmlElement viewLookupField = _doc.CreateElement("FieldRef");
+                        XmlAttribute lookupFieldName = _doc.CreateAttribute("Name");
+                        lookupFieldName.Value = XmlConvert.EncodeName(lookup.LookupDisplayField);
+                        viewLookupField.Attributes.Append(lookupFieldName);
+                        viewFields.AppendChild(viewLookupField);
+
+                        //
+                        // Prepare list of subquery results.
+                        //
+                        ArrayList fks = new ArrayList();
+
+                        //
+                        // Use SharePoint object model.
+                        //
+                        if (_site != null)
+                        {
+                            //
+                            // Build the query.
+                            //
+                            SPQuery query = new SPQuery();
+                            XmlElement q = _doc.CreateElement("Where");
+                            q.InnerXml = caml;
+                            query.Query = q.OuterXml;
+                            query.ViewFields = viewFields.InnerXml;
+                            query.IncludeMandatoryColumns = false;
+                            query.IncludePermissions = false;
+                            query.IncludeAttachmentVersion = false;
+                            query.IncludeAttachmentUrls = false;
+                            query.IncludeAllUserPermissions = false;
+
+                            //
+                            // Log it.
+                            //
+                            DoLogging(innerList, q, null, viewFields);
+
+                            //
+                            // Get subquery results.
+                            //
+                            foreach (SPListItem item in _site.RootWeb.Lists[innerList].GetItems(query))
+                            {
+                                fks.Add(item[lookup.LookupDisplayField]);
+                            }
+                        }
+                        //
+                        // Use SharePoint web services.
+                        //
+                        else
+                        {
+                            //
+                            // Build the query.
+                            //
+                            XmlElement query = _doc.CreateElement("Query");
+                            XmlElement where = _doc.CreateElement("Where");
+                            where.InnerXml = caml;
+                            query.AppendChild(where);
+
+                            XmlNode queryOptions = _doc.CreateElement("QueryOptions");
+
+                            XmlNode includeMandatoryColumns = _doc.CreateElement("IncludeMandatoryColumns");
+                            includeMandatoryColumns.InnerText = "FALSE";
+                            queryOptions.AppendChild(includeMandatoryColumns);
+
+                            //
+                            // Log it.
+                            //
+                            DoLogging(innerList, where, null, viewFields);
+
+                            //
+                            // Get results.
+                            //
+                            XmlNode res = _ws.GetListItems(innerList, null, query, viewFields, null, queryOptions, null);
+                            DataSet ds = new DataSet();
+                            ds.Locale = CultureInfo.InvariantCulture;
+                            ds.ReadXml(new StringReader(res.OuterXml));
+                            DataTable tbl = ds.Tables["row"];
+
+                            //
+                            // Get subquery results.
+                            //
+                            foreach (DataRow row in tbl.Rows)
+                            {
+                                fks.Add(row["ows_" + lookup.LookupDisplayField]);
+                            }
+                        }
+
+                        //
+                        // Create patch.
+                        //
+                        XmlElement patch = null;
+                        foreach (object o in fks)
+                        {
+                            XmlElement val = GetValue(o, lookup);
+                            patch = CreatePatch("Eq", lookupField, val, patch);
+                        }
+
+                        //
+                        // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
+                        //
+                        if (patch != null) //FIX
+                            e.ParentNode.ReplaceChild(patch, e);
+                        else
+                            e.ParentNode.ReplaceChild(GetBooleanPatch(false), e);
+                    }
+                    else
+                        Patch(e);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Prunes Boolean patches from the predicate tree.
+        /// </summary>
+        /// <param name="node">Predicate tree to be pruned.</param>
+        /// <returns></returns>
+        private bool? Prune(XmlNode node)
+        {
+            //
+            // Any work to do?
+            //
+            if (node == null)
+                return null;
+
+            XmlElement e = node as XmlElement;
+            if (e != null)
+            {
+                bool? b1, b2;
+
+                //
+                // Find binary nodes and Boolean patch tags.
+                //
+                switch (e.Name)
+                {
+                    case "Where":
+                        if (e.ChildNodes.Count == 1)
+                        {
+                            b1 = Prune(e.ChildNodes[0]);
+                            if (b1 == null)
+                                return null;
+                            else
+                                return b1.Value;
+                        }
+                        else
+                            return true;
+                    case "And":
+                        b1 = Prune(e.ChildNodes[0]);
+                        b2 = Prune(e.ChildNodes[1]);
+
+                        if (b1 != null && b2 != null)
+                            return b1.Value && b2.Value;
+                        else if (b1 != null)
+                        {
+                            //
+                            // (false && x) == false
+                            //
+                            if (!b1.Value)
+                                return false;
+                            //
+                            // (true && x) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[1], e);
+                        }
+                        else if (b2 != null)
+                        {
+                            //
+                            // (x && false) == false
+                            //
+                            if (!b2.Value)
+                                return false;
+                            //
+                            // (x && true) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[0], e);
+                        }
+                        break;
+                    case "Or":
+                        b1 = Prune(e.ChildNodes[0]);
+                        b2 = Prune(e.ChildNodes[1]);
+
+                        if (b1 != null && b2 != null)
+                            return b1.Value || b2.Value;
+                        else if (b1 != null)
+                        {
+                            //
+                            // (true || x) == true
+                            //
+                            if (b1.Value)
+                                return true;
+                            //
+                            // (false || x) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[1], e);
+                        }
+                        else if (b2 != null)
+                        {
+                            //
+                            // (x || true) == true
+                            //
+                            if (b2.Value)
+                                return true;
+                            //
+                            // (x || false) == x
+                            //
+                            else
+                                e.ParentNode.ReplaceChild(e.ChildNodes[0], e);
+                        }
+                        break;
+                    case "TRUE":
+                        return true;
+                    case "FALSE":
+                        return false;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Helper method to create a Lookup field patch by building a tree of Or CAML elements.
+        /// </summary>
+        /// <param name="condition">Condition node textual representation, e.g. Eq.</param>
+        /// <param name="field">Entity property to construct the Lookup patch for.</param>
+        /// <param name="value">Value for the Lookup condition.</param>
+        /// <param name="parent">Current tree of the Lookup patch to add the new condition node to. Should be null to start creating a condition tree.</param>
+        /// <returns></returns>
+        /// <example>
+        /// If parent == null:
+        /// <![CDATA[
+        /// <condition>
+        ///    value
+        ///    <FieldRef Name="field" />
+        /// </condition>
+        /// ]]>
+        /// 
+        /// If parent != null:
+        /// <![CDATA[
+        /// <Or>
+        ///    <condition>
+        ///       value
+        ///       <FieldRef Name="field" />
+        ///    </condition>
+        ///    parent
+        /// </Or>
+        /// ]]>
+        /// </example>
+        private XmlElement CreatePatch(string condition, PropertyInfo field, XmlElement value, XmlElement parent)
+        {
+            //
+            // Create condition element with the child tree and the FieldRef element.
+            //
+            XmlElement cond = _doc.CreateElement(condition);
+            cond.AppendChild(value);
+            cond.AppendChild(GetFieldRef(field));
+
+            //
+            // If no parent is present yet, we'll just return the condition element.
+            //
+            if (parent == null)
+                return cond;
+            //
+            // If we're deeper in the tree, we'll take the current parent and lift it to a new Or element together with the newly created condition.
+            //
+            else
+            {
+                XmlElement c = _doc.CreateElement("Or");
+                c.AppendChild(cond);
+                c.AppendChild(parent);
+                return c;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to execute a query and fetch results using the SharePoint Object Model.
+        /// </summary>
+        /// <returns>Query results.</returns>
+        private IEnumerator<T> GetEnumeratorSp()
+        {
+            //
+            // Construct the query ready for consumption by the SharePoint Object Model, without <Query> root element.
+            //
+            StringBuilder queryBuilder = new StringBuilder();
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.OmitXmlDeclaration = true;
+            settings.ConformanceLevel = ConformanceLevel.Auto;
+            using (XmlWriter xw = XmlWriter.Create(queryBuilder, settings))
+            {
+                if (this._where != null && this._where.ChildNodes.Count != 0)
+                    this._where.WriteTo(xw);
+                if (this._order != null)
+                    this._order.WriteTo(xw);
+                xw.Flush();
+            }
+
+            //
+            // Make the SharePoint SPQuery object.
+            //
+            SPQuery query = new SPQuery();
+            query.Query = queryBuilder.ToString();
+            query.IncludeMandatoryColumns = false;
+
+            //
+            // Include projection fields if a projection clause has been parsed.
+            //
+            if (_projection != null)
+            {
+                query.ViewFields = _projection.InnerXml;
+            }
+
+            //
+            // In case a row limit (Take) was found, set the limit on the query.
+            //
+            if (_top != null)
+            {
+                uint top = (uint)_top.Value;
+                if (top == 0) //FIX: query.RowLimit = 0 seems to be ineffective.
+                    yield break;
+                else
+                    query.RowLimit = top;
+            }
+
+            //
+            // Perform logging of the gathered information.
+            //
+            DoLogging(_list.Title, _where, _order, _projection);
+
+            //
+            // Execute the query via the SPList object.
+            //
+            SPListItemCollection items;
+            try
+            {
+                items = _list.GetItems(query);
+            }
+            catch (Exception ex)
+            {
+                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint site at " + _site.Url + ".", ex);
+            }
+
+            //
+            // Fetch results using an iterator.
+            //
+            foreach (SPListItem item in items)
+            {
+                yield return GetItem(item, null);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to execute a query and fetch results using SharePoint web services.
+        /// </summary>
+        /// <returns>Query results.</returns>
+        private IEnumerator<T> GetEnumeratorWs()
+        {
+            //
+            // Construct the query ready for consumption by the SharePoint web services, including a <Query> root element.
+            //
+            XmlNode query = _doc.CreateElement("Query");
+            if (this._where != null && this._where.ChildNodes.Count != 0)
+                query.AppendChild(this._where);
+            if (this._order != null)
+                query.AppendChild(this._order);
+
+            //
+            // Set query options.
+            //
+            XmlNode queryOptions = _doc.CreateElement("QueryOptions");
+
+            //
+            // Perform logging of the gathered information.
+            //
+            DoLogging(_wsList, _where, _order, _projection);
+
+            //
+            // Retrieve the results of the query via a web service call, using the projection and a row limit (if set).
+            //
+            uint top = 0;
+            if (_top != null)
+            {
+                top = (uint)_top.Value;
+                if (top == 0) //FIX: don't roundtrip to server if no results are requested.
+                    yield break;
+            }
+
+            XmlNode res;
+            try
+            {
+                res = _ws.GetListItems(_wsList, null, query, _projection, _top == null ? null : top.ToString(), queryOptions, null);
+            }
+            catch (SoapException ex)
+            {
+                throw new SharePointConnectionException("Error occurred when connecting to the SharePoint web service at " + _ws.Url + ".", ex);
+            }
+
+            //
+            // Store results in a DataSet for easy iteration.
+            // TODO: the DataSet approach could be replaced by raw XML parsing.
+            //
+            DataSet ds = new DataSet();
+            ds.ReadXml(new StringReader(res.OuterXml));
+            DataTable tbl = ds.Tables["row"];
+
+            //
+            // Make sure results are available. If not, return nothing.
+            //
+            if (tbl == null)
+                yield break;
+
+            //
+            // Fetch results using an iterator.
+            //
+            foreach (DataRow row in tbl.Rows)
+            {
+                yield return GetItem(null, row);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to log query information before fetching results.
+        /// </summary>
+        /// <param name="list">List that's being queried.</param>
+        /// <param name="where">Query predicate.</param>
+        /// <param name="order">Ordering clause.</param>
+        /// <param name="projection">Projection clause.</param>
+        private void DoLogging(string list, XmlElement where, XmlElement order, XmlElement projection)
+        {
+            //
+            // Check whether logging is enabled or not.
+            //
+            if (_log != null)
+            {
+                //
+                // List general info.
+                //
+                if (_list != null)
+                    _log.WriteLine("Query for " + list + " over object model...");
+                else
+                    _log.WriteLine("Query for " + list + " over web services...");
+
+                //
+                // Do the remainder of the logging (CAML).
+                //
+                DoLoggingTo(_log, where, order, projection);
+
+                //
+                // Spacing to distinguish between subsequent queries.
+                //
+                _log.WriteLine();
+                _log.Flush();
+            }
+        }
+
+        /// <summary>
+        /// Helper method to log query information before fetching results.
+        /// </summary>
+        /// <param name="output">Output to write log information to.</param>
+        /// <param name="where">Query predicate.</param>
+        /// <param name="order">Ordering clause.</param>
+        /// <param name="projection">Projection clause.</param>
+        private static void DoLoggingTo(TextWriter output, XmlElement where, XmlElement order, XmlElement projection)
+        {
+            //
+            // We'll output XML representing various CAML elements. Output should be indented for natural reading.
+            //
+            XmlTextWriter xw = new XmlTextWriter(output);
+            xw.Formatting = Formatting.Indented;
+
+            //
+            // Write the query, including the predicate and the ordering element.
+            //
+            xw.WriteStartElement("Query");
+            if (where != null && where.ChildNodes.Count != 0)
+                where.WriteTo(xw);
+            if (order != null)
+                order.WriteTo(xw);
+            xw.WriteEndElement();
+
+            //
+            // If a projection clause is present, we'll print that too.
+            //
+            if (projection != null)
+            {
+                XmlDocument projectDoc = new XmlDocument();
+                projectDoc.LoadXml(projection.OuterXml);
+                projectDoc.Save(xw);
+            }
+
+            //
+            // Flush output.
+            //
+            output.Flush();
+        }
+
+        /// <summary>
+        /// Constructs a query result object based on the given item that was retrieved either via the SharePoint object model or via the SharePoint list web service.
+        /// </summary>
+        /// <param name="item">Item retrieved via the SharePoint object model.</param>
+        /// <param name="row">Item retrieved via the SharePoint list web service.</param>
+        /// <!--<param name="validItem">Indicates whether or not the retrieved item should be returned in the result set.</param>-->
+        /// <returns>Query result object for the query, reflecting the final result (possibly after projection).</returns>
+        /// <remarks>Either item or row should be null.</remarks>
+        private T GetItem(SPListItem item, DataRow row)//, out bool validItem)
+        {
+            //validItem = true;
+
+            //
+            // Create an instance of the entity type. This instance will be used to perform the projection operation on (if any).
+            //
+            object result = Activator.CreateInstance(_originalType);
+
+            //
+            // Get the collection of properties that have to be set on the entity. If a projection isn't present, all properties will be set; otherwise, only the required properties will be set.
+            //
+            IEnumerable<PropertyInfo> props = (_project != null ? (IEnumerable<PropertyInfo>)_projectProps : typeof(T).GetProperties());
+
+            //
+            // Data comes from the SharePoint Object Model.
+            //
+            if (item != null)
+            {
+                foreach (PropertyInfo p in props)
+                {
+                    AssignResultProperty(item, null, p, result);//, out validItem);
+                    //if (!validItem)
+                    //    return default(T);
+                }
+            }
+            //
+            // Data comes from the SharePoint list web service.
+            //
+            else
+            {
+                foreach (PropertyInfo p in props)
+                {
+                    AssignResultProperty(null, row, p, result);//, out validItem);
+                    //if (!validItem)
+                    //    return default(T);
+                }
+            }
+
+            //
+            // Perform projection if required.
+            //
+            if (_project == null)
+                return (T)result;
+            else
+                return (T)_project.DynamicInvoke(result);
+        }
+
+        /// <summary>
+        /// Assigns a value from the query result to a given property of the entity object.
+        /// </summary>
+        /// <param name="item">Query result item retrieved using the SharePoint object model.</param>
+        /// <param name="row">Query result item retrieved using the SharePoint lists web service.</param>
+        /// <param name="property">Property to set on the entity object.</param>
+        /// <param name="target">Entity object to set the property for.</param>
+        private void AssignResultProperty(SPListItem item, DataRow row, PropertyInfo property, object target)//, out bool validItem)
+        {
+            //
+            // Convert to entity to set property values via SetValue method if an entity type is used.
+            //
+            SharePointListEntity entity = target as SharePointListEntity;
+
+            //
+            // Get the field mapping attribute for the given property.
+            //
+            FieldAttribute field = GetFieldAttribute(property);
+            if (field == null)
+                throw new InvalidOperationException("Missing field mapping attribute for entity property " + property.Name + ".");
+
+            //
+            // Get the value of the property either using the SharePoint list object or using the current DataRow.
+            //
+            object val;
+            string valueAsString;
+            if (item != null)
+                //
+                // Results have a field name which is XML encoded.
+                //
+                val = item[XmlConvert.EncodeName(field.Field)];
+            else
+            {
+                //
+                // Results from the web service have columns prefixed by ows_.
+                //
+                string col = "ows_" + field.Field;
+
+                //
+                // If no results were found with a specific column, it won't be present in the DataRow. We can ignore this property then.
+                //
+                if (!row.Table.Columns.Contains(col))
+                    return;
+                val = row[col];
+            }
+
+            //
+            // If no value has been set, ignore this property.
+            //
+            if (val == null || val is DBNull)
+                return;
+
+            //
+            // Get the property type in order to do subsequent value parsing. If the type is Nullable<X>, return typeof(X).
+            //
+            Type propertyType = property.PropertyType;
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                propertyType = Nullable.GetUnderlyingType(propertyType);
+
+            //
+            // Enums require special treatment in order to set flags and/or fill-in choices.
+            //
+            if (propertyType.IsSubclassOf(typeof(Enum)))
+            {
+                val = AssignResultPropertyAsEnum(property, target, field, val, propertyType);
+            }
+            //
+            // If the value is of type string, we'll do additional parsing to assign the value to the property.
+            //
+            else if ((valueAsString = val as string) != null)
+            {
+                //
+                // Calculated fields are prefixed by a type indicator, followed by a ;# separator. We'll trim this off and keep the remainder which represents the underlying value.
+                //
+                if (field.Calculated)
+                    valueAsString = valueAsString.Substring(valueAsString.IndexOf(";#", StringComparison.Ordinal) + 2);
+
+                //
+                // Parse the value based on the type set on the field mapping attribute.
+                //
+                switch (field.FieldType)
+                {
+                    //
+                    // Booleans are represented as 0, 1 or some string representation compatible with System.Boolean.Parse.
+                    //
+                    case FieldType.Boolean:
+                        bool bb = (valueAsString == "1" ? true : (valueAsString == "0" ? false : bool.Parse(valueAsString)));
+                        if (entity == null)
+                            property.SetValue(target, bb, null);
+                        else
+                            entity.SetValue(property.Name, bb);
+                        break;
+                    //
+                    // DateTime values can be parsed using System.DateTime.Parse.
+                    //
+                    case FieldType.DateTime:
+                        DateTime dt = DateTime.ParseExact(valueAsString, "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-us")); //FIX hh to HH (check!)
+                        if (entity == null)
+                            property.SetValue(target, dt, null);
+                        else
+                            entity.SetValue(property.Name, dt);
+                        break;
+                    //
+                    // Counter field represents an integer and is used in primary key values. (v0.2.0.0)
+                    //
+                    case FieldType.Counter:
+                        int pk = int.Parse(valueAsString, new CultureInfo("en-us"));
+                        if (entity == null)
+                            property.SetValue(target, pk, null);
+                        else
+                            entity.SetValue(property.Name, pk);
+                        break;
+                    //
+                    // Number and Currency values are represented as floats that can be parsed using System.Double.Parse.
+                    //
+                    case FieldType.Number:
+                    case FieldType.Currency:
+                        double dd = double.Parse(valueAsString, new CultureInfo("en-us"));
+                        if (entity == null)
+                            property.SetValue(target, dd, null);
+                        else
+                            entity.SetValue(property.Name, dd);
+                        break;
+                    //
+                    // Integer values are 32-bit signed numbers that can be parsed using System.Int32.Parse.
+                    //
+                    case FieldType.Integer:
+                        int ii = int.Parse(valueAsString, new CultureInfo("en-us"));
+                        if (entity == null)
+                            property.SetValue(target, ii, null);
+                        else
+                            entity.SetValue(property.Name, ii);
+                        break;
+                    //
+                    // For URL values, a custom Url class has been defined that knows how to parse a SharePoint URL value to a Uri and a friendly name.
+                    //
+                    case FieldType.URL:
+                        Url url = Url.Parse(valueAsString);
+                        if (entity == null)
+                            property.SetValue(target, url, null);
+                        else
+                            entity.SetValue(property.Name, url);
+                        break;
+                    //
+                    // Text and Note values are plain simple strings.
+                    //
+                    case FieldType.Text:
+                    case FieldType.Note:
+                        if (entity == null)
+                            property.SetValue(target, valueAsString, null);
+                        else
+                            entity.SetValue(property.Name, valueAsString);
+                        break;
+                    //
+                    // Lookup fields represent n-to-1 mappings and require lazy loading of the referenced list entity.
+                    //
+                    case FieldType.Lookup:
+                        //
+                        // Structure will be key;#display where key represents the foreign key and display the display field.
+                        //
+                        string[] fk = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        if (fk.Length != 2)
+                            break;
+                        int fkey = int.Parse(fk[0], CultureInfo.InvariantCulture.NumberFormat);
+
+                        //
+                        // We'll only support lazy loading on entity types that implement SharePointListEntity.
+                        //
+                        if (entity == null)
+                            throw new NotSupportedException("Lookup fields are only supported on entity types deriving from SharePointListEntity. Did you use SpMetal to generate the entity class?");
+                        else
+                        {
+                            //
+                            // Lazy loading
+                            //
+                            Type t = typeof(LazyLoadingThunk<,>).MakeGenericType(typeof(T), property.PropertyType);
+                            ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, this, fkey);
+                            entity.SetValue(property.Name, thunk);
+                        }
+                        break;
+                    //
+                    // LookupMulti fields represent n-to-m mappings and require lazy loading of the referenced list entities.
+                    //
+                    case FieldType.LookupMulti:
+                        //
+                        // Structure will be [key;#display]* where key represents the foreign key and display the display field.
+                        //
+                        string[] fks = valueAsString.Split(new string[] { ";#" }, StringSplitOptions.None);
+                        if (fks.Length % 2 != 0)
+                            break;
+                        List<int> lstFkeys = new List<int>();
+                        for (int i = 0; i < fks.Length; i += 2)
+                            lstFkeys.Add(int.Parse(fks[i], CultureInfo.InvariantCulture.NumberFormat));
+                        int[] fkeys = lstFkeys.ToArray();
+
+                        //
+                        // We'll only support lazy loading on entity types that implement SharePointListEntity.
+                        //
+                        if (entity == null)
+                            throw new NotSupportedException("Lookup fields are only supported on entity types deriving from SharePointListEntity. Did you use SpMetal to generate the entity class?");
+                        else
+                        {
+                            //
+                            // Lazy loading
+                            //
+                            Type t = typeof(LazyLoadingThunk<,>).MakeGenericType(typeof(T), property.PropertyType.GetGenericArguments()[0]);
+                            ILazyLoadingThunk thunk = (ILazyLoadingThunk)Activator.CreateInstance(t, this, fkeys);
+                            entity.SetValue(property.Name, thunk);
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unrecognized mapping type encountered: " + field.FieldType + ".");
+                }
+            }
+            //
+            // If the type is not an enum or a string, we can assume it has the right type for direct assignment to the property.
+            //
+            else
+            {
+                if (entity == null)
+                    property.SetValue(target, val, null);
+                else
+                    entity.SetValue(property.Name, val);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to assign an enum property on a result object.
+        /// </summary>
+        /// <param name="property">Property to assign a value to.</param>
+        /// <param name="target">Target object to assign a property value to.</param>
+        /// <param name="field">Field attribute of the entity type field to assign to. Used to determine the "other choice" field.</param>
+        /// <param name="val">Value to be assigned as an enum with possible "other choice".</param>
+        /// <param name="propertyType">Type of the underlying enumeration.</param>
+        /// <returns>Value of the enum corresponding to the val parameter.</returns>
+        private static object AssignResultPropertyAsEnum(PropertyInfo property, object target, FieldAttribute field, object val, Type propertyType)
+        {
+            //
+            // Convert to entity to set property values via SetValue method if an entity type is used.
+            //
+            SharePointListEntity entity = target as SharePointListEntity;
+
+            //
+            // Find all of the choices of the enum type. A reverse mapping from SharePoint CHOICE names to enum field names is maintained, which will be used to allow Enum.Parse calls further on.
+            //
+            HashSet<string> choices = new HashSet<string>();
+            Dictionary<string, string> reverseMapping = new Dictionary<string, string>();
+            foreach (string f in Enum.GetNames(propertyType))
+            {
+                //
+                // Custom mapping of enum field to CHOICE value?
+                //
+                ChoiceAttribute[] ca = propertyType.GetField(f).GetCustomAttributes(typeof(ChoiceAttribute), false) as ChoiceAttribute[];
+                if (ca != null && ca.Length != 0 && ca[0] != null)
+                {
+                    choices.Add(ca[0].Choice);
+
+                    //
+                    // Maintain the reverse mapping from the SharePoint CHOICE name to the enum field name.
+                    //
+                    reverseMapping.Add(ca[0].Choice, f);
+                }
+                else
+                    choices.Add(f);
+            }
+
+            //
+            // The value can be converted to a string in case of (Multi)Choice results. Each choice value is separated by ;#, so we'll split the set of choices.
+            // From this set of individual choices, we can filter out the known values, which will leave us with a possible fill-in choice.
+            //
+            string[] vs = ((string)val).Replace(";#", ",").Trim(',', ' ').Split(',');
+            HashSet<string> knownVals = new HashSet<string>(vs);
+            knownVals.IntersectWith(choices);
+
+            //
+            // In order to get the value that needs to be assigned to the property we'll take all of the known values and map them back to enum field names.
+            // The resulting comma-separated string with known choices can be parsed using Enum.Parse to get the final result.
+            //
+            StringBuilder sb = new StringBuilder();
+            foreach (string s in knownVals)
+                sb.AppendFormat("{0}, ", reverseMapping.ContainsKey(s) ? reverseMapping[s] : s);
+
+            string v = sb.ToString().TrimEnd(',', ' ');
+            if (v.Length != 0)
+            {
+                val = Enum.Parse(propertyType, v);
+
+                if (entity == null)
+                    property.SetValue(target, val, null);
+                else
+                    entity.SetValue(property.Name, val);
+
+                //property.SetValue(target, val, null); //FIX v0.1.3
+            }
+
+            //
+            // Now a set of remaining values is constructed by taking the original set of values and removing all known values.
+            //
+            HashSet<string> otherVals = new HashSet<string>(vs);
+            foreach (string s in knownVals)
+                otherVals.Remove(s);
+
+            //
+            // We expect zero or one other value. In the latter case, this will serve as the input for the "other field".
+            //
+            string other = null;
+            if (otherVals.Count == 1)
+                other = otherVals.ToArray()[0];
+            else if (otherVals.Count > 1)
+                throw new InvalidOperationException("More than one unknown choice value encountered for field " + property.Name + ". Only one fill-in value is supported. Is the entity mapping for the list outdated?");
+
+            //
+            // If an other value is found, process it as a fill-in choice for the MultiChoice field.
+            //
+            if (other != null)
+            {
+                //
+                // Find the field used for the fill-in choice.
+                //
+                string otherField = field.OtherChoice;
+                if (otherField != null)
+                {
+                    PropertyInfo pOther = property.DeclaringType.GetProperty(otherField);
+                    //
+                    // Assign the fill-in choice value to the OtherChoice field.
+                    //
+                    if (pOther != null)
+                        pOther.SetValue(target, other, null);
+                    else
+                        throw new InvalidOperationException("Invalid OtherChoice field mapping for MultiChoice field " + property.Name + ".");
+                }
+                else
+                    throw new InvalidOperationException("An unknown fill-in choice value was encountered for field " + property.Name + " but an OtherChoice field mapping is missing. Is the entity mapping for the list outdated?");
+            }
+            return val;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Closes the web service connection if used.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_ws != null)
+                _ws.Dispose();
+        }
+
+        #endregion
+
+        #region Support for Lookup fields and entity type retrieval by key value
+
+        /// <summary>
+        /// Cache of entities retrieved using a *ById method.
+        /// </summary>
+        private Dictionary<int, T> cache = new Dictionary<int, T>();
+
+        /// <summary>
+        /// Retrieves an entity by the given ID (primary key field).
+        /// </summary>
+        /// <param name="id">ID of the entity to retrieve.</param>
+        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
+        /// <returns>Entity object with the given ID; null if not found.</returns>
+        public T GetEntityById(int id, bool fromCache)
+        {
+            //
+            // Look in cache first.
+            //
+            if (fromCache && cache.ContainsKey(id))
+                return cache[id];
+
+            FieldAttribute pkField = null;
+            PropertyInfo pkProp = null;
+
+            //
+            // Find field attribute and corresponding property for the field with PrimaryKey attribute value set to true.
+            //
+            foreach (PropertyInfo property in typeof(T).GetProperties())
+            {
+                FieldAttribute field = GetFieldAttribute(property);
+                if (field != null && field.PrimaryKey && field.FieldType == FieldType.Counter)
+                {
+                    if (pkField != null)
+                        throw new InvalidOperationException("More than one primary key field found on entity type. There should only be one field marked as primary key on each entity type.");
+
+                    pkField = field;
+                    pkProp = property;
+                    break;
+                }
+            }
+
+            //
+            // Primary key field should be present in order to make the query.
+            //
+            if (pkField == null || pkProp == null)
+                throw new InvalidOperationException("No primary key field found on entity type.");
+
+            //
+            // Build a manual query representing this.Where(e => e.ID = id) with ID property being variable, based on pkProp.
+            //
+            ParameterExpression parameter = Expression.Parameter(typeof(T), "e");
+            MemberExpression pk = Expression.Property(parameter, pkProp);
+            BinaryExpression byID = Expression.Equal(pk, Expression.Constant(id, typeof(int)));
+            Expression<Func<T, bool>> filter = Expression.Lambda<Func<T, bool>>(byID, parameter);
+
+            //
+            // Return the result if found, null otherwise.
+            // Remark: AsEnumerable() is required because calling SingleOrDefualt on the IQueryable directly triggers the Execute method (not implemented).
+            //
+            T result = Queryable.Where<T>(this, filter).AsEnumerable().SingleOrDefault();
+
+            //
+            // Cache the result and return it.
+            //
+            cache[id] = result;
+            return result;
+        }
+
+        /// <summary>
+        /// Retrieves a list of entities by the given set of IDs (primary key field).
+        /// </summary>
+        /// <param name="ids">IDs of the entities to retrieve.</param>
+        /// <param name="fromCache">Used to indicate that entities should be looked up in the entity cache first before launching a query against SharePoint.</param>
+        /// <returns>List of entity objects with the given IDs; null if not found.</returns>
+        public IList<T> GetEntitiesById(int[] ids, bool fromCache)
+        {
+            //
+            // TODO
+            //
+            // Replace naive implementation with <Or>-based query on identifier field, excluding items already in cache.
+            // This implementation will launch a lot of small queries for each individual referenced entity.
+            //
+            List<T> lst = new List<T>();
+            foreach (int id in ids)
+                lst.Add(GetEntityById(id, fromCache));
+            return lst;
+        }
+
+        /// <summary>
+        /// Cache of SharePointDataSource objects for various referenced entity types.
+        /// </summary>
+        private Dictionary<Type, object> datasources = new Dictionary<Type, object>();
+
+        /// <summary>
+        /// Gets a SharePointDataSource for Lookup* fields using the same connection mechanism as the current instance (i.e. object model or web services).
+        /// </summary>
+        /// <typeparam name="R">Type of the entity to get a SharePointDataSource for.</typeparam>
+        /// <returns>SharePointDataSource for entity types of the specified parameter.</returns>
+        internal SharePointDataSource<R> GetSharePointDataSource<R>()
+        {
+            Type r = typeof(R);
+
+            //
+            // Data sources are cached.
+            //
+            if (!datasources.ContainsKey(r))
+            {
+                SharePointDataSource<R> o;
+                if (_uri != null)
+                    o = new SharePointDataSource<R>(_uri);
+                else
+                    o = new SharePointDataSource<R>(_site);
+                o.Log = _log;
+                o.CheckListVersion = _checkVersion;
+                o.EnforceLookupFieldUniqueness = _enforceLookupFieldUniqueness;
+
+                datasources.Add(r, o);
+            }
+
+            return (SharePointDataSource<R>)datasources[r];
+        }
+
+        /// <summary>
+        /// Retrieves an entity of the specified type from a SharePointDataSource serving that entity type.
+        /// </summary>
+        /// <typeparam name="R">Entity type to get the instance of, as specified by the id parameter.</typeparam>
+        /// <param name="id">Unique key of the entity type instance to retrieve.</param>
+        /// <returns>Entity type instance of the specified type with the given key.</returns>
+        internal R GetEntityById<R>(int id)
+        {
+            SharePointDataSource<R> src = GetSharePointDataSource<R>();
+            return src.GetEntityById(id, true);
+        }
+
+        /// <summary>
+        /// Retrieves a list of entities of the specified type from a SharePointDataSource serving that entity type.
+        /// </summary>
+        /// <typeparam name="R">Entity type to get instances of, as specified by the ids parameter.</typeparam>
+        /// <param name="ids">Keys of the entity type instances to retrieve.</param>
+        /// <returns>List of entity type instances of the specified type with the given keys.</returns>
+        internal IList<R> GetEntitiesById<R>(int[] ids)
+        {
+            SharePointDataSource<R> src = GetSharePointDataSource<R>();
+            return src.GetEntitiesById(ids, true);
+        }
+
+        #endregion
+
+        #region Debugger visualizer support
+
+        /*
+         * This region contains temporary support for debugger visualizers, primarily as an aid during LINQ to SharePoint development.
+         * Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.
+         * 
+         * Debugger visualizer support will become part of the "Developer Tools Integration Toolkit" for LINQ to SharePoint.
+         */
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
+        private string _camlForDebuggerVisualizer;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
+        private string _entityForDebuggerVisualizer;
+
+        /// <summary>
+        /// Constructor to support debugger visualizers. Not for direct use in end-user code.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
+        private SharePointDataSource(SerializationInfo info, StreamingContext context)
+        {
+            _camlForDebuggerVisualizer = (string)info.GetValue("Caml", typeof(string));
+            _entityForDebuggerVisualizer = (string)info.GetValue("Entity", typeof(string));
+        }
+
+        /// <summary>
+        /// Serialization support for debugger visualizers. Not for direct use in end-user code.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        /// <remarks>Query parser refactorings should allow to move this to another 'SharePointQuery' class level at a later stage.</remarks>
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            StringBuilder caml = new StringBuilder();
+
+            StringWriter sw = new StringWriter(caml, CultureInfo.InvariantCulture);
+            XmlTextWriter writer = new XmlTextWriter(sw);
+            writer.Formatting = Formatting.Indented;
+
+            DoLoggingTo(sw, _where, _order, _projection);
+
+            info.AddValue("Caml", caml.ToString());
+            info.AddValue("Entity", _originalType.Name);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Lazy loading thunk. Helps to load lookup fields lazily and acts as a marker for fields not yet loaded.
+    /// </summary>
+    /// <typeparam name="T">Original source representing the entity that contains the lookup field.</typeparam>
+    /// <typeparam name="R">Type of the lookup field to be loaded.</typeparam>
+    [Obsolete("As of 0.2.1 this class is obsolete. Use LazyLoadingThunk<R> instead.", true)]
+    internal class LazyLoadingThunk<T, R> : ILazyLoadingThunk
+    {
+        /// <summary>
+        /// Source for the containing list of the lookup field. Will be used to get the child entity from.
+        /// This allows for caching of loaded child entities on the level of the containing entity.
+        /// </summary>
+        private SharePointDataSource<T> source;
+
+        /// <summary>
+        /// Unique id of the entity to be loaded from the child (lookup) list. Used for Lookup fields.
+        /// </summary>
+        private int? id;
+
+        /// <summary>
+        /// List of id values of the entities to be loaded from the child (multi-lookup) list. Used for LookupMulti fields.
+        /// </summary>
+        private int[] ids;
+
+        /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
+        /// </summary>
+        /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
+        /// <param name="id">Unique id of the entity to be loaded from the child (lookup) list.</param>
+        public LazyLoadingThunk(SharePointDataSource<T> source, int id)
+        {
+            this.source = source;
+            this.id = id;
+        }
+
+        /// <summary>
+        /// Creates a new lazy loading thunk referring to the containing list source and the id of the child entity as represented by <typeparamref name="R">R</typeparamref>. Used for Lookup fields.
+        /// </summary>
+        /// <param name="source">Source for the containing list of the lookup field. Will be used to get the child entity from. This allows for caching of loaded child entities on the level of the containing entity.</param>
+        /// <param name="ids">List of unique ids of the entities to be loaded from the child (lookup) list.</param>
+        public LazyLoadingThunk(SharePointDataSource<T> source, int[] ids)
+        {
+            this.source = source;
+            this.ids = ids;
+        }
+
+        /// <summary>
+        /// Loads the entity or set of entities from the thunk represented by the thunk's entity id(s).
+        /// </summary>
+        /// <returns></returns>
+        public object Load()
+        {
+            if (id != null)
+                return source.GetEntityById<R>(id.Value);
+            else
+                return source.GetEntitiesById<R>(ids);
+        }
+    }
+}

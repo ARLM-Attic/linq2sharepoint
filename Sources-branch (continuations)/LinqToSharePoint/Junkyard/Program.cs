@@ -28,81 +28,11 @@ namespace Junkyard
             //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
             //var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
-            //var res = from p in ctx.Suppliers select new { Country = p.Country, Name = p.CompanyName } into s group s by s.Country into g select g.Key;
-            //var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
+            var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
             //var res = ctx.Products.Where((Product p, int i) => i == 0).Select((Product p, int i) => p);//.First(p => p.Discontinued.Value);
-            //var res3 = (from p in ctx.Suppliers 
-            //           select new { Name = p.CompanyName, p.Country, p.City, Contact = p.ContactName } into s select s)
-            //           .Where(s => s.Name == "Bart").OrderBy(s => s.City);
-
-
-            /*
-               var res3 = from s in (
-                                  from p in ctx.Suppliers
-                                  select new { 
-                                      Supplier = p, 
-                                      Name = p.CompanyName, 
-                                      p.Country, 
-                                      Foo = p.ID * 2,
-                                      Bar = new { Supplier = p, p.Fax, p.Phone } }
-                                 )
-                       where s.Name == "Bart"
-                       orderby s.Country descending
-                       select s;
-             */
-
-            var res3 =
-                from t in
-                    (
-                    from s in
-                        (
-                            from p in ctx.Products
-                            select new
-                            {
-                                Product = p, //E (can lift)
-                                Price = p.UnitPrice, //P
-                                Category = p.Category, //P (can lift)
-                                Supplier = p.Supplier.CompanyName, //L
-                                Stock = new
-                                {
-                                    InStock = p.UnitsInStock, //P
-                                    Ordered = p.UnitsOnOrder //P
-                                }
-                            })
-                    select new
-                    {
-                        Ent = s.Product, //E
-                        Prop1 = s.Price, //P
-                        Prop2 = s.Product.UnitPrice, //P (lifted)
-                        Lookups = new
-                        {
-                            Lookup1 = s.Category.CategoryName, //L (lifted)
-                            Lookup2 = s.Product.Supplier.City, //L (lifted²)
-                            Lookup3 = s.Supplier, //L
-                            Lookup4 = s.Supplier
-                        }, //L
-                        Stock1 = s.Stock, //Deep copy
-                        Stock2 = s.Stock, //Deep copy
-                        Child = s //Merge
-                    }
-                        )
-                select new
-                {
-                    //t.Child.Stock,
-                    //t.Child.Category, //P
-                    //t.Child.Product, //reference to another anonymous type
-                    t.Prop1//,
-                    //t.Lookups
-                };
-
-            //.Where(s => s.Name == "Bart").OrderBy(s => s.City);
-
-            SharePointListQueryVisualizer.TestShowVisualizer(res3);
-
             foreach (var p in res3)
             {
-                Console.WriteLine(p.Prop1);
-                //Console.WriteLine(p.Supplier.CompanyName);
+                Console.WriteLine(p);
             }
 
             var res = from p in ctx.Products orderby p.UnitPrice.Value descending select p;
