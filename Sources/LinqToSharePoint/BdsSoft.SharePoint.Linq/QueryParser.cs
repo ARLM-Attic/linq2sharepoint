@@ -158,8 +158,9 @@ namespace BdsSoft.SharePoint.Linq
                             //                 where keySelector is of type Expression<Func<TSource, TKey>>
                             // Parse the query based on the sort Expression<Func<TSource, TKey>> key selector expression tree; keep track of descending sorts.
                             //
+                            bool orderBy = mce.Method.Name.StartsWith("O", StringComparison.Ordinal);
                             if (mce.Method.GetParameters().Length == 2)
-                                ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, mce.Method.Name.EndsWith("Descending", StringComparison.Ordinal), ppS + mce.Method.Name.Length + 1, ppE - 1);
+                                ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, orderBy, mce.Method.Name.EndsWith("g", StringComparison.Ordinal), ppS + mce.Method.Name.Length + 1, ppE - 1);
                             else
                                 error = true;
                             break;
@@ -1735,19 +1736,20 @@ namespace BdsSoft.SharePoint.Linq
         /// Parses a query ordering expression, resulting in a CAML OrderBy element (<see crf="_order"/>).
         /// </summary>
         /// <param name="ordering">Lambda expression of the query ordering key selector to parse.</param>
+        /// <param name="orderBy">Indicates whether or not the ordering is a top-level ordering.</param>
         /// <param name="descending">Indicates whether or not the ordering should be descending.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <remarks>Multiple ordering expressions per query are supported.</remarks>
-        private void ParseOrdering(LambdaExpression ordering, bool descending, int ppS, int ppE)
+        private void ParseOrdering(LambdaExpression ordering, bool orderBy, bool descending, int ppS, int ppE)
         {
             GuardProjection(ppS, ppE);
             GuardGrouping(ppS, ppE);
 
             //
-            // If no ordering expression has been encountered before, construct the OrderBy CAML element.
+            // If this is a top-level ordering or no ordering expression has been encountered before, construct the OrderBy CAML element.
             //
-            if (_results.Order == null)
+            if (_results.Order == null || orderBy)
                 _results.Order = _factory.OrderBy();
 
             int ppS2 = ppS + ordering.Parameters[0].Name.Length + " => ".Length;
@@ -2028,10 +2030,11 @@ namespace BdsSoft.SharePoint.Linq
         private static bool IsEntityPropertyReference(Expression e)
         {
             MemberExpression me = e as MemberExpression;
+            PropertyInfo prop;
 
-            if (me != null && me.Member is PropertyInfo)
+            if (me != null && (prop = me.Member as PropertyInfo) != null)
             {
-                FieldAttribute field = Helpers.GetFieldAttribute((PropertyInfo)me.Member);
+                FieldAttribute field = Helpers.GetFieldAttribute(prop);
                 if (field != null)
                     return true;
             }

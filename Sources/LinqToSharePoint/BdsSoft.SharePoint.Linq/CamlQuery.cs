@@ -785,7 +785,11 @@ namespace BdsSoft.SharePoint.Linq
             // Get the collection of properties that have to be set on the entity.
             // Only in case the result type is still an entity, we'll set all properties; otherwise, we'll set the properties from the projection.
             //
-            IEnumerable<PropertyInfo> props = (isEntity ? _results.EntityType.GetProperties() : (IEnumerable<PropertyInfo>)_results.ProjectionProperties);
+            IEnumerable<PropertyInfo> props;
+            if (isEntity)
+                props = (IEnumerable<PropertyInfo>)Helpers.GetEntityProperties(_results.EntityType);
+            else
+                props = (IEnumerable<PropertyInfo>)_results.ProjectionProperties;
 
             //
             // Assign properties.

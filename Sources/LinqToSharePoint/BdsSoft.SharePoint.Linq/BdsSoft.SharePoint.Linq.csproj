@@ -70,6 +70,7 @@
     <Compile Include="CamlFactory.cs" />
     <Compile Include="CamlMethods.cs" />
     <Compile Include="CamlQuery.cs" />
+    <None Include="Continuations.cs" />
     <Compile Include="EntityRef.cs" />
     <Compile Include="EntitySet.cs" />
     <Compile Include="Error handling\Errors.Designer.cs">
