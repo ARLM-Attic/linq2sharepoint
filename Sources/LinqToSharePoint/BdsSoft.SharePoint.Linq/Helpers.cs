@@ -13,6 +13,7 @@
  *
  * 0.2.1 - Introduction of Helpers.
  * 0.2.2 - Change of GetListAttribute.
+ * 0.2.3 - GetEntityProperties
  */
 
 #region Namespace imports
@@ -168,6 +169,23 @@ namespace BdsSoft.SharePoint.Linq
             // Flush output.
             //
             output.Flush();
+        }
+
+        #endregion
+
+        #region Helpers for entity properties
+
+        /// <summary>
+        /// Gets the entity properties for the given type.
+        /// </summary>
+        /// <param name="type">Type to get entity properties from.</param>
+        /// <returns>Sequence of entity properties for the given type.</returns>
+        /// <remarks>Properties are considered to be entity properties if these have a FieldAttribute applied.</remarks>
+        internal static IEnumerable<PropertyInfo> GetEntityProperties(Type type)
+        {
+            foreach (PropertyInfo prop in type.GetProperties())
+                if (GetFieldAttribute(prop) != null)
+                    yield return prop;
         }
 
         #endregion
