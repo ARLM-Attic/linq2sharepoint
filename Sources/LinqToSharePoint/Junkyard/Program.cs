@@ -9,6 +9,7 @@ using BdsSoft.SharePoint.Linq;
 using Microsoft.SharePoint;
 using System.Data.Linq.SqlClient;
 using System.Reflection;
+using BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer;
 
 namespace Junkyard
 {

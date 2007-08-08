@@ -38,7 +38,6 @@ namespace BdsSoft.SharePoint.Linq
     /// Represents a SharePoint list query.
     /// </summary>
     /// <typeparam name="T">Type of the query result objects.</typeparam>
-    [DebuggerVisualizer(typeof(SharePointListQueryVisualizer))]
     [Serializable]
     class SharePointListQuery<T> : IOrderedQueryable<T>, ISerializable
     {

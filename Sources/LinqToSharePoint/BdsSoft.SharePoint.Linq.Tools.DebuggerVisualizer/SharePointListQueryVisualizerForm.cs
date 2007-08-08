@@ -24,7 +24,7 @@ using System.Globalization;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq
+namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
 {
     /// <summary>
     /// Windows Form for the SharePointListSource debugger visualizer.

@@ -110,24 +110,12 @@
       <DependentUpon>9 - Finish.cs</DependentUpon>
     </Compile>
     <Compile Include="Helpers.cs" />
-    <Compile Include="Installer\InstallProgress.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Installer\InstallProgress.Designer.cs">
-      <DependentUpon>InstallProgress.cs</DependentUpon>
-    </Compile>
     <Compile Include="Wizard\IWizardStep.cs" />
     <Compile Include="Wizard\Line.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Wizard\Line.Designer.cs">
       <DependentUpon>Line.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Installer\ProjectItemInstaller.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Installer\ProjectItemInstaller.Designer.cs">
-      <DependentUpon>ProjectItemInstaller.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -181,10 +169,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>9 - Finish.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Installer\InstallProgress.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>InstallProgress.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -210,8 +194,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Item packages\LINQtoSharePointCS.zip" />
-    <Content Include="Item packages\LINQtoSharePointVB.zip" />
     <Content Include="Wizard\LINQtoSharePoint.ico" />
     <None Include="app.config" />
     <None Include="Properties\Settings.settings">

@@ -10,15 +10,13 @@
 
 #region Namespace imports
 
-using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
-using System.Windows.Forms;
 using Microsoft.VisualStudio.DebuggerVisualizers;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq
+namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
 {
     /// <summary>
     /// Debugger visualizer for SharePointListSource.

@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq
+﻿namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
 {
     partial class SharePointListQueryVisualizerForm
     {

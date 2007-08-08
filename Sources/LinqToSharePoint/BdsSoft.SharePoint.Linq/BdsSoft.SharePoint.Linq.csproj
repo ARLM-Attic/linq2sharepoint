@@ -41,20 +41,9 @@
     <CodeAnalysisRules>-Microsoft.Maintainability#CA1506;-Microsoft.Maintainability#CA1502</CodeAnalysisRules>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Program Files\Microsoft Visual Studio 9.0\Common7\IDE\PublicAssemblies\EnvDTE.dll</HintPath>
-    </Reference>
-    <Reference Include="EnvDTE90, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Program Files\Microsoft Visual Studio 9.0\Common7\IDE\PublicAssemblies\EnvDTE90.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.SharePoint, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.DebuggerVisualizers, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.VSHelp, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.VSHelp80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -96,13 +85,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharePointListQuery.cs" />
     <Compile Include="SharePointList.cs" />
-    <Compile Include="Debugger visualizer\SharePointListQueryVisualizer.cs" />
-    <Compile Include="Debugger visualizer\SharePointListQueryVisualizerForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Debugger visualizer\SharePointListQueryVisualizerForm.Designer.cs">
-      <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="SharePointListQueryProvider.cs" />
     <Compile Include="Url.cs" />
   </ItemGroup>
@@ -117,10 +99,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Errors.Designer.cs</LastGenOutput>
       <CustomToolNamespace>BdsSoft.SharePoint.Linq</CustomToolNamespace>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Debugger visualizer\SharePointListQueryVisualizerForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SharePointListQueryVisualizerForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

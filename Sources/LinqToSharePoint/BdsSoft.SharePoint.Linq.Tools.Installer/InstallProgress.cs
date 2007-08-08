@@ -29,17 +29,19 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     public partial class InstallProgress : Form
     {
         private InstallerMode _mode;
-        private string _target;
+        private string _installDir;
         private string _vsPath;
 
         public InstallProgress(InstallerMode mode, string target, string vsPath)
         {
             _mode = mode;
-            _target = target;
+            _installDir = target;
             _vsPath = vsPath;
 
             InitializeComponent();
         }
+
+        #region Event handlers
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -49,6 +51,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     {
                         InstallVsTemplate();
                         InstallSpmlXsd();
+                        InstallDebuggerVisualizer();
                         RegisterSpml();
                         ConfigVs();
                     }
@@ -57,6 +60,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     {
                         UninstallVsTemplate();
                         UninstallSpmlXsd();
+                        UninstallDebuggerVisualizer();
                         UnregisterSpml();
                         ConfigVs();
                     }
@@ -64,9 +68,31 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
         }
 
+        private void InstallProgress_Load(object sender, EventArgs e)
+        {
+            backgroundWorker1.RunWorkerAsync();
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                MessageBox.Show(e.Error.Message);
+                this.DialogResult = DialogResult.Cancel;
+            }
+            else
+                this.DialogResult = DialogResult.OK;
+        }
+
+        #endregion
+
+        #region SPML
+
         static string spml = ".spml";
         static string clas = "LINQtoSharePoint.SPML.1.0";
         static string desc = "LINQ to SharePoint Entity Mapping";
+
+        #region Registration
 
         private void RegisterSpml()
         {
@@ -87,7 +113,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 #region HKEY_CLASSES_ROOT\LINQtoSharePoint.SPML.1.0\DefaultIcon
                 {
                     RegistryKey kIcon = kClas.CreateSubKey("DefaultIcon");
-                    kIcon.SetValue(null, Path.Combine(_target, @"SpMetal.exe") + ",0");
+                    kIcon.SetValue(null, Path.Combine(_installDir, @"SpMetal.exe") + ",0");
                     kIcon.Close();
                 }
                 #endregion
@@ -148,9 +174,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void UnregisterSpml()
         {
-            Registry.ClassesRoot.DeleteSubKey(spml, false);
-            Registry.ClassesRoot.DeleteSubKey(clas, false);
+            if (Registry.ClassesRoot.OpenSubKey(spml) != null)
+                Registry.ClassesRoot.DeleteSubKeyTree(spml);
+            if (Registry.ClassesRoot.OpenSubKey(clas) != null)
+                Registry.ClassesRoot.DeleteSubKeyTree(clas);
         }
+
+        #endregion
+
+        #region XSD
 
         private void InstallSpmlXsd()
         {
@@ -214,6 +246,25 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             return path;
         }
 
+        #endregion
+
+        #endregion
+
+        #region Template
+
+        private void InstallVsTemplate()
+        {
+            string csSrc = Path.Combine(_installDir, @"Item packages\LINQtoSharePointCS.zip");
+            string vbSrc = Path.Combine(_installDir, @"Item packages\LINQtoSharePointVB.zip");
+            string csTgt = Path.Combine(_vsPath, @"ItemTemplates\CSharp\1033\LINQtoSharePointCS.zip");
+            string vbTgt = Path.Combine(_vsPath, @"ItemTemplates\VisualBasic\1033\LINQtoSharePointVB.zip");
+
+            if (!File.Exists(csTgt))
+                File.Copy(csSrc, csTgt);
+            if (!File.Exists(vbTgt))
+                File.Copy(vbSrc, vbTgt);
+        }
+
         private void UninstallVsTemplate()
         {
             string csTgt = Path.Combine(_vsPath, @"ItemTemplates\CSharp\1033\LINQtoSharePointCS.zip");
@@ -227,18 +278,46 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             catch { }
         }
 
-        private void InstallVsTemplate()
-        {
-            string csSrc = Path.Combine(_target, @"Item packages\LINQtoSharePointCS.zip");
-            string vbSrc = Path.Combine(_target, @"Item packages\LINQtoSharePointVB.zip");
-            string csTgt = Path.Combine(_vsPath, @"ItemTemplates\CSharp\1033\LINQtoSharePointCS.zip");
-            string vbTgt = Path.Combine(_vsPath, @"ItemTemplates\VisualBasic\1033\LINQtoSharePointVB.zip");
+        #endregion
 
-            if (!File.Exists(csTgt))
-                File.Copy(csSrc, csTgt);
-            if (!File.Exists(vbTgt))
-                File.Copy(vbSrc, vbTgt);
+        #region Debugger visualizer
+
+        private string dbg = "BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.dll";
+
+        private void InstallDebuggerVisualizer()
+        {
+            string src = Path.Combine(_installDir, dbg);
+            string tgt = Path.Combine(GetDebuggerVisualizerPath(), dbg);
+
+            if (!File.Exists(tgt))
+                File.Copy(src, tgt);
         }
+
+        private void UninstallDebuggerVisualizer()
+        {
+            string tgt = Path.Combine(GetDebuggerVisualizerPath(), dbg);
+
+            try
+            {
+                File.Delete(tgt);
+            }
+            catch { }
+        }
+
+        private string GetDebuggerVisualizerPath()
+        { 
+            string path = _vsPath; //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\IDE\
+            path = path.TrimEnd('\\'); //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\IDE
+            path = path.Substring(0, path.LastIndexOf('\\')); //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7
+            path = Path.Combine(path, "Packages"); //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\Packages
+            path = Path.Combine(path, "Debugger"); //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\Packages\Debugger
+            path = Path.Combine(path, "Visualizers"); //%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\Packages\Debugger\Visualizers
+            return path;
+        }
+
+        #endregion
+
+        #region VS2008 configuration
 
         private void ConfigVs()
         {
@@ -247,18 +326,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             p.WaitForExit();
         }
 
-        private void InstallProgress_Load(object sender, EventArgs e)
-        {
-            backgroundWorker1.RunWorkerAsync();
-        }
-
-        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Error != null)
-                this.DialogResult = DialogResult.Cancel;
-            else
-                this.DialogResult = DialogResult.OK;
-        }
+        #endregion
     }
 
     public enum InstallerMode
