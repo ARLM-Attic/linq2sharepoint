@@ -182,6 +182,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <typeparam name="T">Entity type to get a list source object for.</typeparam>
         /// <returns>List source object for the specified entity type.</returns>
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "BdsSoft.SharePoint.Linq.SharePointList`1<type parameter.T>")]
         public SharePointList<T> GetList<T>()
             where T : class
         {
@@ -236,7 +237,7 @@ namespace BdsSoft.SharePoint.Linq
         /// Registers a list source object for the entity as specified by <typeparamref name="T">T</typeparamref>.
         /// </summary>
         /// <param name="list">List source to register.</param>
-        /// <typeparam name="T">Entity type to register the correspondong list source object for.</typeparam>
+        /// <typeparam name="T">Entity type to register the corresponding list source object for.</typeparam>
         internal void RegisterList<T>(SharePointList<T> list) where T : class
         {
             Debug.Assert(list != null);

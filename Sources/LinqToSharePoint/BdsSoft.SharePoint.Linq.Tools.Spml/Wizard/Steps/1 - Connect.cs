@@ -105,6 +105,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// </summary>
         public event EventHandler WorkCompleted;
 
+        /// <summary>
+        /// Raises the StateChanged event.
+        /// </summary>
+        public void OnStateChanged()
+        {
+            if (StateChanged != null)
+                StateChanged(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the Working event.
+        /// </summary>
+        public void OnWorking()
+        {
+            if (Working != null)
+                Working(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the WorkCompleted event.
+        /// </summary>
+        public void OnWorkCompleted()
+        {
+            if (WorkCompleted != null)
+                WorkCompleted(this, new EventArgs());
+        }
+
         #endregion
 
         #region Event handlers
@@ -143,9 +170,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 // Clear error message and signal working.
                 //
                 lblError.Visible = false;
-                //panel.Enabled = false;
-                if (Working != null)
-                    Working(this, new EventArgs());
+                OnWorking();
 
                 //
                 // Get data.
@@ -188,8 +213,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 if (e.Error == null)
                 {
                     _next = true;
-                    if (StateChanged != null)
-                        StateChanged(this, new EventArgs());
+                    OnStateChanged();
                 }
                 else
                     lblError.Visible = true;
@@ -198,9 +222,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Signal background work completed.
             //
-            //panel.Enabled = true;
-            if (WorkCompleted != null)
-                WorkCompleted(this, new EventArgs());
+            OnWorkCompleted();
         }
 
         #region Validation
@@ -310,8 +332,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void Reset()
         {
             _next = false;
-            if (StateChanged != null)
-                StateChanged(this, new EventArgs());
+            OnStateChanged();
         }
 
         #endregion

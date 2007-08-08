@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.Globalization;
 
 #endregion
 
@@ -196,6 +197,49 @@ namespace BdsSoft.SharePoint.Linq
             currentError = null;
         }
 
+        /// <summary>
+        /// Shows help for the current error.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
+        private void ShowHelp()
+        {
+            try
+            {
+                //
+                // Obtain reference to the Help2 object and display help associated with the SP**** error code.
+                //
+                EnvDTE.DTE dte = (EnvDTE.DTE)System.Runtime.InteropServices.Marshal.GetActiveObject("VisualStudio.DTE.9.0");
+                Microsoft.VisualStudio.VSHelp80.Help2 help2 = (Microsoft.VisualStudio.VSHelp80.Help2)dte.GetObject("Help2");
+                help2.DisplayTopicFromKeyword(currentError.ErrorCode);
+            }
+            catch (Exception ex)
+            {
+                MessageBoxOptions options = IsRightToLeft(this) ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
+                MessageBox.Show("Couldn't load help information.\n\n" + ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, options);
+            }
+        }
+
+        /// <summary>
+        /// Checks for right-to-left culture on the specified control.
+        /// </summary>
+        /// <param name="control">Control to check right-to-left culture for.</param>
+        /// <returns>true if right-to-left; otherwise, false</returns>
+        private static bool IsRightToLeft(Control control)
+        {
+            if (control.RightToLeft == RightToLeft.Inherit)
+            {
+                Control parent = control.Parent;
+
+                while (parent != null)
+                    if (parent.RightToLeft != RightToLeft.Inherit)
+                        return parent.RightToLeft == RightToLeft.Yes;
+
+                return CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+            }
+            else
+                return control.RightToLeft == RightToLeft.Yes;
+        }
+
         #endregion
 
         #region Event handlers
@@ -245,6 +289,7 @@ namespace BdsSoft.SharePoint.Linq
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
         private void btnExecute_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Not implemented yet.");
@@ -340,21 +385,7 @@ namespace BdsSoft.SharePoint.Linq
             // Error selected?
             //
             if (txtLinq.Cursor == Cursors.Hand && currentError != null)
-            {
-                try
-                {
-                    //
-                    // Obtain reference to the Help2 object and display help associated with the SP**** error code.
-                    //
-                    EnvDTE.DTE dte = (EnvDTE.DTE)System.Runtime.InteropServices.Marshal.GetActiveObject("VisualStudio.DTE.9.0");
-                    Microsoft.VisualStudio.VSHelp80.Help2 help2 = (Microsoft.VisualStudio.VSHelp80.Help2)dte.GetObject("Help2");
-                    help2.DisplayTopicFromKeyword(currentError.ErrorCode);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Couldn't load help information.\n\n" + ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+                ShowHelp();
         }
 
         private void txtCaml_MouseMove(object sender, MouseEventArgs e)
@@ -444,10 +475,7 @@ namespace BdsSoft.SharePoint.Linq
             // Error selected?
             //
             if (txtCaml.Cursor == Cursors.Hand && currentError != null)
-            {
-                // TODO: Show additional info about the error.
-                MessageBox.Show(currentError.ErrorCode + ": " + currentError.Message);
-            }
+                ShowHelp();
         }
 
         #endregion

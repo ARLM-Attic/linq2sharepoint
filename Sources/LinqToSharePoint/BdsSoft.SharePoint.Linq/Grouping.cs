@@ -28,21 +28,22 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Key-based grouping of SharePoint list items.
     /// </summary>
-    /// <typeparam name="K">Key type.</typeparam>
-    /// <typeparam name="T">Element type.</typeparam>
-    public class Grouping<K,T> : IGrouping<K,T>
+    /// <typeparam name="TKey">Key type.</typeparam>
+    /// <typeparam name="TElement">Element type.</typeparam>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
+    public class Grouping<TKey,TElement> : IGrouping<TKey,TElement>
     {
         #region Private members
 
         /// <summary>
         /// Key of the group.
         /// </summary>
-        private K _key;
+        private TKey _key;
 
         /// <summary>
         /// Values in the group.
         /// </summary>
-        private List<T> _values;
+        private List<TElement> _values;
 
         #endregion
 
@@ -52,10 +53,10 @@ namespace BdsSoft.SharePoint.Linq
         /// Creates a new group with the given key.
         /// </summary>
         /// <param name="key">Key of the group.</param>
-        internal Grouping(K key)
+        internal Grouping(TKey key)
         {
             _key = key;
-            _values = new List<T>();
+            _values = new List<TElement>();
         }
 
         #endregion
@@ -65,7 +66,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Key of the group.
         /// </summary>
-        public K Key
+        public TKey Key
         {
             get { return _key; }
         }
@@ -80,14 +81,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="item"></param>
         internal void Add(object item)
         {
-            _values.Add((T)item);
+            _values.Add((TElement)item);
         }
 
         /// <summary>
         /// Gets the items in the group.
         /// </summary>
         /// <returns>Items in the group.</returns>
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<TElement> GetEnumerator()
         {
             return _values.GetEnumerator();
         }

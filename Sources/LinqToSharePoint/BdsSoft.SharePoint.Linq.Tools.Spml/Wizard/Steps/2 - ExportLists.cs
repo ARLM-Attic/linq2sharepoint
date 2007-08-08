@@ -102,6 +102,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// </summary>
         public event EventHandler WorkCompleted;
 
+        /// <summary>
+        /// Raises the StateChanged event.
+        /// </summary>
+        public void OnStateChanged()
+        {
+            if (StateChanged != null)
+                StateChanged(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the Working event.
+        /// </summary>
+        public void OnWorking()
+        {
+            if (Working != null)
+                Working(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the WorkCompleted event.
+        /// </summary>
+        public void OnWorkCompleted()
+        {
+            if (WorkCompleted != null)
+                WorkCompleted(this, new EventArgs());
+        }
+
         #endregion
 
         #region Event handlers
@@ -195,8 +222,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     // Work available. Signal "can next" as true.
                     //
                     _next = true;
-                    if (StateChanged != null)
-                        StateChanged(this, new EventArgs());
+                    OnStateChanged();
 
                     //
                     // Checking an item should cause it to get selected.
@@ -218,8 +244,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 if (ctx.ResultContext.Lists.Count == 0)
                 {
                     _next = false;
-                    if (StateChanged != null)
-                        StateChanged(this, new EventArgs());
+                    OnStateChanged();
                 }
             }
         }
@@ -346,8 +371,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Load list in background.
             //
-            if (Working != null)
-                Working(this, new EventArgs());
+            OnWorking();
             itemUpdating = item;
             checkListAfterLoad = check;
             bgList.RunWorkerAsync(item);
@@ -412,8 +436,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Signal background work completed.
             //
-            if (WorkCompleted != null)
-                WorkCompleted(this, new EventArgs());
+            OnWorkCompleted();
             lists.Focus();
         }
 

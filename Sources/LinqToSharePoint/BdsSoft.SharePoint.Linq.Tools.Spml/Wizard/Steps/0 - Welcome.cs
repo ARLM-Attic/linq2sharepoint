@@ -92,6 +92,33 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <remarks>Never raised by this step.</remarks>
         public event EventHandler WorkCompleted;
 
+        /// <summary>
+        /// Raises the StateChanged event.
+        /// </summary>
+        public void OnStateChanged()
+        {
+            if (StateChanged != null)
+                StateChanged(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the Working event.
+        /// </summary>
+        public void OnWorking()
+        {
+            if (Working != null)
+                Working(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Raises the WorkCompleted event.
+        /// </summary>
+        public void OnWorkCompleted()
+        {
+            if (WorkCompleted != null)
+                WorkCompleted(this, new EventArgs());
+        }
+
         #endregion
 
         #region Methods

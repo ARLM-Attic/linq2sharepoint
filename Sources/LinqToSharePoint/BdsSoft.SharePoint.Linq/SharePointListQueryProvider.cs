@@ -45,15 +45,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Dictionary mapping contexts on query providers.
         /// </summary>
-        static HybridDictionary providers;
-
-        /// <summary>
-        /// Type initializer.
-        /// </summary>
-        static SharePointListQueryProvider()
-        {
-            providers = new HybridDictionary();
-        }
+        static HybridDictionary providers = new HybridDictionary();
 
         /// <summary>
         /// Internal constructor for the query provider.

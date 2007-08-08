@@ -50,6 +50,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="value">Value to compare with in the DateRangesOverlap CAML query element.</param>
         /// <param name="fields">List of entity fields to participate in the DateRangesOverlap CAML query element.</param>
         /// <returns>Indicates whether or not the specified DateTimes overlap.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "value"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "fields")]
         public static bool DateRangesOverlap(DateTime value, params DateTime?[] fields)
         {
             throw RuntimeErrors.CamlMethodsInvalidUse();
