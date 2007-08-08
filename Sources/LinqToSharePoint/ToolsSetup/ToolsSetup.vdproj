@@ -1315,6 +1315,33 @@
                 }
             }
         }
+        "Full build"
+        {
+        "DisplayName" = "8:Full build"
+        "IsDebugOnly" = "11:FALSE"
+        "IsReleaseOnly" = "11:FALSE"
+        "OutputFilename" = "8:Full build\\ToolsSetup.msi"
+        "PackageFilesAs" = "3:2"
+        "PackageFileSize" = "3:-2147483648"
+        "CabType" = "3:1"
+        "Compression" = "3:2"
+        "SignOutput" = "11:FALSE"
+        "CertificateFile" = "8:"
+        "PrivateKeyFile" = "8:"
+        "TimeStampServer" = "8:"
+        "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
+        }
         "Release"
         {
         "DisplayName" = "8:Release"
@@ -1735,11 +1762,6 @@
             "AssemblyAsmDisplayName" = "8:BdsSoft.SharePoint.Linq, Version=0.2.3.0, Culture=neutral, PublicKeyToken=c9246ff4557ee8a2, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_5BB64FE0DC5387B943DCC74F0776652C"
-                    {
-                    "Name" = "8:BdsSoft.SharePoint.Linq.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:BdsSoft.SharePoint.Linq.dll"
             "TargetName" = "8:"
@@ -2609,7 +2631,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:BdsSoft LINQ to SharePoint"
         "ProductCode" = "8:{3B9D67E6-CDA4-4FF6-97E7-00A9835A0635}"
-        "PackageCode" = "8:{FDA215F0-E767-43C1-BD0D-6D1F74AE33D0}"
+        "PackageCode" = "8:{7EA46E74-C514-4046-BDB5-CCFBB96674FB}"
         "UpgradeCode" = "8:{A2AD6A2C-2673-4B38-9E1C-C353D6399ADF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -3314,7 +3336,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_047E45C478D44FA3B090BCB3EE52B201"
             {
-            "SourcePath" = "8:..\\SpMetal\\obj\\Release\\SpMetal.exe"
+            "SourcePath" = "8:..\\SpMetal\\obj\\Full build\\SpMetal.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
@@ -3342,7 +3364,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_05BF8B60BE4641029BA3085623199E20"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.EntityGenerator\\obj\\Release\\BdsSoft.SharePoint.Linq.Tools.EntityGenerator.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.EntityGenerator\\obj\\Full build\\BdsSoft.SharePoint.Linq.Tools.EntityGenerator.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
@@ -3370,7 +3392,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_30244D72B918457AB9BF7C571DBB5672"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer\\obj\\Release\\BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer\\obj\\Full build\\BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
@@ -3398,7 +3420,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_40B8CCA68FA9498C9C87827F0E149C20"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Spml\\obj\\Release\\BdsSoft.SharePoint.Linq.Tools.Spml.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Spml\\obj\\Full build\\BdsSoft.SharePoint.Linq.Tools.Spml.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_1D20DDB495D842E7ADC398D9B6ADD93E"
@@ -3454,7 +3476,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5DBB362263314958A8DC27DE8BB0B3DC"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Spml\\obj\\Release\\BdsSoft.SharePoint.Linq.Tools.Spml.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Spml\\obj\\Full build\\BdsSoft.SharePoint.Linq.Tools.Spml.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
@@ -3538,7 +3560,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_7FA1F85F2F60461B9C16EDA313888162"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq\\obj\\Release\\BdsSoft.SharePoint.Linq.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq\\obj\\Full build\\BdsSoft.SharePoint.Linq.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
@@ -3594,7 +3616,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AEFA9F2FA81C4C28AD3A6E8332A05BBB"
             {
-            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Installer\\obj\\Release\\BdsSoft.SharePoint.Linq.Tools.Installer.dll"
+            "SourcePath" = "8:..\\BdsSoft.SharePoint.Linq.Tools.Installer\\obj\\Full build\\BdsSoft.SharePoint.Linq.Tools.Installer.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D4B1CEA5F253402B800510A125AC3FE3"
