@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml {
+namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BdsSoft.SharePoint.Linq.Tools.Spml.Strings", typeof(Strings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.Strings", typeof(Strings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,36 +61,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The call to GetDefaultExtension() has failed due to the exception:.
+        ///   Looks up a localized string similar to Couldn&apos;t load help information..
         /// </summary>
-        internal static string GetDefaultExtensionFailed {
+        internal static string CouldntLoadHelp {
             get {
-                return ResourceManager.GetString("GetDefaultExtensionFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Specified language not supported..
-        /// </summary>
-        internal static string LanguageNotSupported {
-            get {
-                return ResourceManager.GetString("LanguageNotSupported", resourceCulture);
-            }
-        }
-        
-        internal static System.Drawing.Bitmap sharepoint {
-            get {
-                object obj = ResourceManager.GetObject("sharepoint", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Are you sure you want to cancel the wizard?.
-        /// </summary>
-        internal static string WizardCloseConfirm {
-            get {
-                return ResourceManager.GetString("WizardCloseConfirm", resourceCulture);
+                return ResourceManager.GetString("CouldntLoadHelp", resourceCulture);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq.Tools.Spml
+﻿namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     partial class ProjectItemInstaller
     {

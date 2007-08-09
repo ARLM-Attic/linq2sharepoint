@@ -77,6 +77,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml")]
         public static Context FromSpml(XmlNode spml)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // Context object.
             //

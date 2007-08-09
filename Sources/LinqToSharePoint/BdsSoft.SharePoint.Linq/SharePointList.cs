@@ -59,13 +59,24 @@ namespace BdsSoft.SharePoint.Linq
         /// Create a list source object for querying of a SharePoint list.
         /// </summary>
         /// <param name="context">Data context object used to connect to SharePoint.</param>
-        public SharePointList(SharePointDataContext context)
+        public SharePointList(SharePointDataContext context) : this(context, true)
+        {
+        }
+
+        /// <summary>
+        /// Create a list source object for querying of a SharePoint list.
+        /// </summary>
+        /// <param name="context">Data context object used to connect to SharePoint.</param>
+        /// <param name="autoRegister">Indicates whether or not the list should be registered with the context.</param>
+        internal SharePointList(SharePointDataContext context, bool autoRegister)
         {
             if (context == null)
                 throw new ArgumentNullException("context");
 
             _context = context;
-            _context.RegisterList(this);
+
+            if (autoRegister)
+                _context.RegisterList(this);
         }
 
         #endregion

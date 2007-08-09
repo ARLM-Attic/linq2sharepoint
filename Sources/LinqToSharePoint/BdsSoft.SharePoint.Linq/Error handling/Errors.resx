@@ -243,6 +243,9 @@
     <value>Non-boolean constant values are not supported in query predicates.</value>
     <comment>SP0002</comment>
   </data>
+  <data name="NoNetworkCredentialsForSom" xml:space="preserve">
+    <value>Cannot use network credentials when using the SharePoint object model as the data source.</value>
+  </data>
   <data name="NonExistingLookupField" xml:space="preserve">
     <value>The Lookup field {0} links to a non-existing LookupField: {1}.</value>
     <comment>SP0022</comment>

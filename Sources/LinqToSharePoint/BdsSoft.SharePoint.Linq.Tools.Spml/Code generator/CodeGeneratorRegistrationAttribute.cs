@@ -22,7 +22,7 @@ using System.Globalization;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml
+namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     /// <summary>
     /// This attribute adds a custom file generator registry entry for specific file 
@@ -134,6 +134,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         {
             get { return string.Format(CultureInfo.InvariantCulture, @"Generators\{0}\{1}", ContextGuid, GeneratorRegKeyName); }
         }
+
         /// <summary>
         ///     Called to register this attribute with the given context.  The context
         ///     contains the location where the registration inforomation should be placed.
@@ -141,6 +142,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// </summary>
         public override void Register(RegistrationContext context)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+
             using (Key childKey = context.CreateKey(GeneratorRegKey))
             {
                 childKey.SetValue(string.Empty, GeneratorName);
@@ -160,6 +164,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <param name="context"></param>
         public override void Unregister(RegistrationContext context)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+
             context.RemoveKey(GeneratorRegKey);
         }
     }

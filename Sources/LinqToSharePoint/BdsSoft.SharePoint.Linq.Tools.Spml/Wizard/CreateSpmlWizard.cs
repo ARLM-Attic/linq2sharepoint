@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml
+namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     /// <summary>
     /// Entity generator wizard.
@@ -59,6 +59,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         public void ProjectItemFinishedGenerating(EnvDTE.ProjectItem projectItem)
         {
+            if (projectItem == null)
+                throw new ArgumentNullException("projectItem");
+
             projectItem.Properties.Item("CustomTool").Value = _tool;
         }
 

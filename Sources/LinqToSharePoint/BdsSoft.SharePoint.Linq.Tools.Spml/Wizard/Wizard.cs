@@ -256,7 +256,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             else
             {
                 MessageBoxOptions options = Wizard.IsRightToLeft(this) ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
-                return MessageBox.Show("Are you sure you want to cancel the wizard?", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, options) == DialogResult.Yes;
+                return MessageBox.Show(Strings.WizardCloseConfirm, this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, options) == DialogResult.Yes;
             }
         }
 

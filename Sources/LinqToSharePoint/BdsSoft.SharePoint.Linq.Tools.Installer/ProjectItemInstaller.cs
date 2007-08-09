@@ -16,24 +16,18 @@
 
 #region Namespace imports
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration.Install;
-using Microsoft.Win32;
-using System.IO;
-using System.Windows.Forms;
-using System.Text;
-using System.Diagnostics;
 using System.Globalization;
+using System.Windows.Forms;
+using Microsoft.Win32;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml
+namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     [RunInstaller(true)]
-    public partial class ProjectItemInstaller : Installer
+    public partial class ProjectItemInstaller : System.Configuration.Install.Installer
     {
         public ProjectItemInstaller()
         {
@@ -52,7 +46,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 InstallProgress progress = new InstallProgress(InstallerMode.Install, target, instal);
                 MessageBoxOptions options = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
                 if (progress.ShowDialog() != DialogResult.OK)
-                    MessageBox.Show("Visual Studio 2008 configuration failed.", "LINQ to SharePoint Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, options);
+                    MessageBox.Show(Strings.Vs2008ConfigFailed, "LINQ to SharePoint Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, options);
             }
         }
 

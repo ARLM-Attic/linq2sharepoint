@@ -21,7 +21,7 @@ using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml
+namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     /// <summary>
     /// Finish step of the entity generator wizard.

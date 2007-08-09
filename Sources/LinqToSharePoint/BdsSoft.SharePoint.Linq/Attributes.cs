@@ -29,6 +29,22 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public sealed class FieldAttribute : Attribute
     {
+        #region Private members
+
+        /// <summary>
+        /// Name of the list field in SharePoint.
+        /// </summary>
+        /// <remarks>No automatic property with private setter because of Microsoft.Design CA1019 violation.</remarks>
+        private string _field;
+
+        /// <summary>
+        /// List field type in SharePoint.
+        /// </summary>
+        /// <remarks>No automatic property with private setter because of Microsoft.Design CA1019 violation.</remarks>
+        private FieldType _fieldType;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -39,8 +55,8 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The field name should not be XML-encoded. This will be done automatically if needed.</remarks>
         public FieldAttribute(string field, FieldType fieldType)
         {
-            Field = field;
-            FieldType = fieldType;
+            _field = field;
+            _fieldType = fieldType;
         }
 
         #endregion
@@ -53,8 +69,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The field name should not be XML-encoded. This will be done automatically if needed.</remarks>
         public string Field
         {
-            get;
-            private set;
+            get { return _field; }
         }
 
         /// <summary>
@@ -62,8 +77,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         public FieldType FieldType
         {
-            get;
-            private set;
+            get { return _fieldType; }
         }
 
         /// <summary>
@@ -149,6 +163,16 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class ListAttribute : Attribute
     {
+        #region Private members
+
+        /// <summary>
+        /// SharePoint list where the entity type is mapped to.
+        /// </summary>
+        /// <remarks>No automatic property with private setter because of Microsoft.Design CA1019 violation.</remarks>
+        private string _list;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -157,7 +181,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="list">SharePoint list where the entity type is mapped to.</param>
         public ListAttribute(string list)
         {
-            List = list;
+            _list = list;
             CheckVersion = true;
         }
 
@@ -170,8 +194,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         public string List
         {
-            get;
-            private set;
+            get { return _list; }
         }
 
         /// <summary>
@@ -220,6 +243,16 @@ namespace BdsSoft.SharePoint.Linq
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public sealed class ChoiceAttribute : Attribute
     {
+        #region Private members
+
+        /// <summary>
+        /// Name of the choice value in SharePoint.
+        /// </summary>
+        /// <remarks>No automatic property with private setter because of Microsoft.Design CA1019 violation.</remarks>
+        private string _choice;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -229,7 +262,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The choice value should not be XML-encoded. This will be done automatically if needed.</remarks>
         public ChoiceAttribute(string choice)
         {
-            Choice = choice;
+            _choice = choice;
         }
 
         #endregion
@@ -242,8 +275,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>The choice value should not be XML-encoded. This will be done automatically if needed.</remarks>
         public string Choice
         {
-            get;
-            private set;
+            get { return _choice; }
         }
 
         #endregion

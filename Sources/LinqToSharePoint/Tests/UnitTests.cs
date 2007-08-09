@@ -1532,9 +1532,9 @@ namespace Tests
                 //
                 // Add items.
                 //
-                UrlValue url1 = new UrlValue("http://www.bartdesmet.net", "Bart's homepage");
-                UrlValue url2 = new UrlValue("http://www.codeplex.com/LINQtoSharePoint", null);
-                UrlValue url3 = new UrlValue(null, null);
+                Url url1 = new Url("http://www.bartdesmet.net", "Bart's homepage");
+                Url url2 = new Url("http://www.codeplex.com/LINQtoSharePoint", null);
+                Url url3 = new Url(null, null);
                 UrlTest u1 = new UrlTest() { Title = "Bart", Homepage = url1 };
                 UrlTest u2 = new UrlTest() { Title = "Project", Homepage = url2 };
                 UrlTest u3 = new UrlTest() { Title = "Null", Homepage = url3 };
@@ -1552,9 +1552,9 @@ namespace Tests
                     // Queries.
                     //
                     var res1 = (from u in src where u.ID == 1 select u.Homepage).First();
-                    Assert.IsTrue(res1.Description == "Bart's homepage" && res1.Url == "http://www.bartdesmet.net", "Test for Url failed (1) " + ctx.Name);
+                    Assert.IsTrue(res1.Description == "Bart's homepage" && res1.Address == "http://www.bartdesmet.net", "Test for Url failed (1) " + ctx.Name);
                     var res2 = (from u in src where u.ID == 2 select u.Homepage).First();
-                    Assert.IsTrue(res2.Url == "http://www.codeplex.com/LINQtoSharePoint", "Test for Url failed (2) " + ctx.Name);
+                    Assert.IsTrue(res2.Address == "http://www.codeplex.com/LINQtoSharePoint", "Test for Url failed (2) " + ctx.Name);
                     var res3 = (from u in src where u.ID == 3 select u.Homepage).First();
                     Assert.IsTrue(res3 == null, "Test for Url failed (3) " + ctx.Name);
                     var res4 = (from u in src where u.ID == 4 select u.Homepage).First();

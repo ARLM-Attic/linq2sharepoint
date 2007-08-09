@@ -213,6 +213,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static Field FromCaml(XmlNode fieldDefinition)
         {
+            if (fieldDefinition == null)
+                throw new ArgumentNullException("fieldDefinition");
+
             //
             // Field object. Include by default.
             //
@@ -332,6 +335,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static Field FromSpml(XmlNode spml)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // Field object.
             //
@@ -475,7 +481,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 case "URL":
                     field.FieldType = FieldType.URL;
-                    field.RuntimeType = typeof(UrlValue);
+                    field.RuntimeType = typeof(Url);
                     break;
                 //
                 // Choice and MultiChoice are mapped on helper enums, (optionally) together with a helper string field for fill-in choices.

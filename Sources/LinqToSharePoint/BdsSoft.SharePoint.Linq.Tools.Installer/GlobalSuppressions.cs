@@ -8,6 +8,5 @@
 // Suppression File". You do not need to add suppressions to this
 // file manually.
 
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Bds", Scope = "namespace", Target = "BdsSoft.SharePoint.Linq.Tools.Spml")]
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml", Scope = "namespace", Target = "BdsSoft.SharePoint.Linq.Tools.Spml")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Bds")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Bds", Scope = "namespace", Target = "BdsSoft.SharePoint.Linq.Tools.Installer")]

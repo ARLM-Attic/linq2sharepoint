@@ -188,6 +188,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml")]
         public CodeCompileUnit GenerateCode(XmlDocument spml)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // Validate the SPML input.
             //
@@ -264,6 +267,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <returns>true if validation succeeded; otherwise, false.</returns>
         private static bool ValidateSpml(XmlDocument spml, out List<ValidationEventArgs> messages)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // Get the resource with the SPML XSD definition.
             //

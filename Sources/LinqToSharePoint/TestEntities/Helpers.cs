@@ -90,9 +90,9 @@ namespace Tests
 
                     if (fa.FieldType == FieldType.URL)
                     {
-                        UrlValue uVal = (UrlValue)o;
+                        Url uVal = (Url)o;
                         SPFieldUrlValue val = new SPFieldUrlValue();
-                        val.Url = uVal.Url;
+                        val.Url = uVal.Address;
                         val.Description = uVal.Description;
                         item[fa.Field] = val;
                     }

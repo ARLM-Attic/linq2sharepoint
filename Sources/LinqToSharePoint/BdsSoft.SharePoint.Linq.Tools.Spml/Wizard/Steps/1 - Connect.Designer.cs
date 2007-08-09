@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq.Tools.Spml
+﻿namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     partial class Connect
     {
@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Connect));
             this.label3 = new System.Windows.Forms.Label();
             this.btnTest = new System.Windows.Forms.Button();
             this.errors = new System.Windows.Forms.ErrorProvider(this.components);
@@ -55,23 +56,13 @@
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(3, 0);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(405, 39);
-            this.label3.TabIndex = 0;
-            this.label3.Text = "Enter information of the SharePoint site to export entities from and click on \'Te" +
-                "st connection\'. If the connection is successful, click Next to continue.";
             // 
             // btnTest
             // 
-            this.btnTest.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnTest.Location = new System.Drawing.Point(291, 192);
+            resources.ApplyResources(this.btnTest, "btnTest");
             this.btnTest.Name = "btnTest";
-            this.btnTest.Size = new System.Drawing.Size(100, 23);
-            this.btnTest.TabIndex = 11;
-            this.btnTest.Text = "&Test connection";
             this.btnTest.UseVisualStyleBackColor = true;
             this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
             // 
@@ -82,53 +73,36 @@
             // 
             // txtUrl
             // 
-            this.txtUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtUrl, 5);
-            this.txtUrl.Location = new System.Drawing.Point(59, 0);
+            resources.ApplyResources(this.txtUrl, "txtUrl");
+            this.errors.SetIconPadding(this.txtUrl, ((int)(resources.GetObject("txtUrl.IconPadding"))));
             this.txtUrl.Name = "txtUrl";
-            this.txtUrl.Size = new System.Drawing.Size(302, 20);
-            this.txtUrl.TabIndex = 2;
-            this.txtUrl.Text = "http://";
             this.txtUrl.TextChanged += new System.EventHandler(this.txtUrl_TextChanged);
             this.txtUrl.Enter += new System.EventHandler(this.txtUrl_Enter);
             this.txtUrl.Validating += new System.ComponentModel.CancelEventHandler(this.txtUrl_Validating);
             // 
             // txtUser
             // 
-            this.txtUser.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtUser, 5);
-            this.txtUser.Location = new System.Drawing.Point(67, 1);
+            resources.ApplyResources(this.txtUser, "txtUser");
+            this.errors.SetIconPadding(this.txtUser, ((int)(resources.GetObject("txtUser.IconPadding"))));
             this.txtUser.Name = "txtUser";
-            this.txtUser.Size = new System.Drawing.Size(259, 20);
-            this.txtUser.TabIndex = 1;
             this.txtUser.TextChanged += new System.EventHandler(this.txtUser_TextChanged);
             this.txtUser.Enter += new System.EventHandler(this.txtUser_Enter);
             this.txtUser.Validating += new System.ComponentModel.CancelEventHandler(this.txtUser_Validating);
             // 
             // txtPassword
             // 
-            this.txtPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtPassword, 5);
-            this.txtPassword.Location = new System.Drawing.Point(67, 29);
+            resources.ApplyResources(this.txtPassword, "txtPassword");
+            this.errors.SetIconPadding(this.txtPassword, ((int)(resources.GetObject("txtPassword.IconPadding"))));
             this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(259, 20);
-            this.txtPassword.TabIndex = 3;
             this.txtPassword.UseSystemPasswordChar = true;
             this.txtPassword.TextChanged += new System.EventHandler(this.txtPassword_TextChanged);
             this.txtPassword.Enter += new System.EventHandler(this.txtPassword_Enter);
             // 
             // txtDomain
             // 
-            this.txtDomain.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.errors.SetIconPadding(this.txtDomain, 5);
-            this.txtDomain.Location = new System.Drawing.Point(67, 57);
+            resources.ApplyResources(this.txtDomain, "txtDomain");
+            this.errors.SetIconPadding(this.txtDomain, ((int)(resources.GetObject("txtDomain.IconPadding"))));
             this.txtDomain.Name = "txtDomain";
-            this.txtDomain.Size = new System.Drawing.Size(259, 20);
-            this.txtDomain.TabIndex = 5;
             this.txtDomain.TextChanged += new System.EventHandler(this.txtDomain_TextChanged);
             this.txtDomain.Enter += new System.EventHandler(this.txtDomain_Enter);
             // 
@@ -140,127 +114,83 @@
             // 
             // panel
             // 
-            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.panel, "panel");
             this.panel.Controls.Add(this.lblError);
             this.panel.Controls.Add(this.label1);
             this.panel.Controls.Add(this.txtUrl);
             this.panel.Controls.Add(this.btnTest);
             this.panel.Controls.Add(this.groupBox1);
-            this.panel.Location = new System.Drawing.Point(9, 42);
             this.panel.Name = "panel";
-            this.panel.Size = new System.Drawing.Size(391, 219);
-            this.panel.TabIndex = 12;
             // 
             // lblError
             // 
-            this.lblError.AutoSize = true;
+            resources.ApplyResources(this.lblError, "lblError");
             this.lblError.ForeColor = System.Drawing.Color.Red;
-            this.lblError.Location = new System.Drawing.Point(0, 197);
             this.lblError.Name = "lblError";
-            this.lblError.Size = new System.Drawing.Size(196, 13);
-            this.lblError.TabIndex = 12;
-            this.lblError.Text = "Failed to connect to the SharePoint site.";
-            this.lblError.Visible = false;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "&Site URL:";
             // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Controls.Add(this.panelCustom);
             this.groupBox1.Controls.Add(this.radCustom);
             this.groupBox1.Controls.Add(this.radNetwork);
-            this.groupBox1.Location = new System.Drawing.Point(0, 30);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(391, 156);
-            this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Log on to the server";
             // 
             // panelCustom
             // 
-            this.panelCustom.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.panelCustom, "panelCustom");
             this.panelCustom.Controls.Add(this.txtDomain);
             this.panelCustom.Controls.Add(this.txtPassword);
             this.panelCustom.Controls.Add(this.txtUser);
             this.panelCustom.Controls.Add(this.label6);
             this.panelCustom.Controls.Add(this.label5);
             this.panelCustom.Controls.Add(this.label4);
-            this.panelCustom.Enabled = false;
-            this.panelCustom.Location = new System.Drawing.Point(35, 65);
             this.panelCustom.Name = "panelCustom";
-            this.panelCustom.Size = new System.Drawing.Size(350, 86);
-            this.panelCustom.TabIndex = 2;
             // 
             // label6
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(0, 60);
+            resources.ApplyResources(this.label6, "label6");
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(46, 13);
-            this.label6.TabIndex = 4;
-            this.label6.Text = "&Domain:";
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(0, 32);
+            resources.ApplyResources(this.label5, "label5");
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(56, 13);
-            this.label5.TabIndex = 2;
-            this.label5.Text = "&Password:";
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(0, 4);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(61, 13);
-            this.label4.TabIndex = 0;
-            this.label4.Text = "&User name:";
             // 
             // radCustom
             // 
-            this.radCustom.AutoSize = true;
-            this.radCustom.Location = new System.Drawing.Point(15, 41);
+            resources.ApplyResources(this.radCustom, "radCustom");
             this.radCustom.Name = "radCustom";
-            this.radCustom.Size = new System.Drawing.Size(114, 17);
-            this.radCustom.TabIndex = 1;
             this.radCustom.TabStop = true;
-            this.radCustom.Text = "&Custom credentials";
             this.radCustom.UseVisualStyleBackColor = true;
             this.radCustom.CheckedChanged += new System.EventHandler(this.radCustom_CheckedChanged);
             // 
             // radNetwork
             // 
-            this.radNetwork.AutoSize = true;
+            resources.ApplyResources(this.radNetwork, "radNetwork");
             this.radNetwork.Checked = true;
-            this.radNetwork.Location = new System.Drawing.Point(15, 18);
             this.radNetwork.Name = "radNetwork";
-            this.radNetwork.Size = new System.Drawing.Size(154, 17);
-            this.radNetwork.TabIndex = 0;
             this.radNetwork.TabStop = true;
-            this.radNetwork.Text = "Default &network credentials";
             this.radNetwork.UseVisualStyleBackColor = true;
             // 
             // Connect
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.panel);
             this.Controls.Add(this.label3);
             this.Name = "Connect";
-            this.Size = new System.Drawing.Size(411, 267);
             this.Load += new System.EventHandler(this.Connect_Load);
             ((System.ComponentModel.ISupportInitialize)(this.errors)).EndInit();
             this.panel.ResumeLayout(false);

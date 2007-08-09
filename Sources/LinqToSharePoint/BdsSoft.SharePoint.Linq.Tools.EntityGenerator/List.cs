@@ -128,6 +128,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static List FromCaml(XmlNode listDefinition)
         {
+            if (listDefinition == null)
+                throw new ArgumentNullException("listDefinition");
+
             //
             // List object.
             //
@@ -174,6 +177,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static List FromSpml(XmlNode spml)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // List object.
             //

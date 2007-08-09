@@ -934,7 +934,7 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case FieldType.URL:
                         SPFieldUrlValue urlVal = new SPFieldUrlValue(valueAsString);
-                        UrlValue url = new UrlValue(urlVal);
+                        Url url = new Url(urlVal);
                         AssignValue(target, property, field, url);
                         break;
                     //

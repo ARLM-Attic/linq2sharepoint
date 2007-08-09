@@ -182,7 +182,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <typeparam name="T">Entity type to get a list source object for.</typeparam>
         /// <returns>List source object for the specified entity type.</returns>
         /// <remarks>Implements a singleton pattern on a per-entity type basis.</remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "BdsSoft.SharePoint.Linq.SharePointList`1<type parameter.T>")]
         public SharePointList<T> GetList<T>()
             where T : class
         {
@@ -193,9 +192,9 @@ namespace BdsSoft.SharePoint.Linq
             if (!_lists.ContainsKey(t))
             {
                 //
-                // Constructor will add list to the context.
+                // Create new list and add list to the context. Note: we avoid the public ctor with side-effect because of Microsoft.Design CA1806.
                 //
-                new SharePointList<T>(this);
+                RegisterList<T>(new SharePointList<T>(this, false));
             }
 
             return (SharePointList<T>)_lists[t];

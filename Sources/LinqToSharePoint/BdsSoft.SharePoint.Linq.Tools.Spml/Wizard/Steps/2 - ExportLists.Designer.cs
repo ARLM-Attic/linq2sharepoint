@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq.Tools.Spml
+﻿namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     partial class ExportLists
     {
@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExportLists));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
@@ -52,26 +53,17 @@
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(3, 4);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(359, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Select the lists you want to generate entities for and click Next to continue.";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(3, 0);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(31, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Lists:";
             // 
             // splitContainer2
             // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.splitContainer2, "splitContainer2");
             this.splitContainer2.Name = "splitContainer2";
             // 
             // splitContainer2.Panel1
@@ -83,34 +75,22 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.label4);
             this.splitContainer2.Panel2.Controls.Add(this.properties);
-            this.splitContainer2.Size = new System.Drawing.Size(402, 305);
-            this.splitContainer2.SplitterDistance = 144;
-            this.splitContainer2.TabIndex = 0;
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(37, 13);
-            this.label3.TabIndex = 0;
-            this.label3.Text = "Fields:";
             // 
             // fields
             // 
-            this.fields.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.fields, "fields");
             this.fields.CheckBoxes = true;
             this.fields.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader2});
             this.fields.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.fields.Location = new System.Drawing.Point(4, 16);
             this.fields.MultiSelect = false;
             this.fields.Name = "fields";
             this.fields.ShowGroups = false;
-            this.fields.Size = new System.Drawing.Size(135, 286);
-            this.fields.TabIndex = 0;
             this.fields.UseCompatibleStateImageBehavior = false;
             this.fields.View = System.Windows.Forms.View.Details;
             this.fields.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.fields_ItemChecked);
@@ -120,29 +100,17 @@
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(57, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "Properties:";
             // 
             // properties
             // 
-            this.properties.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.properties.Location = new System.Drawing.Point(3, 16);
+            resources.ApplyResources(this.properties, "properties");
             this.properties.Name = "properties";
-            this.properties.Size = new System.Drawing.Size(248, 289);
-            this.properties.TabIndex = 0;
             // 
             // panel
             // 
-            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.panel.Location = new System.Drawing.Point(6, 52);
+            resources.ApplyResources(this.panel, "panel");
             this.panel.Name = "panel";
             // 
             // panel.Panel1
@@ -153,25 +121,17 @@
             // panel.Panel2
             // 
             this.panel.Panel2.Controls.Add(this.splitContainer2);
-            this.panel.Size = new System.Drawing.Size(545, 305);
-            this.panel.SplitterDistance = 139;
-            this.panel.TabIndex = 1;
             // 
             // lists
             // 
-            this.lists.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.lists, "lists");
             this.lists.CheckBoxes = true;
             this.lists.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1});
             this.lists.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.lists.Location = new System.Drawing.Point(6, 16);
             this.lists.MultiSelect = false;
             this.lists.Name = "lists";
             this.lists.ShowGroups = false;
-            this.lists.Size = new System.Drawing.Size(130, 289);
-            this.lists.TabIndex = 1;
             this.lists.UseCompatibleStateImageBehavior = false;
             this.lists.View = System.Windows.Forms.View.Details;
             this.lists.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lists_ItemChecked);
@@ -180,24 +140,16 @@
             // 
             // txtContext
             // 
-            this.txtContext.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtContext.Location = new System.Drawing.Point(253, 26);
+            resources.ApplyResources(this.txtContext, "txtContext");
             this.txtContext.Name = "txtContext";
-            this.txtContext.Size = new System.Drawing.Size(295, 20);
-            this.txtContext.TabIndex = 2;
             this.txtContext.TextChanged += new System.EventHandler(this.txtContext_TextChanged);
             // 
             // chkContext
             // 
-            this.chkContext.AutoSize = true;
+            resources.ApplyResources(this.chkContext, "chkContext");
             this.chkContext.Checked = true;
             this.chkContext.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkContext.Location = new System.Drawing.Point(6, 28);
             this.chkContext.Name = "chkContext";
-            this.chkContext.Size = new System.Drawing.Size(241, 17);
-            this.chkContext.TabIndex = 1;
-            this.chkContext.Text = "Auto-generate data &context object with name:";
             this.chkContext.UseVisualStyleBackColor = true;
             this.chkContext.CheckedChanged += new System.EventHandler(this.chkContext_CheckedChanged);
             // 
@@ -208,14 +160,13 @@
             // 
             // ExportLists
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.chkContext);
             this.Controls.Add(this.txtContext);
             this.Controls.Add(this.panel);
             this.Controls.Add(this.label1);
             this.Name = "ExportLists";
-            this.Size = new System.Drawing.Size(554, 360);
             this.Load += new System.EventHandler(this.ExportLists_Load);
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel1.PerformLayout();

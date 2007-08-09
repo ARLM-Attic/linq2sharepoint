@@ -163,7 +163,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             else if (value == "false" || value == "0")
                 return false;
             else
-                throw new FormatException("String was not recognized as a valid Boolean.");
+                throw new FormatException(Strings.InvalidBool);
         }
 
         #endregion

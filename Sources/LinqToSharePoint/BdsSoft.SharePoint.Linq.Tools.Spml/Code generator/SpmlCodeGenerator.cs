@@ -91,7 +91,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             else if (lang == CodeModelLanguageConstants.vsCMLanguageVB)
                 args.Language = BdsSoft.SharePoint.Linq.Tools.EntityGenerator.Language.VB;
             else
-                throw new NotSupportedException("Specified language not supported.");
+                throw new NotSupportedException(Strings.LanguageNotSupported);
 
             //
             // Generate the code.

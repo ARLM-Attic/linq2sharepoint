@@ -62,12 +62,12 @@ namespace BdsSoft.SharePoint.Linq.Providers
             get
             {
                 CheckDisposed();
-                throw new NotSupportedException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                throw new NotSupportedException(Errors.NoNetworkCredentialsForSom);
             }
             set
             {
                 CheckDisposed();
-                throw new NotSupportedException("Cannot use network credentials when using the SharePoint object model as the data source.");
+                throw new NotSupportedException(Errors.NoNetworkCredentialsForSom);
             }
         }
 

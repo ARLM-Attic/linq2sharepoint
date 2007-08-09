@@ -215,7 +215,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
             catch (Exception ex)
             {
                 MessageBoxOptions options = IsRightToLeft(this) ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
-                MessageBox.Show("Couldn't load help information.\n\n" + ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, options);
+                MessageBox.Show(Strings.CouldntLoadHelp + "\n\n" + ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, options);
             }
         }
 

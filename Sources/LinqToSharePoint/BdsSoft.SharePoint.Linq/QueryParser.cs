@@ -520,7 +520,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Check for UrlValue fields.
             //
-            if (property.DeclaringType == typeof(UrlValue))
+            if (property.DeclaringType == typeof(Url))
             {
                 if (property.Name != "Url")
                 {
@@ -1269,9 +1269,9 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Special treatment for UrlValues.
             //
-            UrlValue urlVal = value as UrlValue;
+            Url urlVal = value as Url;
             if (urlVal != null)
-                value = urlVal.Url;
+                value = urlVal.Address;
 
             //
             // Special treatment for detected date values.
@@ -1517,7 +1517,7 @@ namespace BdsSoft.SharePoint.Linq
             found = false;
 
             MemberExpression m = expression as MemberExpression;
-            if (m != null && m.Member.DeclaringType == typeof(UrlValue) && IsEntityPropertyReference(m.Expression))
+            if (m != null && m.Member.DeclaringType == typeof(Url) && IsEntityPropertyReference(m.Expression))
             {
                 if (m.Member.Name != "Url")
                 {

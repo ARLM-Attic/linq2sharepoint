@@ -1554,7 +1554,7 @@ namespace Tests
 
         private string _Title;
 
-        private global::BdsSoft.SharePoint.Linq.UrlValue _Homepage;
+        private global::BdsSoft.SharePoint.Linq.Url _Homepage;
 
         private int _ID = default(int);
 
@@ -1591,7 +1591,7 @@ namespace Tests
         /// Homepage
         /// </summary>
         [global::BdsSoft.SharePoint.Linq.FieldAttribute("Homepage", global::BdsSoft.SharePoint.Linq.FieldType.URL, Id = "f188c0ac-fc72-4a79-b10c-82f35f23caa5", Storage = "_Homepage")]
-        public global::BdsSoft.SharePoint.Linq.UrlValue Homepage
+        public global::BdsSoft.SharePoint.Linq.Url Homepage
         {
             get
             {

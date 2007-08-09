@@ -25,7 +25,7 @@ using System.Globalization;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Spml
+namespace BdsSoft.SharePoint.Linq.Tools.Installer
 {
     public partial class InstallProgress : Form
     {
@@ -71,7 +71,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
 
         private void InstallProgress_Load(object sender, EventArgs e)
         {
-            backgroundWorker1.RunWorkerAsync();
+            installationWorker.RunWorkerAsync();
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

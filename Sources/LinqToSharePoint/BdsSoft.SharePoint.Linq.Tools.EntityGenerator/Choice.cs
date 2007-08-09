@@ -78,6 +78,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static Choice FromCaml(XmlNode choiceDefinition)
         {
+            if (choiceDefinition == null)
+                throw new ArgumentNullException("choiceDefinition");
+
             //
             // Choice object.
             //
@@ -102,6 +105,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static Choice FromSpml(XmlNode spml)
         {
+            if (spml == null)
+                throw new ArgumentNullException("spml");
+
             //
             // Choice object.
             //
