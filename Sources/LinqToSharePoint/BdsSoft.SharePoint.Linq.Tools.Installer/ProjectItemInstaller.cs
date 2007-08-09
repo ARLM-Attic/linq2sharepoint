@@ -26,6 +26,7 @@ using System.IO;
 using System.Windows.Forms;
 using System.Text;
 using System.Diagnostics;
+using System.Globalization;
 
 #endregion
 
@@ -49,12 +50,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             if (instal != null && target != null)
             {
                 InstallProgress progress = new InstallProgress(InstallerMode.Install, target, instal);
+                MessageBoxOptions options = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
                 if (progress.ShowDialog() != DialogResult.OK)
-                    MessageBox.Show("Visual Studio 2008 configuration failed.", "LINQ to SharePoint Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Visual Studio 2008 configuration failed.", "LINQ to SharePoint Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, options);
             }
         }
 
-        private string GetVsPath()
+        private static string GetVsPath()
         {
             RegistryKey key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\VisualStudio\\9.0", false);
             if (key != null)

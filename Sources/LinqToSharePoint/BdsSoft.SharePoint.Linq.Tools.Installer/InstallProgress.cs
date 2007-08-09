@@ -21,6 +21,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Win32;
+using System.Globalization;
 
 #endregion
 
@@ -76,10 +77,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Error != null)
-            {
-                MessageBox.Show(e.Error.Message);
                 this.DialogResult = DialogResult.Cancel;
-            }
             else
                 this.DialogResult = DialogResult.OK;
         }
@@ -172,7 +170,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             #endregion
         }
 
-        private void UnregisterSpml()
+        private static void UnregisterSpml()
         {
             if (Registry.ClassesRoot.OpenSubKey(spml) != null)
                 Registry.ClassesRoot.DeleteSubKeyTree(spml);
@@ -201,7 +199,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Get entity generator assembly which contains the XSD for SPML.
             //
-            string assemblyName = String.Format("BdsSoft.SharePoint.Linq.Tools.EntityGenerator, Version={0}, Culture=neutral, PublicKeyToken={1}", version, publicKeyToken);
+            string assemblyName = String.Format(CultureInfo.InvariantCulture, "BdsSoft.SharePoint.Linq.Tools.EntityGenerator, Version={0}, Culture=neutral, PublicKeyToken={1}", version, publicKeyToken);
             Assembly assembly = Assembly.Load(assemblyName);
 
             //
@@ -225,6 +223,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private void UninstallSpmlXsd()
         {
             try
@@ -265,6 +264,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 File.Copy(vbSrc, vbTgt);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private void UninstallVsTemplate()
         {
             string csTgt = Path.Combine(_vsPath, @"ItemTemplates\CSharp\1033\LINQtoSharePointCS.zip");
@@ -293,6 +293,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 File.Copy(src, tgt);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private void UninstallDebuggerVisualizer()
         {
             string tgt = Path.Combine(GetDebuggerVisualizerPath(), dbg);
