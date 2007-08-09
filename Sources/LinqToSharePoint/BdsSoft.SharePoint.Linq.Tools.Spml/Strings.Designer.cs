@@ -61,6 +61,51 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connect to {0} using {1}..
+        /// </summary>
+        internal static string Connect {
+            get {
+                return ResourceManager.GetString("Connect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to custom credentials.
+        /// </summary>
+        internal static string CustomCredentials {
+            get {
+                return ResourceManager.GetString("CustomCredentials", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to default network credentials.
+        /// </summary>
+        internal static string DefaultNetworkCredentials {
+            get {
+                return ResourceManager.GetString("DefaultNetworkCredentials", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Generate SharePoint datacontext {0}..
+        /// </summary>
+        internal static string GenerateContext {
+            get {
+                return ResourceManager.GetString("GenerateContext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Generate entity for list {0}..
+        /// </summary>
+        internal static string GenerateEntity {
+            get {
+                return ResourceManager.GetString("GenerateEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The call to GetDefaultExtension() has failed due to the exception:.
         /// </summary>
         internal static string GetDefaultExtensionFailed {

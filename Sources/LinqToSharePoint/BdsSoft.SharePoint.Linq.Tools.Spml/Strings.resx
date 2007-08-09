@@ -130,4 +130,19 @@
   <data name="WizardCloseConfirm" xml:space="preserve">
     <value>Are you sure you want to cancel the wizard?</value>
   </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Connect to {0} using {1}.</value>
+  </data>
+  <data name="CustomCredentials" xml:space="preserve">
+    <value>custom credentials</value>
+  </data>
+  <data name="DefaultNetworkCredentials" xml:space="preserve">
+    <value>default network credentials</value>
+  </data>
+  <data name="GenerateContext" xml:space="preserve">
+    <value>Generate SharePoint datacontext {0}.</value>
+  </data>
+  <data name="GenerateEntity" xml:space="preserve">
+    <value>Generate entity for list {0}.</value>
+  </data>
 </root>

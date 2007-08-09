@@ -18,6 +18,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using System.Globalization;
 
 #endregion
 
@@ -126,10 +127,32 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private void Finish_Load(object sender, EventArgs e)
         {
             StringBuilder sb = new StringBuilder();
+
+            //
+            // Connection info.
+            //
+            sb.AppendLine(String.Format(CultureInfo.InvariantCulture, 
+                Strings.Connect, 
+                ctx.ResultContext.Connection.Url,
+                ctx.ResultContext.Connection.CustomAuthentication ? Strings.CustomCredentials : Strings.DefaultNetworkCredentials
+                ));
+            sb.AppendLine();
+
+            //
+            // Lists.
+            //
             foreach (List list in ctx.ResultContext.Lists)
+                sb.AppendLine(String.Format(CultureInfo.InvariantCulture, Strings.GenerateEntity, list.Name));
+
+            //
+            // Context (optional).
+            //
+            if (!string.IsNullOrEmpty(ctx.ResultContext.Name))
             {
-                sb.AppendLine("Generate entity for list " + list.Name);
+                sb.AppendLine();
+                sb.AppendLine(String.Format(CultureInfo.InvariantCulture, Strings.GenerateContext, ctx.ResultContext.Name));
             }
+            
             txtSummary.Text = sb.ToString();
             txtSummary.Select(0, 0);
         }
