@@ -13,12 +13,7 @@ using BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer;
 
 namespace Junkyard
 {
-    class Junk
-    {
-        //public Users User;
-    }
-
-    class Program
+    class Program_old
     {
         static void Main(string[] args)
         {
@@ -27,9 +22,19 @@ namespace Junkyard
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
             ctx.CheckListVersion = false;
 
-            var res = (from p in ctx.Products select p).Take(10).Where(p => p.UnitPrice > 100).Select(p => p.ProductName);
-            foreach (var p in res)
-                ;
+            //var res = (from p in ctx.Products select p).Take(10).Where(p => p.UnitPrice > 100).Select(p => p.ProductName);
+            //foreach (var p in res)
+            //    ;
+
+            var res = (from l in ctx.LookupMultiTest select l).AsEnumerable().SingleOrDefault();
+            //EntitySet<Categories> cats = res.Categories;
+            bool b = res.Categories.IsLoaded;
+            if (!b)
+            {
+                Category c = res.Categories[0];
+            }
+            Console.WriteLine(res.Categories.IsLoaded);
+            string s = "";
 
             //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
@@ -364,6 +369,7 @@ namespace Junkyard
         }
     }
 
+    /*
     /// <summary>
     /// UrlTest
     /// </summary>
@@ -510,7 +516,6 @@ namespace Junkyard
         }
     }
 
-    /*
     /// <summary>
     /// Use the Tasks list to keep track of work that you or your team needs to complete.
     /// </summary>
@@ -1652,6 +1657,147 @@ namespace Junkyard
         }
     }
 
+    /// <summary>
+    /// LookupMultiTest
+    /// </summary>
+    [global::BdsSoft.SharePoint.Linq.ListAttribute("LookupMultiTest", Id = "b15d38c9-fa09-4736-a95f-9bd217df9da8", Version = 1, Path = "/Lists/LookupMultiTest")]
+    public partial class LookupMultiTest : global::System.ComponentModel.INotifyPropertyChanged, global::System.ComponentModel.INotifyPropertyChanging
+    {
+
+        private string _Title;
+
+        private global::BdsSoft.SharePoint.Linq.EntitySet<Category> _Categories = default(global::BdsSoft.SharePoint.Linq.EntitySet<Category>);
+
+        private int _ID = default(int);
+
+        private string _ContentType = default(string);
+
+        private global::System.Nullable<System.DateTime> _Modified = default(global::System.Nullable<System.DateTime>);
+
+        private global::System.Nullable<System.DateTime> _Created = default(global::System.Nullable<System.DateTime>);
+
+        private string _Version = default(string);
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Title", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "fa564e0f-0c70-4ab9-b863-0177e6ddd247", Storage = "_Title")]
+        public string Title
+        {
+            get
+            {
+                return this._Title;
+            }
+            set
+            {
+                if ((this._Title != value))
+                {
+                    this.OnPropertyChanging("Title");
+                    this._Title = value;
+                    this.OnPropertyChanged("Title");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Categories
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Categories", global::BdsSoft.SharePoint.Linq.FieldType.LookupMulti, Id = "72d4ca7f-637a-4161-8a3e-a9a84782fa0d", LookupDisplayField = "CategoryName", Storage = "_Categories")]
+        public global::BdsSoft.SharePoint.Linq.EntitySet<Category> Categories
+        {
+            get
+            {
+                return this._Categories;
+            }
+            set
+            {
+                this._Categories.Assign(value);
+            }
+        }
+
+        /// <summary>
+        /// ID
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ID", global::BdsSoft.SharePoint.Linq.FieldType.Counter, Id = "1d22ea11-1e32-424e-89ab-9fedbadb6ce1", PrimaryKey = true, ReadOnly = true, Storage = "_ID")]
+        public int ID
+        {
+            get
+            {
+                return this._ID;
+            }
+        }
+
+        /// <summary>
+        /// Content Type
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("ContentType", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "c042a256-787d-4a6f-8a8a-cf6ab767f12d", ReadOnly = true, Storage = "_ContentType")]
+        public string ContentType
+        {
+            get
+            {
+                return this._ContentType;
+            }
+        }
+
+        /// <summary>
+        /// Modified
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Modified", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f", ReadOnly = true, Storage = "_Modified")]
+        public global::System.Nullable<System.DateTime> Modified
+        {
+            get
+            {
+                return this._Modified;
+            }
+        }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("Created", global::BdsSoft.SharePoint.Linq.FieldType.DateTime, Id = "8c06beca-0777-48f7-91c7-6da68bc07b69", ReadOnly = true, Storage = "_Created")]
+        public global::System.Nullable<System.DateTime> Created
+        {
+            get
+            {
+                return this._Created;
+            }
+        }
+
+        /// <summary>
+        /// Version
+        /// </summary>
+        [global::BdsSoft.SharePoint.Linq.FieldAttribute("_UIVersionString", global::BdsSoft.SharePoint.Linq.FieldType.Text, Id = "dce8262a-3ae9-45aa-aab4-83bd75fb738a", ReadOnly = true, Storage = "_Version")]
+        public string Version
+        {
+            get
+            {
+                return this._Version;
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangingEventHandler PropertyChanging;
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanging(string propertyName)
+        {
+            if ((this.PropertyChanging != null))
+            {
+                this.PropertyChanging(this, new global::System.ComponentModel.PropertyChangingEventArgs(propertyName));
+            }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+
     public partial class NorthwindSharePointDataContext : global::BdsSoft.SharePoint.Linq.SharePointDataContext
     {
 
@@ -1717,6 +1863,17 @@ namespace Junkyard
             get
             {
                 return this.GetList<Supplier>();
+            }
+        }
+
+        /// <summary>
+        /// LookupMultiTest list.
+        /// </summary>
+        public global::BdsSoft.SharePoint.Linq.SharePointList<LookupMultiTest> LookupMultiTest
+        {
+            get
+            {
+                return this.GetList<LookupMultiTest>();
             }
         }
     }
