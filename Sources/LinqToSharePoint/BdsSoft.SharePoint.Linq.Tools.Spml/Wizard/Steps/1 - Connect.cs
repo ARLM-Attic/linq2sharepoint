@@ -61,7 +61,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         public Connect(WizardContext context)
         {
             this.ctx = context;
-            _next = false;
 
             InitializeComponent();
         }
@@ -175,7 +174,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 //
                 // Get data.
                 //
-                string url = txtUrl.Text;
+                Uri url = new Uri(txtUrl.Text);
                 string user = txtUser.Text;
                 string password = txtPassword.Text;
                 string domain = txtDomain.Text;
@@ -200,7 +199,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             ctx.ResultContext.Url 
                 = ctx.FullContext.Url
                 = conn.Url;
-            ctx.FullContext.Lists = Helpers.GetLists(conn);
+            ctx.FullContext.Lists.Clear();
+            foreach (List l in Helpers.GetLists(conn))
+                ctx.FullContext.Lists.Add(l);
         }
 
         private void bgConnect_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

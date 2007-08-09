@@ -34,7 +34,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     /// <summary>
     /// Base code generator with site implementation
     /// </summary>
-    public abstract class BaseCodeGeneratorWithSite : BaseCodeGenerator, VSOLE.IObjectWithSite
+    public abstract class BaseCodeGeneratorWithSite : BaseCodeGenerator, VSOLE.IObjectWithSite, IDisposable
     {
         private object site = null;
         private CodeDomProvider codeDomProvider = null;
@@ -98,11 +98,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Method to get a service by its GUID
         /// </summary>
-        /// <param name="serviceGuid">GUID of service to retrieve</param>
+        /// <param name="service">GUID of service to retrieve</param>
         /// <returns>An object that implements the requested service</returns>
-        protected object GetService(Guid serviceGuid)
+        protected object GetService(Guid service)
         {
-            return SiteServiceProvider.GetService(serviceGuid);
+            CheckDisposed();
+            return SiteServiceProvider.GetService(service);
         }
 
         /// <summary>
@@ -112,6 +113,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <returns>An object that implements the requested service</returns>
         protected object GetService(Type serviceType)
         {
+            CheckDisposed();
             return SiteServiceProvider.GetService(serviceType);
         }
 
@@ -120,8 +122,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// the project item the generator was called on
         /// </summary>
         /// <returns>A CodeDomProvider object</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected virtual CodeDomProvider GetCodeProvider()
         {
+            CheckDisposed();
             if (codeDomProvider == null)
             {
                 switch (GetProject().CodeModel.Language)
@@ -152,6 +156,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <returns></returns>
         protected override string GetDefaultExtension()
         {
+            CheckDisposed();
             CodeDomProvider codeDom = GetCodeProvider();
             Debug.Assert(codeDom != null, "CodeDomProvider is NULL.");
             string extension = codeDom.FileExtension;
@@ -167,8 +172,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// generator was called on
         /// </summary>
         /// <returns>The EnvDTE.ProjectItem of the project item the code generator was called on</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected ProjectItem GetProjectItem()
         {
+            CheckDisposed();
             object p = GetService(typeof(ProjectItem));
             Debug.Assert(p != null, "Unable to get Project Item.");
             return (ProjectItem)p;
@@ -181,8 +188,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <returns>
         /// The EnvDTE.Project object of the project containing the project item the code generator was called on
         /// </returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected Project GetProject()
         {
+            CheckDisposed();
             return GetProjectItem().ContainingProject;
         }
 
@@ -191,8 +200,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// generator was called on
         /// </summary>
         /// <returns>The VSLangProj.VSProjectItem of the project item the code generator was called on</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected VSProjectItem GetVSProjectItem()
         {
+            CheckDisposed();
             return (VSProjectItem)GetProjectItem().Object;
         }
 
@@ -204,9 +215,42 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// The VSLangProj.VSProject object of the project containing the project item 
         /// the code generator was called on
         /// </returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected VSProject GetVSProject()
         {
+            CheckDisposed();
             return (VSProject)GetProject().Object;
         }
+
+        #region IDisposable Members
+
+        private bool _disposed = false;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (serviceProvider != null)
+                        serviceProvider.Dispose();
+                }
+            }
+            _disposed = true;
+        }
+
+        private void CheckDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(null);
+        }
+
+        #endregion
     }
 }

@@ -32,6 +32,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Wizard context.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private WizardContext ctx;
 
         #endregion
@@ -95,6 +96,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Raises the StateChanged event.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void OnStateChanged()
         {
             if (StateChanged != null)
@@ -104,6 +106,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Raises the Working event.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void OnWorking()
         {
             if (Working != null)
@@ -113,6 +116,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Raises the WorkCompleted event.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void OnWorkCompleted()
         {
             if (WorkCompleted != null)

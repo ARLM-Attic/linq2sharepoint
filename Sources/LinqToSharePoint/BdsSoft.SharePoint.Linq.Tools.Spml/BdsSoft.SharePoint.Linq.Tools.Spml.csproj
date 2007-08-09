@@ -35,6 +35,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRules>-Microsoft.Design#CA1014</CodeAnalysisRules>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -89,6 +91,7 @@
     <Compile Include="Code generator\BaseCodeGenerator.cs" />
     <Compile Include="Code generator\BaseCodeGeneratorWithSite.cs" />
     <Compile Include="Code generator\CodeGeneratorRegistrationAttribute.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Wizard\Steps\1 - Connect.cs">
       <SubType>UserControl</SubType>
     </Compile>

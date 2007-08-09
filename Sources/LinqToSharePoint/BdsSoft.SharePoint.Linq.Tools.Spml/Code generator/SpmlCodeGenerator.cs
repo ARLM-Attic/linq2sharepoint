@@ -31,6 +31,7 @@ using System.Xml;
 using EnvDTE;
 using System.Diagnostics;
 using System.Xml.Schema;
+using System.Globalization;
 
 #endregion
 
@@ -39,7 +40,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     /// <summary>
     /// Code generator for SPML files. Translates an SPML definition into a set of entity classes in either C# or VB, using the Entity Generator.
     /// </summary>
-    [ComVisible(true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
     [Guid("8943CA47-BF10-4f25-9E5C-AE42A21338D9")]
     [CodeGeneratorRegistration(typeof(SpmlCodeGenerator), "C# LINQ to SharePoint Entity Class Generator", vsContextGuids.vsContextGuidVCSProject, GeneratesDesignTimeSource = true, GeneratorRegKeyName = "LINQtoSharePointGenerator")]
     [CodeGeneratorRegistration(typeof(SpmlCodeGenerator), "VB LINQ to SharePoint Entity Class Generator", vsContextGuids.vsContextGuidVBProject, GeneratesDesignTimeSource = true, GeneratorRegKeyName = "LINQtoSharePointGenerator")]
@@ -80,7 +81,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             // Set arguments.
             //
             EntityGeneratorArgs args = new EntityGeneratorArgs();
-            args.Namespace = this.FileNameSpace;
+            args.Namespace = this.FileNamespace;
 
             string lang = GetProject().CodeModel.Language;
             Debug.Assert(lang == CodeModelLanguageConstants.vsCMLanguageCSharp || lang == CodeModelLanguageConstants.vsCMLanguageVB);
@@ -95,14 +96,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Generate the code.
             //
-            return GenerateCode(new BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator(args), spml);
+            return GenerateCode(new BdsSoft.SharePoint.Linq.Tools.EntityGenerator.Generator(args), spml);
         }
 
         #endregion
 
         #region Helper methods
 
-        private byte[] GenerateCode(BdsSoft.SharePoint.Linq.Tools.EntityGenerator.EntityGenerator gen, XmlDocument spml)
+        private byte[] GenerateCode(BdsSoft.SharePoint.Linq.Tools.EntityGenerator.Generator gen, XmlDocument spml)
         {
             //
             // Generate code and report warnings/errors if any.
@@ -126,7 +127,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             CodeDomProvider provider = GetCodeProvider();
             StringBuilder code = new StringBuilder();
-            TextWriter tw = new StringWriter(code);
+            TextWriter tw = new StringWriter(code, CultureInfo.InvariantCulture);
             provider.GenerateCodeFromCompileUnit(compileUnit, tw, null);
             tw.Flush();
 

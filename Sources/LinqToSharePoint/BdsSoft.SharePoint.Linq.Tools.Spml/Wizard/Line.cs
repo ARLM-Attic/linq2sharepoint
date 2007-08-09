@@ -44,11 +44,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Draws the line.
         /// </summary>
-        /// <param name="pe">Paint event args.</param>
-        protected override void OnPaint(PaintEventArgs pe)
+        /// <param name="e">Paint event args.</param>
+        protected override void OnPaint(PaintEventArgs e)
         {
-            pe.Graphics.DrawLine(Pens.White, 0, 0, this.Width, 0);
-            base.OnPaint(pe);
+            e.Graphics.DrawLine(Pens.White, 0, 0, this.Width, 0);
+            base.OnPaint(e);
         }
     }
 }

@@ -19,6 +19,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using System.Globalization;
 
 #endregion
 
@@ -94,7 +95,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Go to the first step.
             //
-            step = 0;
             Step();
         }
 
@@ -163,9 +163,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// </summary>
         private void SetupEvents()
         {
-            foreach (IWizardStep step in steps)
+            foreach (IWizardStep wizardStep in steps)
             {
-                step.StateChanged +=
+                wizardStep.StateChanged +=
                     delegate(object sender, EventArgs e)
                     {
                         bool next = ((IWizardStep)sender).CanNext;
@@ -178,14 +178,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                             btnNext.Focus();
                         }
                     };
-                step.Working +=
+                wizardStep.Working +=
                     delegate(object sender, EventArgs e)
                     {
                         contents.Enabled = false;
                         progress.Visible = true;
                         buttons.Enabled = false;
                     };
-                step.WorkCompleted +=
+                wizardStep.WorkCompleted +=
                     delegate(object sender, EventArgs e)
                     {
                         contents.Enabled = true;
@@ -254,7 +254,34 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             if (noCancel)
                 return true;
             else
-                return MessageBox.Show("Are you sure you want to cancel the wizard?", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes;
+            {
+                MessageBoxOptions options = Wizard.IsRightToLeft(this) ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
+                return MessageBox.Show("Are you sure you want to cancel the wizard?", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, options) == DialogResult.Yes;
+            }
+        }
+
+        /// <summary>
+        /// Checks for right-to-left culture on the specified control.
+        /// </summary>
+        /// <param name="control">Control to check right-to-left culture for.</param>
+        /// <returns>true if right-to-left; otherwise, false</returns>
+        internal static bool IsRightToLeft(Control control)
+        {
+            if (control.RightToLeft == RightToLeft.Inherit)
+            {
+                Control parent = control.Parent;
+
+                while (parent != null)
+                {
+                    if (parent.RightToLeft != RightToLeft.Inherit)
+                        return parent.RightToLeft == RightToLeft.Yes;
+                    parent = parent.Parent;
+                }
+
+                return CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+            }
+            else
+                return control.RightToLeft == RightToLeft.Yes;
         }
 
         #endregion

@@ -20,6 +20,8 @@ using System.Xml;
 using System.IO;
 using System.Reflection;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using System.Globalization;
+using System.Runtime.InteropServices;
 
 #endregion
 
@@ -28,6 +30,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
     /// <summary>
     /// Entity generator wizard.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
     public class CreateSpmlWizard : IWizard
     {
         #region Private members
@@ -76,7 +79,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                 if (replacementsDictionary.ContainsKey("$rootname$"))
                 {
                     name = replacementsDictionary["$rootname$"];
-                    if (name.ToLower().EndsWith(".spml"))
+                    if (name.EndsWith(".spml", StringComparison.OrdinalIgnoreCase))
                         name = name.Substring(0, name.Length - ".spml".Length);
                 }
 

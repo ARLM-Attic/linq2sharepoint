@@ -58,7 +58,6 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         public ExportLists(WizardContext context)
         {
             this.ctx = context;
-            _next = false;
 
             InitializeComponent();
         }
@@ -146,12 +145,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Get lists and set context name "best guess".
             //
-            if (ctx.ResultContext.Lists == null)
-            {
-                txtContext.Text = ctx.ResultContext.Name ?? new Uri(ctx.ResultContext.Url).Host.Replace('.', ' ');
-                ctx.ResultContext.Lists = new List<List>();
-                PopulateLists();
-            }
+            txtContext.Text = ctx.ResultContext.Name ?? ctx.ResultContext.Url.Host.Replace('.', ' ');
+            PopulateLists();
         }
 
         private void lists_SelectedIndexChanged(object sender, EventArgs e)
@@ -413,7 +408,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                         fi.Checked = field.Include = true;
                         itemUpdating.Fields.Add(fi);
                     }
-                    
+
                     //
                     // Self-select.
                     //
@@ -430,7 +425,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
                     }
                 }
                 else
-                    MessageBox.Show("An error occurred while connecting to the server.\n\n" + e.Error.Message, this.ParentForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                {
+                    MessageBoxOptions options = Wizard.IsRightToLeft(this) ? MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading : 0;
+                    MessageBox.Show("An error occurred while connecting to the server.\n\n" + e.Error.Message, this.ParentForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, options);
+                }
             }
 
             //

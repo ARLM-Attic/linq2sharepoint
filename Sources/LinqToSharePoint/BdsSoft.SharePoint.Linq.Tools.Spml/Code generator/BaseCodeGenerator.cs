@@ -36,7 +36,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         #region Private members
 
         private IVsGeneratorProgress codeGeneratorProgress;
-        private string codeFileNameSpace = String.Empty;
+        private string codeFileNamespace = String.Empty;
         private string codeFilePath = String.Empty;
 
         #endregion
@@ -84,7 +84,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             }
 
             codeFilePath = wszInputFilePath;
-            codeFileNameSpace = wszDefaultNamespace;
+            codeFileNamespace = wszDefaultNamespace;
             codeGeneratorProgress = pGenerateProgress;
 
             byte[] bytes = GenerateCode(bstrInputFileContents);
@@ -120,11 +120,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <summary>
         /// Namespace for the file
         /// </summary>
-        protected string FileNameSpace
+        protected string FileNamespace
         {
             get
             {
-                return codeFileNameSpace;
+                return codeFileNamespace;
             }
         }
 
@@ -158,6 +158,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// Gets the default extension for this generator
         /// </summary>
         /// <returns>String with the default extension for this generator</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         protected abstract string GetDefaultExtension();
 
         /// <summary>
@@ -179,13 +180,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <param name="message">Text displayed to the user</param>
         /// <param name="line">Line number of error</param>
         /// <param name="column">Column number of error</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "Microsoft.VisualStudio.Shell.Interop.IVsGeneratorProgress.GeneratorError(System.Int32,System.UInt32,System.String,System.UInt32,System.UInt32)")]
         protected virtual void GeneratorError(bool warning, uint level, string message, uint line, uint column)
         {
             IVsGeneratorProgress progress = CodeGeneratorProgress;
             if (progress != null)
-            {
-                progress.GeneratorError(warning ? 1 : 0, level, message, line, column);
-            }
+                progress.GeneratorError(warning ? 1 : 0, level, message, line, column); //Ignore HRESULT
         }
 
         /// <summary>
@@ -195,13 +195,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         /// <param name="message">Text displayed to the user</param>
         /// <param name="line">Line number of warning</param>
         /// <param name="column">Column number of warning</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "Microsoft.VisualStudio.Shell.Interop.IVsGeneratorProgress.GeneratorError(System.Int32,System.UInt32,System.String,System.UInt32,System.UInt32)")]
         protected virtual void GeneratorWarning(uint level, string message, uint line, uint column)
         {
             IVsGeneratorProgress progress = CodeGeneratorProgress;
             if (progress != null)
-            {
-                progress.GeneratorError(1, level, message, line, column);
-            }
+                progress.GeneratorError(1, level, message, line, column); //Ignore HRESULT
         }
 
         #endregion

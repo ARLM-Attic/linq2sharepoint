@@ -22,6 +22,7 @@ using System.Text;
 using System.Xml;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.Net;
+using System.Globalization;
 
 #endregion
 
@@ -37,7 +38,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             List<List> result = new List<List>();
 
             foreach (XmlNode l in listsXml.ChildNodes)
-                if (l.Attributes["Hidden"].Value.ToLower() != "true")
+                if (l.Attributes["Hidden"].Value.ToUpperInvariant() != "TRUE")
                     result.Add(List.FromCaml(l));
 
             return result;
@@ -54,7 +55,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         private static WebServices.Lists GetListsProxy(Connection connection)
         {
             WebServices.Lists lists = new WebServices.Lists();
-            lists.Url = connection.Url.TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
+            lists.Url = connection.Url.ToString().TrimEnd('/') + "/_vti_bin/lists.asmx"; ;
 
             if (!connection.CustomAuthentication)
                 lists.Credentials = CredentialCache.DefaultNetworkCredentials;
