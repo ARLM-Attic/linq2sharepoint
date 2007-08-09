@@ -897,7 +897,7 @@ namespace Tests
 
         private string _Title;
 
-        private global::BdsSoft.SharePoint.Linq.EntitySet<LookupChild> _Childs;
+        private global::BdsSoft.SharePoint.Linq.EntitySet<LookupChild> _Childs = default(global::BdsSoft.SharePoint.Linq.EntitySet<LookupChild>);
 
         private int _ID = default(int);
 

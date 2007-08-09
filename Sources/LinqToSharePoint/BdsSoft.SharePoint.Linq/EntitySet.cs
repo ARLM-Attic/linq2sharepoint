@@ -12,6 +12,7 @@
  * Version history:
  *
  * 0.2.2 - Introduction of EntitySet<T>; replaces lazy loading thunk functionality.
+ * 0.2.3 - Lazy loading implementation improvement.
  */
 
 #region Namespace imports
@@ -30,7 +31,7 @@ namespace BdsSoft.SharePoint.Linq
     /// </summary>
     /// <typeparam name="T">Type of the referenced entities.</typeparam>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
-    public struct EntitySet<T> : IList<T>, ICollection<T>
+    public class EntitySet<T> : IList<T>, ICollection<T>
         where T : class
     {
         #region Private members
@@ -441,9 +442,9 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Can only compare to another EntitySet instance.
             //
-            if (!(obj is EntitySet<T>))
+            EntitySet<T> e = obj as EntitySet<T>;
+            if (e == null)
                 return false;
-            EntitySet<T> e = (EntitySet<T>)obj;
 
             //
             // Compare both instances.

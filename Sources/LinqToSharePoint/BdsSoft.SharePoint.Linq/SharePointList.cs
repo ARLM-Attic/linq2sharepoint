@@ -11,9 +11,10 @@
 /*
  * Version history:
  *
- * 0.2.1 - Introduction of SharePointList<T>
- * 0.2.2 - New entity model
- * 0.2.3 - Orcas Beta 2 changes
+ * 0.2.1 - Introduction of SharePointList<T>.
+ * 0.2.2 - New entity model.
+ * 0.2.3 - Orcas Beta 2 changes.
+ *         Lazy loading improvement for multiple ids.
  */
 
 #region Namespace imports
@@ -140,21 +141,7 @@ namespace BdsSoft.SharePoint.Linq
 
         #endregion
 
-        #region IQuerable<T> implementation
-
-        ///// <summary>
-        ///// Creates a query for the list source.
-        ///// </summary>
-        ///// <typeparam name="TElement">Type of the query result objects.</typeparam>
-        ///// <param name="expression">Expression representing the query.</param>
-        ///// <returns>Query object representing the list query.</returns>
-        //public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        //{
-        //    if (expression == null)
-        //        throw new ArgumentNullException("expression");
-
-        //    return new SharePointListQuery<TElement>(_context, expression);
-        //}
+        #region IOrderedQueryable<T> implementation
 
         /// <summary>
         /// Gets all entity objects from the SharePoint list.
@@ -173,38 +160,6 @@ namespace BdsSoft.SharePoint.Linq
         {
             return _context.ExecuteQuery<T>(this.Expression);
         }
-
-        ///// <summary>
-        ///// Executes the query and returns a single result of the specified type.
-        ///// </summary>
-        ///// <typeparam name="TResult">Type of the query result object.</typeparam>
-        ///// <param name="expression">Expression representing the query.</param>
-        ///// <returns>Singleton query result object.</returns>
-        //public TResult Execute<TResult>(Expression expression)
-        //{
-        //    if (expression == null)
-        //        throw new ArgumentNullException("expression");
-
-        //    IEnumerator<TResult> res = _context.ExecuteQuery<TResult>(expression);
-        //    if (res.MoveNext())
-        //        return res.Current;
-        //    else
-        //        throw new InvalidOperationException("Query did not return any results.");
-        //}
-
-        //#region Not implemented
-
-        //public IQueryable CreateQuery(Expression expression)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public object Execute(Expression expression)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //#endregion
 
         #endregion
 
@@ -262,14 +217,70 @@ namespace BdsSoft.SharePoint.Linq
                 throw new ArgumentNullException("ids");
 
             //
-            // TODO
+            // Entities to be loaded because these are missing in the cache.
             //
-            // Replace naive implementation with <Or>-based query on identifier field, excluding items already in cache.
-            // This implementation will launch a lot of small queries for each individual referenced entity.
+            List<int> missing = new List<int>();
+
             //
-            List<T> lst = new List<T>();
+            // Find missing entities to build load list.
+            //
             foreach (int id in ids)
-                lst.Add(GetEntityById(id));
+                if (!cache.ContainsKey(id))
+                    missing.Add(id);
+
+            //
+            // Need to load missing entities?
+            //
+            if (missing.Count > 0)
+            {
+                //
+                // Find primary key field and property.
+                //
+                FieldAttribute pkField;
+                PropertyInfo pkProp;
+                Helpers.FindPrimaryKey(typeof(T), out pkField, out pkProp, true);
+
+                //
+                // Build a manual query representing this.Where(e => e.ID = missing[0] || e.ID = missing[1] || ...) with ID property being variable, based on pkProp.
+                //
+                ParameterExpression parameter = Expression.Parameter(typeof(T), "e");
+                MemberExpression pk = Expression.Property(parameter, pkProp);
+
+                //
+                // Get equality checks for all of the ids.
+                //
+                Queue<BinaryExpression> byIDs = new Queue<BinaryExpression>();
+                foreach (int id in missing)
+                    byIDs.Enqueue(Expression.Equal(pk, Expression.Constant(id, typeof(int))));
+                
+                //
+                // Try to balance the tree.
+                //
+                while (byIDs.Count > 1)
+                    byIDs.Enqueue(Expression.Or(byIDs.Dequeue(), byIDs.Dequeue()));
+
+                //
+                // Get the filter based on the expression node.
+                //
+                Expression<Func<T, bool>> filter = Expression.Lambda<Func<T, bool>>(byIDs.Dequeue(), parameter);
+
+                //
+                // Put loaded entities in the cache.
+                //
+                foreach (T item in Queryable.Where<T>(this, filter))
+                {
+                    int id = (int)pkProp.GetValue(item, null);
+                    cache[id] = item;
+                }
+            }
+
+            //
+            // Result list based on cached entities. Keeps the ordering of the original ids parameter.
+            //
+            List<T> lst = new List<T>(ids.Length);
+            foreach (int id in ids)
+                lst.Add(cache[id]); //TODO: what if an entity is missing for some reason?
+
             return lst;
         }
 
