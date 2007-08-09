@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq.Tools.Installer
+﻿namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class ExportLists
     {

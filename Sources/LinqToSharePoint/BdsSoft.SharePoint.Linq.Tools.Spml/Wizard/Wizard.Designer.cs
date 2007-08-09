@@ -1,4 +1,4 @@
-﻿namespace BdsSoft.SharePoint.Linq.Tools.Installer
+﻿namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     partial class Wizard
     {
@@ -41,7 +41,7 @@
             this.btnCancel = new System.Windows.Forms.Button();
             this.contents = new System.Windows.Forms.Panel();
             this.progress = new System.Windows.Forms.ProgressBar();
-            this.line1 = new BdsSoft.SharePoint.Linq.Tools.Installer.Line();
+            this.line1 = new BdsSoft.SharePoint.Linq.Tools.Spml.Line();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
@@ -65,7 +65,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Image = global::BdsSoft.SharePoint.Linq.Tools.Installer.Strings.sharepoint;
+            this.pictureBox1.Image = global::BdsSoft.SharePoint.Linq.Tools.Spml.Strings.sharepoint;
             resources.ApplyResources(this.pictureBox1, "pictureBox1");
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.TabStop = false;

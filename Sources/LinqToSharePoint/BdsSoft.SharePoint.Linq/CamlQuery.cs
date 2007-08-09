@@ -36,9 +36,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using System.Web.Services.Protocols;
 using Microsoft.SharePoint;
-using Microsoft.SharePoint.Utilities;
 
 #endregion
 

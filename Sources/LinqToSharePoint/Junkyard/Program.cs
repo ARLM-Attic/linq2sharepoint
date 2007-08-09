@@ -26,6 +26,11 @@ namespace Junkyard
 
             NorthwindSharePointDataContext ctx = new NorthwindSharePointDataContext();
             ctx.CheckListVersion = false;
+
+            var res = (from p in ctx.Products select p).Take(10).Where(p => p.UnitPrice > 100).Select(p => p.ProductName);
+            foreach (var p in res)
+                ;
+
             //var res1 = from p in ctx.Products group p by p.Category; //entity property; no traversals (lookup -> warning)
             //var res2 = from p in ctx.Products group p by p.Category into g select g;
             //var res3 = (from p in ctx.Suppliers group p by p.Country into g select g.Key);//.Take(1);
@@ -50,7 +55,6 @@ namespace Junkyard
                        where s.Name == "Bart"
                        orderby s.Country descending
                        select s;
-             */
 
             var res3 =
                 from t in
@@ -142,7 +146,7 @@ namespace Junkyard
             //var res = from u in lst where u.Homepage.Description.Equals(url.Url) select u;
             //var res = from u in lst where u.Homepage.Description == "Test" select u;
             //SharePointListQueryVisualizer.TestShowVisualizer(res);
-
+            */
             /*
             int fkey = 1;
 

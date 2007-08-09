@@ -61,7 +61,7 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Can&apos;t add another expression to the query after the grouping operation..
+        ///   Looks up a localized string similar to The {0} query expression can&apos;t be used after a grouping operation..
         /// </summary>
         internal static string AfterGrouping {
             get {
@@ -70,11 +70,20 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Can&apos;t add another expression to the query after the projection operation..
+        ///   Looks up a localized string similar to The {0} query expression can&apos;t be used after a projection operation..
         /// </summary>
         internal static string AfterProjection {
             get {
                 return ResourceManager.GetString("AfterProjection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The {0} query expression can&apos;t be used after a take operation..
+        /// </summary>
+        internal static string AfterTake {
+            get {
+                return ResourceManager.GetString("AfterTake", resourceCulture);
             }
         }
         

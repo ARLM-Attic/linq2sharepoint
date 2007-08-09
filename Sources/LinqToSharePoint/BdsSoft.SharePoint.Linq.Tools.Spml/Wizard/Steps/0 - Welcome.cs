@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Installer
+namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     /// <summary>
     /// Welcome step of the entity generator wizard.

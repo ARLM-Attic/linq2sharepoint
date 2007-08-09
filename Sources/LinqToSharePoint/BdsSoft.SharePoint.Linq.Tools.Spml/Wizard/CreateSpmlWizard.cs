@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Installer
+namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     /// <summary>
     /// Entity generator wizard.

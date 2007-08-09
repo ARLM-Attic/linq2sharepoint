@@ -19,17 +19,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Xml;
-using System.Web.Services.Protocols;
-using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
 
 #endregion
@@ -140,7 +133,14 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
                             if (expressionFunc.GetGenericArguments().Length == 2)
+                            {
+                                if (GuardProjection(mce.Method.Name, ppS, ppE) || // Where after project -> lost meaning (TODO: continuations)
+                                    GuardGrouping(mce.Method.Name, ppS, ppE) ||   // Where after group   -> IGrouping<K,T> objects not known by SharePoint
+                                    GuardTake(mce.Method.Name, ppS, ppE))         // Where after take    -> can't put a predicate on a reduced row set server-side
+                                    return;
+
                                 ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
+                            }
                             else
                                 error = true;
                             break;
@@ -160,7 +160,14 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             bool orderBy = mce.Method.Name.StartsWith("O", StringComparison.Ordinal);
                             if (mce.Method.GetParameters().Length == 2)
+                            {
+                                if (GuardProjection(mce.Method.Name, ppS, ppE) || // Order after project -> lost meaning (TODO: continuations)
+                                    GuardGrouping(mce.Method.Name, ppS, ppE) ||   // Order after group   -> IGrouping<K,T> objects not known by SharePoint
+                                    GuardTake(mce.Method.Name, ppS, ppE))         // Order after take    -> can't sort a reduced row set server-side
+                                    return;
+
                                 ParseOrdering((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, orderBy, mce.Method.Name.EndsWith("g", StringComparison.Ordinal), ppS + mce.Method.Name.Length + 1, ppE - 1);
+                            }
                             else
                                 error = true;
                             break;
@@ -187,7 +194,8 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case "Take":
                         {
-                            GuardGrouping(ppS, ppE);
+                            if (GuardGrouping(mce.Method.Name, ppS, ppE)) // Take after group -> IGrouping<K,T> objects not known by SharePoint
+                                return;
 
                             //
                             // Original call = Queryable::Take(source, count)
@@ -202,17 +210,32 @@ namespace BdsSoft.SharePoint.Linq
                     case "First":
                     case "FirstOrDefault":
                         {
-                            GuardGrouping(ppS, ppE);
+                            if (GuardGrouping(mce.Method.Name, ppS, ppE)) // First after group -> IGrouping<K,T> objects not known by SharePoint
+                                return;
 
                             //
                             // Original call = Queryable::First(source[, predicate])
                             //                 Queryable::FirstOrDefault(source[, predicate])
                             //
+                            // Check for predicate (2nd parameter)
+                            //
                             if (mce.Method.GetParameters().Length == 2)
                             {
+                                //
+                                // Parameter signature = Expression<Func<TSource, bool>> predicate
+                                //                                  +-----------------+
+                                //                                   => expressionFunc
+                                //
                                 Type expressionFunc = mce.Method.GetParameters()[1].ParameterType.GetGenericArguments()[0];
                                 if (expressionFunc.GetGenericArguments().Length == 2)
+                                {
+                                    if (GuardProjection(mce.Method.Name, ppS, ppE) || // Where after project -> lost meaning (TODO: continuations)
+                                        GuardGrouping(mce.Method.Name, ppS, ppE) ||   // Where after group   -> IGrouping<K,T> objects not known by SharePoint
+                                        GuardTake(mce.Method.Name, ppS, ppE))         // Where after take    -> can't put a predicate on a reduced row set server-side
+                                        return;
+
                                     ParsePredicate((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
+                                }
                             }
 
                             //
@@ -226,8 +249,17 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     case "GroupBy":
                         {
+                            //
+                            // Original call = Queryable::GroupBy(source, keySelector) -> only overload with two parameters
+                            //
                             if (mce.Method.GetParameters().Length == 2)
+                            {
+                                if (GuardProjection(mce.Method.Name, ppS, ppE) || // Group after project -> lost meaning (TODO: continuations)
+                                    GuardTake(mce.Method.Name, ppS, ppE))         // Group after take    -> can't group a reduced row set server-side
+                                    return;
+
                                 ParseGrouping((LambdaExpression)((UnaryExpression)mce.Arguments[1]).Operand, ppS, ppE);
+                            }
                             else
                                 error = true;
                             break;
@@ -273,9 +305,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppE">End position for parser error tracking.</param>
         private void ParsePredicate(LambdaExpression predicate, int ppS, int ppE)
         {
-            GuardProjection(ppS, ppE);
-            GuardGrouping(ppS, ppE);
-
             //
             // Calculcate expression body parser positions.
             // E.g. Where(t => ((t.Age >= 24) && t.LastName.StartsWith("Smet")))
@@ -1741,9 +1770,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Multiple ordering expressions per query are supported.</remarks>
         private void ParseOrdering(LambdaExpression ordering, bool orderBy, bool descending, int ppS, int ppE)
         {
-            GuardProjection(ppS, ppE);
-            GuardGrouping(ppS, ppE);
-
             //
             // If this is a top-level ordering or no ordering expression has been encountered before, construct the OrderBy CAML element.
             //
@@ -1867,7 +1893,7 @@ namespace BdsSoft.SharePoint.Linq
                     //
                     // Acts as barrier for groupings that are not of type .Key
                     //
-                    _results.Projection.AppendChild(this.AfterGrouping(ppS, ppE)); /* PARSE ERROR */
+                    _results.Projection.AppendChild(this.AfterGrouping("Select", ppS, ppE)); /* PARSE ERROR */
                     return;
                 }
             }
@@ -1936,8 +1962,6 @@ namespace BdsSoft.SharePoint.Linq
         /// <remarks>Only one grouping expression can be parsed per query.</remarks>
         private void ParseGrouping(LambdaExpression keySelector, int ppS, int ppE)
         {
-            GuardProjection(ppS, ppE);
-
             //
             // Only one grouping expression is supported.
             //
@@ -2517,23 +2541,55 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Guards entry to a parse method. Checks that no projection has been carried out previously.
         /// </summary>
+        /// <param name="method">Query operator where the guard call originates from.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
-        private void GuardProjection(int ppS, int ppE)
+        /// <returns>true if guard signals an error; otherwise false</returns>
+        private bool GuardProjection(string method, int ppS, int ppE)
         {
             if (_results.Projection != null)
-                this.AfterProjection(ppS, ppE); /* PARSE ERROR */
+            {
+                this.AfterProjection(method, ppS, ppE); /* PARSE ERROR */
+                return true;
+            }
+            else
+                return false;
         }
 
         /// <summary>
         /// Guards entry to a parse method. Checks that no grouping has been carried out previously.
         /// </summary>
+        /// <param name="method">Query operator where the guard call originates from.</param>
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
-        private void GuardGrouping(int ppS, int ppE)
+        /// <returns>true if guard signals an error; otherwise false</returns>
+        private bool GuardGrouping(string method, int ppS, int ppE)
         {
             if (_results.Grouping != null)
-                this.AfterGrouping(ppS, ppE); /* PARSE ERROR */
+            {
+                this.AfterGrouping(method, ppS, ppE); /* PARSE ERROR */
+                return true;
+            }
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// Guards entry to a parse method. Checks that no "take" result restriction has been carried out previously.
+        /// </summary>
+        /// <param name="method">Query operator where the guard call originates from.</param>
+        /// <param name="ppS">Start position for parser error tracking.</param>
+        /// <param name="ppE">End position for parser error tracking.</param>
+        /// <returns>true if guard signals an error; otherwise false</returns>
+        private bool GuardTake(string method, int ppS, int ppE)
+        {
+            if (_results.Top != null)
+            {
+                this.AfterTake(method, ppS, ppE); /* PARSE ERROR */
+                return true;
+            }
+            else
+                return false;
         }
 
         #endregion

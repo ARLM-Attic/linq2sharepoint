@@ -22,7 +22,7 @@ using System.Globalization;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.Installer
+namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {
     /// <summary>
     /// This attribute adds a custom file generator registry entry for specific file 

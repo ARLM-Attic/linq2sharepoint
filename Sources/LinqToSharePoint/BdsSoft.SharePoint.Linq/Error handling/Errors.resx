@@ -118,11 +118,11 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AfterGrouping" xml:space="preserve">
-    <value>Can't add another expression to the query after the grouping operation.</value>
+    <value>The {0} query expression can't be used after a grouping operation.</value>
     <comment>SP0028</comment>
   </data>
   <data name="AfterProjection" xml:space="preserve">
-    <value>Can't add another expression to the query after the projection operation.</value>
+    <value>The {0} query expression can't be used after a projection operation.</value>
     <comment>SP0003</comment>
   </data>
   <data name="CamlMethodsInvalidUse" xml:space="preserve">
@@ -325,5 +325,9 @@
   <data name="UnsupportedUnary" xml:space="preserve">
     <value>Unsupported unary expression detected in query predicate: {0}.</value>
     <comment>SP0012</comment>
+  </data>
+  <data name="AfterTake" xml:space="preserve">
+    <value>The {0} query expression can't be used after a take operation.</value>
+    <comment>SP0029</comment>
   </data>
 </root>
