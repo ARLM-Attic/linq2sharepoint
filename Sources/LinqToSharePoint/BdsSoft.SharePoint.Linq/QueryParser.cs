@@ -1139,22 +1139,9 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Trim Convert nodes on the both operandi before examining the nodes further on and remove excessive ToString method calls at the end.
             //
-            while (left.NodeType == ExpressionType.Convert || left.NodeType == ExpressionType.ConvertChecked)
-            {
-                left = ((UnaryExpression)left).Operand;
-
-                ppS += (left.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
-                ppT -= 1;
-            }
+            left = TrimConvert(left, ref ppS, ref ppT);
             left = DropToString(left, ref ppT);
-
-            while (right.NodeType == ExpressionType.Convert || right.NodeType == ExpressionType.ConvertChecked)
-            {
-                right = ((UnaryExpression)right).Operand;
-
-                ppD += (right.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
-                ppE -= 1;
-            }
+            right = TrimConvert(right, ref ppD, ref ppE);
             right = DropToString(right, ref ppE);
 
             //
@@ -1275,91 +1262,9 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Variable that holds the CAML equivalent of the condition.
             //
-            string camlQueryElement;
-
-            //
-            // Check the type of the node for CAML-supported operations.
-            //
-            switch (condition.NodeType)
-            {
-                //
-                // Equality is commutative, correctOrder doesn't matter.
-                //
-                case ExpressionType.Equal:
-                    camlQueryElement = isPositive ? "Eq" : "Neq";
-                    break;
-                //
-                // Non-equality is commutative, correctOrder doesn't matter.
-                //
-                case ExpressionType.NotEqual:
-                    camlQueryElement = isPositive ? "Neq" : "Eq";
-                    break;
-                //
-                // Less than <=(!correctOrder)=> Greater than
-                //
-                case ExpressionType.LessThan:
-                    if (!correctOrder)
-                        //
-                        // !(a > b) == a <= b
-                        //
-                        camlQueryElement = isPositive ? "Gt" : "Leq";
-                    else
-                        //
-                        // !(a < b) == a >= b
-                        //
-                        camlQueryElement = isPositive ? "Lt" : "Geq";
-                    break;
-                //
-                // Less than or equal <=(!correctOrder)=> Greater than or equal
-                //
-                case ExpressionType.LessThanOrEqual:
-                    if (!correctOrder)
-                        //
-                        // !(a >= b) == a < b
-                        //
-                        camlQueryElement = isPositive ? "Geq" : "Lt";
-                    else
-                        //
-                        // !(a <= b) == a > b
-                        //
-                        camlQueryElement = isPositive ? "Leq" : "Gt";
-                    break;
-                //
-                // Greater than <=(!correctOrder)=> Less than
-                //
-                case ExpressionType.GreaterThan:
-                    if (!correctOrder)
-                        //
-                        // !(a < b) == a >= b
-                        //
-                        camlQueryElement = isPositive ? "Lt" : "Geq";
-                    else
-                        //
-                        // !(a > b) == a <= b
-                        //
-                        camlQueryElement = isPositive ? "Gt" : "Leq";
-                    break;
-                //
-                // Greater than or equal <=(!correctOrder)=> Less than or equal
-                //
-                case ExpressionType.GreaterThanOrEqual:
-                    if (!correctOrder)
-                        //
-                        // !(a <= b) == a > b
-                        //
-                        camlQueryElement = isPositive ? "Leq" : "Gt";
-                    else
-                        //
-                        // !(a >= b) == a < b
-                        //
-                        camlQueryElement = isPositive ? "Geq" : "Lt";
-                    break;
-                //
-                // Currently no support for other binary operations (if any).
-                //
-                default:
-                    return /* PARSE ERROR */ this.UnsupportedBinary(condition.NodeType.ToString(), ppS, ppE);
-            }
+            string camlQueryElement = GetCamlQueryElementFor(condition.NodeType, isPositive, correctOrder);
+            if (camlQueryElement == null)
+                return /* PARSE ERROR */ this.UnsupportedBinary(condition.NodeType.ToString(), ppS, ppE);
 
             //
             // Special treatment for UrlValues.
@@ -1514,11 +1419,104 @@ namespace BdsSoft.SharePoint.Linq
             return c;
         }
 
-        private XmlElement CheckForUrlValueUrl(ref Expression e, out bool found, int ppS)
+        private static Expression TrimConvert(Expression expression, ref int ppS, ref int ppE)
+        {
+            while (expression.NodeType == ExpressionType.Convert || expression.NodeType == ExpressionType.ConvertChecked)
+            {
+                expression = ((UnaryExpression)expression).Operand;
+
+                ppS += (expression.NodeType == ExpressionType.Convert ? "Convert(".Length : "ConvertChecked(".Length);
+                ppE -= 1;
+            }
+            return expression;
+        }
+
+        private static string GetCamlQueryElementFor(ExpressionType nodeType, bool isPositive, bool correctOrder)
+        {
+            //
+            // Check the type of the node for CAML-supported operations.
+            //
+            switch (nodeType)
+            {
+                //
+                // Equality is commutative, correctOrder doesn't matter.
+                //
+                case ExpressionType.Equal:
+                    return isPositive ? "Eq" : "Neq";
+                //
+                // Non-equality is commutative, correctOrder doesn't matter.
+                //
+                case ExpressionType.NotEqual:
+                    return isPositive ? "Neq" : "Eq";
+                //
+                // Less than <=(!correctOrder)=> Greater than
+                //
+                case ExpressionType.LessThan:
+                    if (!correctOrder)
+                        //
+                        // !(a > b) == a <= b
+                        //
+                        return isPositive ? "Gt" : "Leq";
+                    else
+                        //
+                        // !(a < b) == a >= b
+                        //
+                        return isPositive ? "Lt" : "Geq";
+                //
+                // Less than or equal <=(!correctOrder)=> Greater than or equal
+                //
+                case ExpressionType.LessThanOrEqual:
+                    if (!correctOrder)
+                        //
+                        // !(a >= b) == a < b
+                        //
+                        return isPositive ? "Geq" : "Lt";
+                    else
+                        //
+                        // !(a <= b) == a > b
+                        //
+                        return isPositive ? "Leq" : "Gt";
+                //
+                // Greater than <=(!correctOrder)=> Less than
+                //
+                case ExpressionType.GreaterThan:
+                    if (!correctOrder)
+                        //
+                        // !(a < b) == a >= b
+                        //
+                        return isPositive ? "Lt" : "Geq";
+                    else
+                        //
+                        // !(a > b) == a <= b
+                        //
+                        return isPositive ? "Gt" : "Leq";
+                //
+                // Greater than or equal <=(!correctOrder)=> Less than or equal
+                //
+                case ExpressionType.GreaterThanOrEqual:
+                    if (!correctOrder)
+                        //
+                        // !(a <= b) == a > b
+                        //
+                        return isPositive ? "Leq" : "Gt";
+                    else
+                        //
+                        // !(a >= b) == a < b
+                        //
+                        return isPositive ? "Geq" : "Lt";
+                //
+                // Currently no support for other binary operations (if any).
+                //
+                default:
+                    return null;
+            }
+        }
+
+        private XmlElement CheckForUrlValueUrl(ref Expression expression, out bool found, int ppS)
         {
             found = false;
 
-            MemberExpression m = e as MemberExpression;
+            MemberExpression m = expression as MemberExpression;
             if (m != null && m.Member.DeclaringType == typeof(UrlValue) && IsEntityPropertyReference(m.Expression))
             {
                 if (m.Member.Name != "Url")
@@ -1527,14 +1525,14 @@ namespace BdsSoft.SharePoint.Linq
                     return /* PARSE ERROR */ this.NonUrlCallOnUrlValue(ppS1, ppS1 + m.Member.Name.Length - 1);
                 }
 
-                e = m.Expression;
+                expression = m.Expression;
                 found = true;
             }
             return null;
         }
 
         /// <summary>
-        /// Retrieves the XM -representation for the DateTime value represented in the specified expression.
+        /// Retrieves the XML-representation for the DateTime value represented in the specified expression.
         /// </summary>
         /// <param name="dateValue">Expression containing a DateTime value to be converted to XML.</param>
         /// <returns>XML representation for the specified DateTime value expression.</returns>
