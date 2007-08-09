@@ -1,0 +1,264 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FxCopProject Version="1.35" Name="My FxCop Project">
+ <ProjectOptions>
+  <SharedProject>True</SharedProject>
+  <Stylesheet Apply="False">http://www.gotdotnet.com/team/fxcop//xsl/1.35/FxCopReport.xsl</Stylesheet>
+  <SaveMessages>
+   <Project Status="Active, Excluded" NewOnly="False" />
+   <Report Status="Active" NewOnly="False" />
+  </SaveMessages>
+  <ProjectFile Compress="True" DefaultTargetCheck="True" DefaultRuleCheck="True" SaveByRuleGroup="" Deterministic="True" />
+  <EnableMultithreadedLoad>True</EnableMultithreadedLoad>
+  <EnableMultithreadedAnalysis>True</EnableMultithreadedAnalysis>
+  <SourceLookup>True</SourceLookup>
+  <AnalysisExceptionsThreshold>10</AnalysisExceptionsThreshold>
+  <RuleExceptionsThreshold>1</RuleExceptionsThreshold>
+  <Spelling Locale="en-us" />
+  <VersionAware>False</VersionAware>
+  <OverrideRuleVisibilities>False</OverrideRuleVisibilities>
+  <CustomDictionaries SearchFxCopDir="True" SearchUserProfile="True" SearchProjectDir="True" />
+  <SearchGlobalAssemblyCache>False</SearchGlobalAssemblyCache>
+  <DeadlockDetectionTimeout>120</DeadlockDetectionTimeout>
+ </ProjectOptions>
+ <Targets>
+  <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer/bin/Release/BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.EntityGenerator/bin/Release/BdsSoft.SharePoint.Linq.Tools.EntityGenerator.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.Installer/bin/Release/BdsSoft.SharePoint.Linq.Tools.Installer.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.Spml/bin/Release/BdsSoft.SharePoint.Linq.Tools.Spml.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq/bin/Release/BdsSoft.SharePoint.Linq.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/SpMetal/bin/Release/SPMetal.exe" Analyze="True" AnalyzeAllChildren="True" />
+ </Targets>
+ <Rules>
+  <RuleFiles>
+   <RuleFile Name="$(FxCopDir)\Rules\DesignRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\GlobalizationRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\InteroperabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\MobilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\NamingRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PerformanceRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PortabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\SecurityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\UsageRules.dll" Enabled="True" AllRulesEnabled="True" />
+  </RuleFiles>
+  <Groups />
+  <Settings />
+ </Rules>
+ <FxCopReport Version="1.35">
+  <Namespaces>
+   <Namespace Name="BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer">
+    <Messages>
+     <Message TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020" Status="Excluded" Created="2007-08-09 10:41:24Z">
+      <Issue>
+       <Item>BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer</Item>
+      </Issue>
+     </Message>
+    </Messages>
+   </Namespace>
+   <Namespace Name="BdsSoft.SharePoint.Linq.Tools.Installer">
+    <Messages>
+     <Message TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020" Status="Excluded" Created="2007-08-09 10:41:24Z">
+      <Issue>
+       <Item>BdsSoft.SharePoint.Linq.Tools.Installer</Item>
+      </Issue>
+     </Message>
+    </Messages>
+   </Namespace>
+  </Namespaces>
+  <Targets>
+   <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer/bin/Release/BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer.dll">
+    <Modules>
+     <Module Name="bdssoft.sharepoint.linq.tools.debuggervisualizer.dll">
+      <Namespaces>
+       <Namespace Name="BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer">
+        <Types>
+         <Type Name="SharePointListQueryVisualizerForm">
+          <Members>
+           <Member Name="btnExecute_Click(System.Object,System.EventArgs):System.Void">
+            <Messages>
+             <Message Id="System.Windows.Forms.MessageBox.Show(System.String)" TypeName="DoNotPassLiteralsAsLocalizedParameters" Category="Microsoft.Globalization" CheckId="CA1303" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>SharePointListQueryVisualizerForm.btnExecute_Click(Object, EventArgs):Void</Item>
+               <Item>1</Item>
+               <Item>MessageBox.Show(String):DialogResult</Item>
+               <Item>Not implemented yet.</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+   <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.Installer/bin/Release/BdsSoft.SharePoint.Linq.Tools.Installer.dll">
+    <Modules>
+     <Module Name="bdssoft.sharepoint.linq.tools.installer.dll">
+      <Namespaces>
+       <Namespace Name="BdsSoft.SharePoint.Linq.Tools.Installer">
+        <Types>
+         <Type Name="ProjectItemInstaller">
+          <Members>
+           <Member Name="Dispose(System.Boolean):System.Void">
+            <Messages>
+             <Message TypeName="DisposeMethodsShouldCallBaseClassDispose" Category="Microsoft.Usage" CheckId="CA2215" Created="2007-08-09 10:17:27Z">
+              <Issue>
+               <Item>ProjectItemInstaller.Dispose(Boolean):Void</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="Install(System.Collections.IDictionary):System.Void">
+            <Messages>
+             <Message Id="System.Windows.Forms.MessageBox.Show(System.String,System.String,System.Windows.Forms.MessageBoxButtons,System.Windows.Forms.MessageBoxIcon,System.Windows.Forms.MessageBoxDefaultButton,System.Windows.Forms.MessageBoxOptions)" TypeName="DoNotPassLiteralsAsLocalizedParameters" Category="Microsoft.Globalization" CheckId="CA1303" Created="2007-08-09 10:17:27Z">
+              <Issue>
+               <Item>ProjectItemInstaller.Install(IDictionary):Void</Item>
+               <Item>2</Item>
+               <Item>MessageBox.Show(String, String, MessageBoxButtons, MessageBoxIcon, MessageBoxDefaultButton, MessageBoxOptions):DialogResult</Item>
+               <Item>LINQ to SharePoint Setup</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+   <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq.Tools.Spml/bin/Release/BdsSoft.SharePoint.Linq.Tools.Spml.dll">
+    <Modules>
+     <Module Name="bdssoft.sharepoint.linq.tools.spml.dll">
+      <Messages>
+       <Message TypeName="MarkAssembliesWithClsCompliant" Category="Microsoft.Design" CheckId="CA1014" Created="2007-08-09 09:56:28Z">
+        <Issue Name="NoAttr">
+         <Item>BdsSoft.SharePoint.Linq.Tools.Spml</Item>
+        </Issue>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="BdsSoft.SharePoint.Linq.Tools.Spml">
+        <Types>
+         <Type Name="BaseCodeGenerator">
+          <Members>
+           <Member Name="Microsoft.VisualStudio.Shell.Interop.IVsSingleFileGenerator.DefaultExtension(System.String&amp;):System.Int32">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGenerator.Microsoft.VisualStudio.Shell.Interop.IVsSingleFileGenerator.DefaultExtension(String&amp;):Int32</Item>
+               <Item>System.Exception</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="InterfaceMethodsShouldBeCallableByChildTypes" Category="Microsoft.Design" CheckId="CA1033" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGenerator</Item>
+               <Item>IVsSingleFileGenerator.DefaultExtension(String&amp;):Int32</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="Microsoft.VisualStudio.Shell.Interop.IVsSingleFileGenerator.Generate(System.String,System.String,System.String,System.IntPtr[],System.UInt32&amp;,Microsoft.VisualStudio.Shell.Interop.IVsGeneratorProgress):System.Int32">
+            <Messages>
+             <Message TypeName="InterfaceMethodsShouldBeCallableByChildTypes" Category="Microsoft.Design" CheckId="CA1033" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGenerator</Item>
+               <Item>IVsSingleFileGenerator.Generate(String, String, String, IntPtr[], UInt32&amp;, IVsGeneratorProgress):Int32</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="BaseCodeGeneratorWithSite">
+          <Members>
+           <Member Name="Microsoft.VisualStudio.OLE.Interop.IObjectWithSite.GetSite(System.Guid&amp;,System.IntPtr&amp;):System.Void">
+            <Messages>
+             <Message Id="System.Runtime.InteropServices.COMException.#ctor(System.String,System.Int32)" TypeName="DoNotPassLiteralsAsLocalizedParameters" Category="Microsoft.Globalization" CheckId="CA1303" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGeneratorWithSite.Microsoft.VisualStudio.OLE.Interop.IObjectWithSite.GetSite(Guid&amp;, IntPtr&amp;):Void</Item>
+               <Item>1</Item>
+               <Item>COMException.COMException(String, Int32)</Item>
+               <Item>site does not support requested interface</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="InterfaceMethodsShouldBeCallableByChildTypes" Category="Microsoft.Design" CheckId="CA1033" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGeneratorWithSite</Item>
+               <Item>IObjectWithSite.GetSite(Guid&amp;, IntPtr&amp;):Void</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="Microsoft.VisualStudio.OLE.Interop.IObjectWithSite.SetSite(System.Object):System.Void">
+            <Messages>
+             <Message TypeName="InterfaceMethodsShouldBeCallableByChildTypes" Category="Microsoft.Design" CheckId="CA1033" Created="2007-08-09 09:56:28Z">
+              <Issue>
+               <Item>BaseCodeGeneratorWithSite</Item>
+               <Item>IObjectWithSite.SetSite(Object):Void</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+   <Target Name="$(ProjectDir)/BdsSoft.SharePoint.Linq/bin/Release/BdsSoft.SharePoint.Linq.dll">
+    <Modules>
+     <Module Name="bdssoft.sharepoint.linq.dll">
+      <Namespaces>
+       <Namespace Name="BdsSoft.SharePoint.Linq">
+        <Types>
+         <Type Name="FieldType">
+          <Members>
+           <Member Name="URL">
+            <Messages>
+             <Message Id="Member" TypeName="LongAcronymsShouldBePascalCased" Category="Microsoft.Naming" CheckId="CA1705" Created="2007-08-09 09:19:34Z">
+              <Issue Name="Member">
+               <Item>FieldType.URL</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+  </Targets>
+  <Rules>
+   <Rule TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020">
+    <Resolution Name="Default">Consider merging the types defined in '{0}' with another namespace.</Resolution>
+   </Rule>
+   <Rule TypeName="DisposeMethodsShouldCallBaseClassDispose" Category="Microsoft.Usage" CheckId="CA2215">
+    <Resolution Name="Default">Change {0} so that it calls its base class Dispose method for all code paths. Place the call in a finally block to ensure that resources are cleaned up when an exception is raised.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031">
+    <Resolution Name="Default">Modify '{0}' to catch a more specific exception than '{1}' or rethrow the exception.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotPassLiteralsAsLocalizedParameters" Category="Microsoft.Globalization" CheckId="CA1303">
+    <Resolution Name="Default">{0} passes a literal as parameter {1} of a call to {2}. Retrieve the following string argument from a resource table instead: '{3}'</Resolution>
+   </Rule>
+   <Rule TypeName="InterfaceMethodsShouldBeCallableByChildTypes" Category="Microsoft.Design" CheckId="CA1033">
+    <Resolution Name="Default">Make '{0}' sealed (a breaking change if this class has previously shipped), implement the method non-explicitly, or implement a new method that exposes the functionality of '{1}' and is visible to derived classes.</Resolution>
+   </Rule>
+   <Rule TypeName="LongAcronymsShouldBePascalCased" Category="Microsoft.Naming" CheckId="CA1705">
+    <Resolution Name="Member">Correct the capitalization of member name '{0}'.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkAssembliesWithClsCompliant" Category="Microsoft.Design" CheckId="CA1014">
+    <Resolution Name="NoAttr">'{0}' should be marked with CLSCompliantAttribute and its value should be true.</Resolution>
+   </Rule>
+  </Rules>
+ </FxCopReport>
+</FxCopProject>
