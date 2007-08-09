@@ -10,10 +10,10 @@ namespace Junkyard
         static void Main()
         {
             var ctx = new NorthwindSharePointDataContext();
-            var res = (from l in ctx.LookupMultiTest select l).AsEnumerable().SingleOrDefault();
-            Console.WriteLine(res.Categories.IsLoaded);
-            Console.WriteLine(res.Categories[0].CategoryName);
-            Console.WriteLine(res.Categories.IsLoaded);
+            ctx.Log = Console.Out;
+            var res = from p in ctx.Products where p.Category.CategoryName != "Dairy Products" select p.ProductName;
+            foreach (var p in res)
+                Console.WriteLine(p);
         }
     }
 }

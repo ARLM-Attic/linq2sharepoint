@@ -490,17 +490,13 @@ namespace BdsSoft.SharePoint.Linq
                             ids.Add(int.Parse(row["ID"].ToString(), CultureInfo.InvariantCulture.NumberFormat));
 
                         //
-                        // Create patch.
+                        // Create and apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
                         //
-                        XmlElement patch = null;
-                        foreach (int id in ids)
-                            patch = CreatePatch(lookupField, id, patch);
-
-                        //
-                        // Apply patch. If no Lookup field reference patch is found, a Boolean false-valued patch will be inserted to allow for subsequent pruning.
-                        //
-                        if (patch != null) //FIX
+                        if (ids.Count > 0)
+                        {
+                            XmlElement patch = CreatePatch(lookupField, ids);
                             patches.Add(new Patch() { Parent = e.ParentNode, NewChild = patch, OldChild = e });
+                        }
                         else
                             patches.Add(new Patch() { Parent = e.ParentNode, NewChild = _factory.BooleanPatch(false), OldChild = e });
                     }
@@ -624,54 +620,69 @@ namespace BdsSoft.SharePoint.Linq
         /// Helper method to create a Lookup field patch by building a tree of Or CAML elements.
         /// </summary>
         /// <param name="field">Entity property to construct the Lookup patch for.</param>
-        /// <param name="value">Value for the Lookup condition.</param>
-        /// <param name="parent">Current tree of the Lookup patch to add the new condition node to. Should be null to start creating a condition tree.</param>
-        /// <returns></returns>
+        /// <param name="values">Values for the Lookup condition.</param>
+        /// <returns>CAML condition tree of field lookup comparisons with the given values, Or-ed together.</returns>
         /// <example>
-        /// If parent == null:
-        /// <![CDATA[
-        /// <condition>
-        ///    value
-        ///    <FieldRef Name="field" />
-        /// </condition>
-        /// ]]>
-        /// 
-        /// If parent != null:
         /// <![CDATA[
         /// <Or>
         ///    <condition>
         ///       value
         ///       <FieldRef Name="field" />
         ///    </condition>
-        ///    parent
+        ///    ...
         /// </Or>
         /// ]]>
         /// </example>
-        private XmlElement CreatePatch(PropertyInfo field, int value, XmlElement parent)
+        /// <remarks>This method will return a balanced tree.</remarks>
+        private XmlElement CreatePatch(PropertyInfo field, IEnumerable<int> values)
         {
             //
-            // Create condition element with the child tree and the FieldRef element.
+            // Get the lookup field's reference tag.
             //
-            XmlElement cond = _factory.Eq();
-
-            XmlElement val = _factory.Value("Lookup");
-            val.InnerText = value.ToString(CultureInfo.InvariantCulture.NumberFormat);
-            cond.AppendChild(val);
-
             XmlElement fieldRef = GetFieldRef(field);
             fieldRef.Attributes.Append(_factory.LookupAttribute());
-            cond.AppendChild(fieldRef);
 
             //
-            // If no parent is present yet, we'll just return the condition element.
+            // Build queue of condition nodes.
             //
-            if (parent == null)
-                return cond;
+            Queue<XmlElement> conditions = new Queue<XmlElement>();
+            foreach (int val in values)
+            {
+                //
+                // <Eq>
+                //
+                XmlElement cond = _factory.Eq();
+
+                //
+                //    <Value Type="Lookup">val</Value>
+                //
+                XmlElement value = _factory.Value("Lookup");
+                value.InnerText = val.ToString(CultureInfo.InvariantCulture.NumberFormat);
+                cond.AppendChild(value);
+
+                //
+                //    <FieldRef Name="field" LookupId="TRUE" />
+                //
+                cond.AppendChild(fieldRef.CloneNode(true));
+
+                //
+                // </Eq>
+                //
+                // Enqueue condition for tree creation.
+                //
+                conditions.Enqueue(cond);
+            }
+
             //
-            // If we're deeper in the tree, we'll take the current parent and lift it to a new Or element together with the newly created condition.
+            // "Or" the nodes together.
             //
-            else
-                return _factory.Or(cond, parent);
+            while (conditions.Count > 1)
+                conditions.Enqueue(_factory.Or(conditions.Dequeue(), conditions.Dequeue()));
+
+            //
+            // Return the resulting node.
+            //
+            return conditions.Dequeue();
         }
 
         /// <summary>
