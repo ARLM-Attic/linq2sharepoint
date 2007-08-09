@@ -231,8 +231,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
                 Control parent = control.Parent;
 
                 while (parent != null)
+                {
                     if (parent.RightToLeft != RightToLeft.Inherit)
                         return parent.RightToLeft == RightToLeft.Yes;
+                    parent = parent.Parent;
+                }
 
                 return CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
             }

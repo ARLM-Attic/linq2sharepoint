@@ -5,6 +5,8 @@ using System.Diagnostics;
 using BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer;
 using Microsoft.VisualStudio.DebuggerVisualizers;
 using BdsSoft.SharePoint.Linq;
+using System.Resources;
+using System;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
@@ -40,3 +42,5 @@ using BdsSoft.SharePoint.Linq;
 [assembly: AssemblyFileVersion("0.2.3.0")]
 
 [assembly: DebuggerVisualizer(typeof(SharePointListQueryVisualizer), typeof(VisualizerObjectSource), Target = typeof(SharePointListQuery<>), Description = "LINQ to SharePoint Query Visualizer")]
+[assembly: NeutralResourcesLanguageAttribute("en-US")]
+[assembly: CLSCompliant(true)]
