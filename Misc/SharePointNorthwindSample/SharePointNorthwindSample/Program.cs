@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
-using System.Data.SqlClient;
 using Microsoft.SharePoint;
-using System.Data.Linq;
-using System.Reflection;
-using System.Collections.Specialized;
 
 namespace SharePointNorthwindSample
 {
@@ -31,25 +27,14 @@ namespace SharePointNorthwindSample
                     var suppliers = from s in ctx.Suppliers select s;
                     var products = from p in ctx.Products select p;
 
-                    //string cat = "new Category() { ID = {0}, CategoryName = {1}, Description = {2} },\n";
-                    //StringBuilder cats = new StringBuilder();
                     foreach (var c in categories)
                     {
                         SPListItem cat = lstCategories.Items.Add();
                         cat["CategoryName"] = c.CategoryName;
                         cat["Description"] = c.Description;
                         cat.Update();
-
-                        //cats.AppendFormat(
-                        //    cat,
-                        //    c.CategoryID, 
-                        //    c.CategoryName == null ? "null" : "\"" + c.CategoryName + "\"",
-                        //    c.Description == null ? "null" : "\"" + c.Description + "\""
-                        //);
                     }
 
-                    //string sup = "new Supplier() { ID = {0}, CompanyName = {1}, ContactTitle = {2}, ContactName = {3}, Address = {4}, City = {5}, Country = {6} },\n";
-                    //StringBuilder sups = new StringBuilder();
                     foreach (var s in suppliers)
                     {
                         SPListItem sup = lstSuppliers.Items.Add();
@@ -197,33 +182,5 @@ namespace SharePointNorthwindSample
 
             return list;
         }
-
-        /*
-        static SPList CreateList<T>(SPWeb web)
-        {
-            Type t = typeof(T);
-            TableAttribute ta = (TableAttribute)t.GetCustomAttributes(typeof(TableAttribute), false)[0];
-
-            string listName = ta.Name;
-            
-            SPList list;
-            try
-            {
-                list = web.Lists[listName];
-                if (list != null)
-                    list.Delete();
-            }
-            catch {}
-            
-            Guid g = web.Lists.Add(listName, "", SPListTemplateType.GenericList);
-            list = web.Lists[g];
-
-            foreach (PropertyInfo prop in t.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-            {
-            }
-
-            return list;
-        }
-         */
     }
 }

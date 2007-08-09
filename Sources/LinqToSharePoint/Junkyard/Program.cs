@@ -127,7 +127,6 @@ namespace Junkyard
             }
 
             //var product = ctx.Products.Where(p => p.UnitsInStock > 0).First(p => p.Discontinued.Value);
-            string ss = "";
             //SharePointDataContext ctx = new SharePointDataContext(new Uri("http://wss3demo"));
 
             //var lst = new SharePointList<UrlTest>(ctx);
