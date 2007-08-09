@@ -43,10 +43,11 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.Xml.Schema;
+using System.Globalization;
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
+namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
 {
     class Program
     {
@@ -54,6 +55,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// Entry point for SpMetal.
         /// </summary>
         /// <param name="args">Command-line arguments.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         static void Main(string[] args)
         {
             //
@@ -84,22 +86,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Entity generator.
             //
-            EG.EntityGenerator gen = new EG.EntityGenerator(
-                                         new EntityGeneratorArgs()
-                                         {
-                                             RunMode = a.RunMode,
-                                             Connection = new Connection()
-                                                          {
-                                                              CustomAuthentication = a.User != null,
-                                                              Url = a.Url,
-                                                              User = a.User,
-                                                              Password = a.Password,
-                                                              Domain = a.Domain
-                                                          },
-                                             Namespace = a.Namespace,
-                                             Language = (a.Language == "VB" ? Language.VB : Language.CSharp)
-                                         }
-                                     );
+            Generator gen = new Generator(
+                                new EntityGeneratorArgs()
+                                {
+                                    RunMode = a.RunMode,
+                                    Connection = new Connection()
+                                                 {
+                                                     CustomAuthentication = a.User != null,
+                                                     Url = a.Url,
+                                                     User = a.User,
+                                                     Password = a.Password,
+                                                     Domain = a.Domain
+                                                 },
+                                    Namespace = a.Namespace,
+                                    Language = (a.Language == "VB" ? Language.VB : Language.CSharp)
+                                }
+                            );
 
             //
             // Pluralization setting.
@@ -114,7 +116,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Check run mode: online or offline.
             //
-            if ((a.RunMode & RunMode.Online) == RunMode.Online)
+            if ((a.RunMode & RunModes.Online) == RunModes.Online)
             {
                 try
                 {
@@ -126,7 +128,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     return;
                 }
             }
-            else if ((a.RunMode & RunMode.Offline) == RunMode.Offline)
+            else if ((a.RunMode & RunModes.Offline) == RunModes.Offline)
             {
                 try
                 {
@@ -149,7 +151,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Just save the SPML.
             //
-            if ((a.RunMode & RunMode.Export) == RunMode.Export)
+            if ((a.RunMode & RunModes.Export) == RunModes.Export)
             {
                 //
                 // Write to output file.
@@ -182,7 +184,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             // Create and save entity code.
             //
-            else if ((a.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
+            else if ((a.RunMode & RunModes.CodeGen) == RunModes.CodeGen)
             {
                 //
                 // Generate code in the appropriate language.
@@ -199,13 +201,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     {
                         Console.WriteLine("\nSchema validation messages:");
                         foreach (var s in (List<ValidationEventArgs>)ex.Data["messages"])
-                            Console.WriteLine("- [{3}] {0} ({1},{2})", s.Message, s.Exception.LineNumber, s.Exception.LinePosition, s.Severity.ToString().ToUpper());
+                            Console.WriteLine("- [{3}] {0} ({1},{2})", s.Message, s.Exception.LineNumber, s.Exception.LinePosition, s.Severity.ToString().ToUpperInvariant());
                     }
                     return;
                 }
                 CodeDomProvider cdp = CodeDomProvider.CreateProvider(a.Language);
                 StringBuilder code = new StringBuilder();
-                TextWriter tw = new StringWriter(code);
+                TextWriter tw = new StringWriter(code, CultureInfo.InvariantCulture);
                 cdp.GenerateCodeFromCompileUnit(compileUnit, tw, null);
 
                 //
@@ -265,6 +267,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// </summary>
         /// <param name="sender">Sender.</param>
         /// <param name="e">Event arguments.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         static void Error(object sender, UnhandledExceptionEventArgs e)
         {
             //
@@ -273,7 +276,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Exception ex = e.ExceptionObject as Exception;
             string message = null;
             if (ex != null)
-                message = String.Format("{0}: {1}\r\n{2}", ex.GetType().FullName, ex.Message, ex.StackTrace);
+                message = String.Format(CultureInfo.InvariantCulture, "{0}: {1}\r\n{2}", ex.GetType().FullName, ex.Message, ex.StackTrace);
 
             //
             // Print error message.
@@ -306,7 +309,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                     Process.Start("notepad.exe", report);
 #endif
                 }
-                catch { }
+                catch { } //Failure to write error report can be ignored.
             }
 
             Environment.Exit(-1);

@@ -19,16 +19,15 @@
 #region Namespace imports
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+
 
 #endregion
 
-namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
+namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
 {
     /// <summary>
     /// Helper class to parse and validate the command-line arguments.
@@ -40,14 +39,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// <summary>
         /// Run-mode to run the entity generator in.
         /// </summary>
-        public RunMode RunMode { get; set; }
+        public RunModes RunMode { get; set; }
 
         #region {online}
 
         /// <summary>
         /// Url to the SharePoint site.
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
 
         /// <summary>
         /// Name of the list on the SharePoint site to query for.
@@ -133,6 +132,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// </summary>
         /// <param name="args">Arguments to be parsed.</param>
         /// <returns>An instance of Args containing the argument values; null if the argument list is invalid.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public static Args Parse(string[] args)
         {
             //
@@ -177,7 +177,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 else if (xml != null)
                 {
                     res.Xml = xml;
-                    res.RunMode = RunMode.Online | RunMode.Export;
+                    res.RunMode = RunModes.Online | RunModes.Export;
                 }
                 //
                 // Code parameter can be null.
@@ -185,7 +185,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 else
                 {
                     res.Code = code;
-                    res.RunMode = RunMode.Online | RunMode.CodeGen;
+                    res.RunMode = RunModes.Online | RunModes.CodeGen;
                 }
             }
             //
@@ -193,7 +193,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             //
             else if (arguments.ContainsKey("in"))
             {
-                res.RunMode = RunMode.Offline | RunMode.CodeGen;
+                res.RunMode = RunModes.Offline | RunModes.CodeGen;
 
                 //
                 // In shouldn't be empty.
@@ -206,17 +206,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             else
                 Debug.Assert(false);
 
-            if ((res.RunMode & RunMode.Online) == RunMode.Online)
+            if ((res.RunMode & RunModes.Online) == RunModes.Online)
             {
                 //
                 // Url shouldn't be empty and should start with either http:// or https://.
                 //
                 string url;
-                if (!arguments.TryGetValue("url", out url) || url.Length == 0)
+                if (!arguments.TryGetValue("url", out url) || url.Length == 0 || !Uri.IsWellFormedUriString(url, UriKind.Absolute))
                     return null;
-                res.Url = url;
-                url = url.ToLower();
-                if (!(url.StartsWith("http://") && url.Length > 7) && !(url.StartsWith("https://") && url.Length > 8))
+                res.Url = new Uri(url);
+                if (!(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && url.Length > 7) && !(url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) && url.Length > 8))
                     return null;
 
                 //
@@ -261,7 +260,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 }
             }
 
-            if ((res.RunMode & RunMode.CodeGen) == RunMode.CodeGen)
+            if ((res.RunMode & RunModes.CodeGen) == RunModes.CodeGen)
             {
                 //
                 // Output language can be set optionally and should be CS or VB (case-insensitive).
@@ -270,7 +269,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
                 string language;
                 if (arguments.TryGetValue("language", out language) && language.Length != 0)
                 {
-                    language = language.ToLower();
+                    language = language.ToLowerInvariant();
 
                     switch (language)
                     {
@@ -318,6 +317,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
         /// <param name="args">Argument list to search for key/value argument pairs.</param>
         /// <returns>Dictionary with key/value argument pairs.</returns>
         /// <example>-key:value, /key:value, -key:"value with spaces"</example>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         private static Dictionary<string, string> FindArgs(string[] args)
         {
             Dictionary<string, string> res = new Dictionary<string, string>();
@@ -325,7 +325,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SpMetal
             Regex r = new Regex(@"[-/](?<option>\w+)(:(""(?<value>.*)""|(?<value>.*)))?", RegexOptions.CultureInvariant | RegexOptions.Compiled);
             foreach (string arg in args)
                 foreach (Match m in r.Matches(arg))
-                    res.Add(m.Groups["option"].Value.ToLower(), m.Groups["value"].Value);
+                    res.Add(m.Groups["option"].Value.ToLowerInvariant(), m.Groups["value"].Value);
 
             return res;
         }
