@@ -46,6 +46,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Type initializer.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline")]
         static Helpers()
         {
             Plurals = new Dictionary<string, string>();
@@ -83,12 +84,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 // Process string if not empty.
                 //
-                if (s2 != String.Empty)
+                if (!String.IsNullOrEmpty(s2))
                 {
                     //
                     // First letter of a part should be capitalized.
                     //
-                    sb.Append(char.ToUpper(s2[0]));
+                    sb.Append(char.ToUpperInvariant(s2[0]));
 
                     //
                     // Leave original casing for the remainder.
@@ -141,7 +142,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         public static string Singularize(string listName)
         {
             foreach (string plural in Plurals.Keys)
-                if (listName.EndsWith(plural))
+                if (listName.EndsWith(plural, StringComparison.Ordinal))
                     listName = listName.Substring(0, listName.Length - plural.Length) + Plurals[plural];
             return listName;
         }

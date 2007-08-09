@@ -181,7 +181,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         [Category("Choices")]
         [Editor(typeof(ChoiceEditor), typeof(UITypeEditor))]
         [Description("List of choices for Choice and MultiChoice fields.")]
-        public List<Choice> Choices { get; set; }
+        public IList<Choice> Choices { get; private set; }
 
         /// <summary>
         /// Indicates whether the field is included in a list export.
@@ -210,6 +210,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="fieldDefinition">SharePoint list field definition.</param>
         /// <returns>Field definition object for the specified list field.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static Field FromCaml(XmlNode fieldDefinition)
         {
             //
@@ -290,7 +291,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Choices.
             //
-            if (field.SharePointType.EndsWith("Choice"))
+            if (field.SharePointType.EndsWith("Choice", StringComparison.Ordinal))
             {
                 field.Choices = new List<Choice>();
                 foreach (XmlNode choice in fieldDefinition["CHOICES"])
@@ -306,7 +307,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Lookup.
             //
-            if (field.SharePointType.StartsWith("Lookup"))
+            if (field.SharePointType.StartsWith("Lookup", StringComparison.Ordinal))
             {
                 field.LookupList = (string)fieldDefinition.Attributes["List"].Value;
                 field.LookupField = (string)fieldDefinition.Attributes["ShowField"].Value;
@@ -328,6 +329,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="spml">SharePoint field definition in SPML.</param>
         /// <returns>Field definition object for the specified field.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static Field FromSpml(XmlNode spml)
         {
             //
@@ -519,6 +521,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the SPML representation for the Field element.
         /// </summary>
         /// <returns>SPML XML element.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public XmlNode ToSpml()
         {
             XmlDocument doc = new XmlDocument();

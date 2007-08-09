@@ -24,6 +24,8 @@ using System.Drawing.Design;
 using System.Windows.Forms.Design;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Security;
+using System.Security.Permissions;
 
 #endregion
 
@@ -73,6 +75,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="choiceDefinition">SharePoint choice definition in CAML.</param>
         /// <returns>Choice definition object for the specified choice.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static Choice FromCaml(XmlNode choiceDefinition)
         {
             //
@@ -96,6 +99,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="spml">SharePoint choice definition in SPML.</param>
         /// <returns>Choice definition object for the specified choice.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static Choice FromSpml(XmlNode spml)
         {
             //
@@ -129,6 +133,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the SPML representation for the Choice element.
         /// </summary>
         /// <returns>SPML XML element.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public XmlNode ToSpml()
         {
             XmlDocument doc = new XmlDocument();
@@ -176,6 +181,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     {
         #region Overrides
 
+        [PermissionSet(SecurityAction.LinkDemand, Name = "FullTrust")]
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
         {
             if (context != null && context.Instance != null)
@@ -184,6 +190,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 return base.GetEditStyle(context);
         }
 
+        [PermissionSet(SecurityAction.LinkDemand, Name="FullTrust")]
         public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
             if (provider != null)

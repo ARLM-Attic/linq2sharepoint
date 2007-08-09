@@ -24,6 +24,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Collections.ObjectModel;
 
 #endregion
 
@@ -49,6 +50,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Creates a new Choice collection editing form.
         /// </summary>
         /// <param name="choices">Choice collection to edit.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
         public ChoiceEditorForm(List<Choice> choices)
         {
             _choices = choices;
@@ -63,6 +65,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Gets the choice collection to edit.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
         public List<Choice> Choices { get { return _choices; } }
 
         #endregion

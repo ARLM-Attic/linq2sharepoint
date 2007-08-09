@@ -23,6 +23,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Globalization;
 
 #endregion
 
@@ -95,7 +96,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// List of exported list fields.
         /// </summary>
         [Browsable(false)]
-        public List<Field> Fields { get; set; }
+        public IList<Field> Fields { get; private set; }
 
         /// <summary>
         /// Mapping alias for the list.
@@ -124,6 +125,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="listDefinition">SharePoint list definition in CAML.</param>
         /// <returns>List definition object for the specified list.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Caml")]
         public static List FromCaml(XmlNode listDefinition)
         {
             //
@@ -136,10 +138,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             list.Name = (string)listDefinition.Attributes["Title"].Value;
             string listDescription = (string)listDefinition.Attributes["Description"].Value;
-            if (listDescription != "")
+            if (!String.IsNullOrEmpty(listDescription))
                 list.Description = null;
             list.Id = new Guid((string)listDefinition.Attributes["ID"].Value);
-            list.Version = int.Parse(listDefinition.Attributes["Version"].Value);
+            list.Version = int.Parse(listDefinition.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
             list.Path = (string)listDefinition.Attributes["RootFolder"].Value;
 
             //
@@ -169,6 +171,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="spml">SharePoint list definition in SPML.</param>
         /// <returns>List definition object for the specified list.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public static List FromSpml(XmlNode spml)
         {
             //
@@ -181,10 +184,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             list.Name = spml.Attributes["Name"].Value;
             string listDescription = (string)spml.Attributes["Description"].Value;
-            if (listDescription != "")
+            if (!String.IsNullOrEmpty(listDescription))
                 list.Description = null;
             list.Id = new Guid((string)spml.Attributes["Id"].Value);
-            list.Version = int.Parse(spml.Attributes["Version"].Value);
+            list.Version = int.Parse(spml.Attributes["Version"].Value, CultureInfo.InvariantCulture.NumberFormat);
             list.Path = (string)spml.Attributes["Path"].Value;
             XmlAttribute entityAlias = spml.Attributes["EntityAlias"];
             if (entityAlias != null)
@@ -215,6 +218,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Gets all of the fields supported by LINQ to SharePoint.
         /// </summary>
         /// <returns>Fields supported by LINQ to SharePoint.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public IEnumerable<Field> GetKnownFields()
         {
             //
@@ -231,6 +235,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the SPML representation for the List element.
         /// </summary>
         /// <returns>SPML XML element.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public XmlNode ToSpml()
         {
             XmlDocument doc = new XmlDocument();
@@ -238,7 +243,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             list.Attributes.Append(doc.CreateAttribute("Name")).Value = this.Name;
             list.Attributes.Append(doc.CreateAttribute("Description")).Value = this.Description;
             list.Attributes.Append(doc.CreateAttribute("Id")).Value = this.Id.ToString("D");
-            list.Attributes.Append(doc.CreateAttribute("Version")).Value = this.Version.ToString();
+            list.Attributes.Append(doc.CreateAttribute("Version")).Value = this.Version.ToString(CultureInfo.InvariantCulture);
             list.Attributes.Append(doc.CreateAttribute("Path")).Value = this.Path;
             if (!string.IsNullOrEmpty(this.EntityAlias))
                 list.Attributes.Append(doc.CreateAttribute("EntityAlias")).Value = this.EntityAlias;

@@ -34,6 +34,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Full build|AnyCPU' ">
     <OutputPath>bin\Full build\</OutputPath>
@@ -75,6 +76,7 @@
     <Compile Include="EntityGenerator.cs" />
     <Compile Include="Events.cs" />
     <Compile Include="Field.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="List.cs" />
     <Compile Include="Lists.cs">

@@ -24,7 +24,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     public class ConnectingEventArgs : EventArgs
     {
-        public ConnectingEventArgs(string url)
+        public ConnectingEventArgs(Uri url)
             : base()
         {
             Url = url;
@@ -33,7 +33,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Url connecting to.
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
     }
 
     /// <summary>
@@ -116,11 +116,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     public class ExportingSchemaEventArgs : EventArgs
     {
-        public ExportingSchemaEventArgs(string listName, Guid listID, int version)
+        public ExportingSchemaEventArgs(string listName, Guid list, int version)
             : base()
         {
             List = listName;
-            Identifier = listID;
+            Identifier = list;
             Version = version;
         }
 

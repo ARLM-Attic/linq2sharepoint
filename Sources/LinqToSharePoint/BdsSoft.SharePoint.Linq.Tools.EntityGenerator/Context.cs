@@ -31,6 +31,18 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// </summary>
     public class Context
     {
+        #region Constructors
+
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        public Context()
+        {
+            Lists = new List<List>();
+        }
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -41,7 +53,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Url to the SharePoint site.
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
 
         /// <summary>
         /// Connection parameters.
@@ -51,7 +63,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Lists contained by the data context.
         /// </summary>
-        public List<List> Lists { get; set; }
+        public IList<List> Lists { get; internal set; }
 
         #endregion
 
@@ -62,6 +74,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="spml">SharePoint data context definition in SPML.</param>
         /// <returns>Context definition object for the specified data context.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml")]
         public static Context FromSpml(XmlNode spml)
         {
             //
@@ -73,13 +86,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Set general context information.
             //
             context.Name = spml.Attributes["Name"].Value;
-            context.Url = spml.Attributes["Url"].Value;
+            context.Url = new Uri(spml.Attributes["Url"].Value);
             context.Connection = Connection.FromSpml(spml["Connection"]);
 
             //
             // Get lists.
             //
-            context.Lists = new List<List>();
             if (spml["Lists"] != null)
                 foreach (XmlNode c in spml["Lists"].ChildNodes)
                     context.Lists.Add(List.FromSpml(c));
@@ -98,6 +110,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the SPML representation for the Context element.
         /// </summary>
         /// <returns>SPML XML element.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public XmlNode ToSpml()
         {
             XmlDocument doc = new XmlDocument();
@@ -109,7 +122,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             ctx.Attributes.Append(name);
 
             XmlAttribute url = doc.CreateAttribute("Url");
-            url.Value = Url;
+            url.Value = Url.ToString();
             ctx.Attributes.Append(url);
 
             XmlAttribute ns = doc.CreateAttribute("xmlns");

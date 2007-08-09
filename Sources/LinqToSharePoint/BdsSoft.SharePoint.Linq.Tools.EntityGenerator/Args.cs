@@ -37,7 +37,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Run-mode to run the entity generator in.
         /// </summary>
-        public RunMode RunMode { get; set; }
+        public RunModes RunMode { get; set; }
 
         /// <summary>
         /// Connection parameters to connect to SharePoint.
@@ -83,7 +83,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
     /// - Offline | CodeGen
     /// </remarks>
     [Flags]
-    public enum RunMode
+    public enum RunModes
     {
         /// <summary>
         /// Online.
@@ -116,7 +116,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <summary>
         /// Url of SharePoint site to connect to.
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
 
         /// <summary>
         /// Indicates whether or not custom authentication is enabled.
@@ -147,6 +147,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="spml">SharePoint connection definition in SPML.</param>
         /// <returns>Connection definition object for the specified connection.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml")]
         public static Connection FromSpml(XmlNode spml)
         {
             //
@@ -157,7 +158,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             //
             // Set general connection information.
             //
-            conn.Url = spml.Attributes["Url"].Value;
+            conn.Url = new Uri(spml.Attributes["Url"].Value);
 
             XmlAttribute user = spml.Attributes["User"];
             conn.CustomAuthentication = user != null;
@@ -188,13 +189,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates the SPML representation for the Connection element.
         /// </summary>
         /// <returns>SPML XML element.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
         public XmlNode ToSpml()
         {
             XmlDataDocument doc = new XmlDataDocument();
             XmlElement conn = doc.CreateElement("Connection");
 
             XmlAttribute url = doc.CreateAttribute("Url");
-            url.Value = Url;
+            url.Value = Url.ToString();
             conn.Attributes.Append(url);
 
             if (CustomAuthentication)
