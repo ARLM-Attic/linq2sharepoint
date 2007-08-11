@@ -401,7 +401,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Patch Lookup field references.
             //
-            Patch(_results.Where);
+            Patch(_results.Where, _results.EntityType);
 
             //
             // Eliminate Boolean patches by tree pruning.
@@ -413,16 +413,23 @@ namespace BdsSoft.SharePoint.Linq
         /// Patches the query predicate represented by the given node to eliminate Lookup field references by subqueries.
         /// </summary>
         /// <param name="node">Query predicate node to be patched.</param>
-        private void Patch(XmlNode node)
+        /// <param name="entityType">Entity type to construct patches for.</param>
+        private void Patch(XmlNode node, Type entityType)
         {
             List<Patch> patches = new List<Patch>();
-            GetPatches(node, ref patches);
+            GetPatches(node, entityType, ref patches);
 
             foreach (Patch p in patches)
                 p.Parent.ReplaceChild(p.NewChild, p.OldChild);
         }
 
-        private void GetPatches(XmlNode node, ref List<Patch> patches)
+        /// <summary>
+        /// Gets a list of patches for the specified query predicate node.
+        /// </summary>
+        /// <param name="node">Query predicate node to be patched.</param>
+        /// <param name="entityType">Entity type to construct patches for.</param>
+        /// <param name="patches">Result list of patches.</param>
+        private void GetPatches(XmlNode node, Type entityType, ref List<Patch> patches)
         {
             //
             // Any work to do?
@@ -444,10 +451,15 @@ namespace BdsSoft.SharePoint.Linq
                         // Get information about the Lookup field.
                         //
                         string field = e.Attributes["Field"].Value;
-                        PropertyInfo lookupField = _results.EntityType.GetProperty(field);
+                        PropertyInfo lookupField = entityType.GetProperty(field);
                         FieldAttribute lookup = Helpers.GetFieldAttribute(lookupField);
                         if (lookup.FieldType != FieldType.Lookup)
                             throw RuntimeErrors.LookupFieldPatchError();
+
+                        //
+                        // Head recursion; search for sub-patches and patch those first.
+                        //
+                        Patch(e, lookupField.PropertyType);
 
                         //
                         // Get information about the Lookup list.
@@ -501,7 +513,7 @@ namespace BdsSoft.SharePoint.Linq
                             patches.Add(new Patch() { Parent = e.ParentNode, NewChild = _factory.BooleanPatch(false), OldChild = e });
                     }
                     else
-                        GetPatches(e, ref patches);
+                        GetPatches(e, entityType, ref patches);
                 }
             }
         }

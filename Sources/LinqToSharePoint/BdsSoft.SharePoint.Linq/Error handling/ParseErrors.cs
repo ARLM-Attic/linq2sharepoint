@@ -149,9 +149,9 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 24, Errors.MultipleEntityReferencesInCondition, start, end);
         }
 
-        public static XmlElement NonUrlCallOnUrlValue(this QueryParser parser, int start, int end)
+        public static XmlElement NonAddressPropertyCallOnUrlValue(this QueryParser parser, int start, int end)
         {
-            return KeepOrThrow(parser, 25, Errors.NonUrlCallOnUrlValue, start, end);
+            return KeepOrThrow(parser, 25, Errors.NonAddressPropertyCallOnUrlValue, start, end);
         }
 
         public static XmlElement MultipleGroupings(this QueryParser parser, int start, int end)

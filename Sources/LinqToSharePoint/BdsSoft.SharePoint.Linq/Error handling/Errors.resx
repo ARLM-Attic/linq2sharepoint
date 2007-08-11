@@ -258,8 +258,8 @@
     <value>Lookup field subqueries are only supported for lookup fields that are unique. Field {0} violates this rule.</value>
     <comment>SP0020</comment>
   </data>
-  <data name="NonUrlCallOnUrlValue" xml:space="preserve">
-    <value>Only the Url property of Url fields is supported in query predicates.</value>
+  <data name="NonAddressPropertyCallOnUrlValue" xml:space="preserve">
+    <value>Only the Address property of Url fields is supported in query predicates.</value>
     <comment>SP0025</comment>
   </data>
   <data name="NullValuedLookupField" xml:space="preserve">

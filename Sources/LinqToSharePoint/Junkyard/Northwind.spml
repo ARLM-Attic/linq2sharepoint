@@ -20,10 +20,10 @@
         <Field Name="ID" DisplayName="ID" Type="Counter" Id="1d22ea11-1e32-424e-89ab-9fedbadb6ce1" ReadOnly="true" PrimaryKey="true" />
       </Fields>
     </List>
-    <List Name="LookupMultiTest" Description="" Id="b15d38c9-fa09-4736-a95f-9bd217df9da8" Version="1" Path="/Lists/LookupMultiTest">
+    <List Name="NestedSubqueries" Description="" Id="2d19fcdf-8e96-4765-9974-73b7f5d41cde" Version="1" Path="/Lists/NestedSubqueries" EntityAlias="Order" ListAlias="Orders">
       <Fields>
         <Field Name="Title" DisplayName="Title" Type="Text" Id="fa564e0f-0c70-4ab9-b863-0177e6ddd247" Required="true" />
-        <Field Name="Categories" DisplayName="Categories" Type="LookupMulti" Id="72d4ca7f-637a-4161-8a3e-a9a84782fa0d" LookupList="{7934f5ae-ffeb-4fef-8502-1403a44625c3}" LookupField="CategoryName" />
+        <Field Name="Product" DisplayName="Product" Type="Lookup" Id="143d14c7-94c1-4977-a9f6-f18e9d06e013" LookupList="{a03f5c0c-4abc-43a5-9512-8fa38579f69d}" LookupField="ProductName" />
         <Field Name="ID" DisplayName="ID" Type="Counter" Id="1d22ea11-1e32-424e-89ab-9fedbadb6ce1" ReadOnly="true" PrimaryKey="true" />
       </Fields>
     </List>

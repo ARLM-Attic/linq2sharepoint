@@ -24,6 +24,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml;
 using Microsoft.SharePoint.Utilities;
+using System.Diagnostics;
 
 #endregion
 
@@ -318,7 +319,7 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Parse the predicate recursively, starting without negation (last parameter "positive" set to true).
             //
-            PropertyInfo lookup;
+            LookupInfo lookup;
             XmlElement pred = ParsePredicate(predicate.Body, predicate.Parameters[0], true, out lookup, ppS, ppE);
 
             //
@@ -361,7 +362,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate in CAML syntax.</returns>
-        private XmlElement ParsePredicate(Expression predicate, ParameterExpression predicateParameter, bool isPositive, out PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicate(Expression predicate, ParameterExpression predicateParameter, bool isPositive, out LookupInfo lookup, int ppS, int ppE)
         {
             BinaryExpression be;
             UnaryExpression ue;
@@ -370,7 +371,7 @@ namespace BdsSoft.SharePoint.Linq
             ConstantExpression ce;
 
             //
-            // By default, no Lookup field will be referenced.
+            // By default, no lookup.
             //
             lookup = null;
 
@@ -432,7 +433,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate member expression in CAML syntax.</returns>
-        private XmlElement ParsePredicateMember(bool isPositive, MemberExpression me, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicateMember(bool isPositive, MemberExpression me, ref LookupInfo lookup, int ppS, int ppE)
         {
             //
             // Check for (and trim) Nullable wrapper.
@@ -450,16 +451,10 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Check for lookup field to propagate lookup query expressions to parent.
                 //
-                if (mRes.Member.DeclaringType != _results.EntityType)
-                {
-                    MemberExpression outer = mRes.Expression as MemberExpression;
-                    if (!IsEntityPropertyReference(outer))
-                        return /* PARSE ERROR */ this.InvalidEntityReference(me.Member.Name, ppS, ppE);
+                if (!FindLookups(mRes, ref lookup))
+                    return /* PARSE ERROR */ this.InvalidEntityReference(me.Member.Name, ppS, ppE);
 
-                    lookup = (PropertyInfo)outer.Member;
-                }
-
-                me = mRes;// (MemberExpression)res;
+                me = mRes;
 
                 XmlElement c;
 
@@ -488,7 +483,6 @@ namespace BdsSoft.SharePoint.Linq
             {
                 bool b = (bool)Expression.Lambda<Func<bool>>(me).Compile().DynamicInvoke();
                 return _factory.BooleanPatch(b);
-                //return /* PARSE ERROR */ this.PredicateContainsNonEntityReference(me.Member.Name, ppS, ppE);
             }
         }
 
@@ -503,7 +497,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate method call expression in CAML syntax.</returns>
-        private XmlElement ParsePredicateMethodCall(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MethodCallExpression mce, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicateMethodCall(Expression predicate, ParameterExpression predicateParameter, bool isPositive, MethodCallExpression mce, ref LookupInfo lookup, int ppS, int ppE)
         {
             //
             // Check for CamlElements methods.
@@ -541,7 +535,7 @@ namespace BdsSoft.SharePoint.Linq
             if (o != null)
                 o = CheckForNullableType(o, out isHasValue) as MemberExpression;
 
-            if (o == null || !(o.Member is PropertyInfo))
+            if (o == null || !IsEntityPropertyReference(o))
                 return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
 
             PropertyInfo property = (PropertyInfo)o.Member;
@@ -551,26 +545,24 @@ namespace BdsSoft.SharePoint.Linq
             //
             if (property.DeclaringType == typeof(Url))
             {
-                if (property.Name != "Url")
+                if (property.Name != "Address")
                 {
                     int ppS1 = ppS + o.Expression.ToString().Length + 1;
-                    return /* PARSE ERROR */ this.NonUrlCallOnUrlValue(ppS1, ppS1 + property.Name.Length - 1);
+                    return /* PARSE ERROR */ this.NonAddressPropertyCallOnUrlValue(ppS1, ppS1 + property.Name.Length - 1);
                 }
 
-                property = (PropertyInfo)((MemberExpression)o.Expression).Member;
+                o = o.Expression as MemberExpression;
+                if (o == null || !IsEntityPropertyReference(o))
+                    return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
+
+                property = (PropertyInfo)o.Member;
             }
 
             //
             // Check for lookup field to propagate lookup query expressions to parent.
             //
-            if (property.DeclaringType != _results.EntityType)
-            {
-                MemberExpression outer = o.Expression as MemberExpression;
-                if (!IsEntityPropertyReference(outer))
-                    return /* PARSE ERROR */ this.InvalidEntityReference(mce.Method.Name, ppS, ppE);
-
-                lookup = (PropertyInfo)outer.Member;
-            }
+            if (!FindLookups(o, ref lookup))
+                return /* PARSE ERROR */ this.InvalidEntityReference(mce.Method.Name, ppS, ppE);
 
             //
             // Only string operations "Contains", "StartsWith" and "Equals" are supported in CAML.
@@ -745,7 +737,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed DateRangesOverlap expression in CAML syntax.</returns>
-        private XmlElement ParseDateRangesOverlap(Expression predicate, bool isPositive, MethodCallExpression mce, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParseDateRangesOverlap(Expression predicate, bool isPositive, MethodCallExpression mce, ref LookupInfo lookup, int ppS, int ppE)
         {
             //
             // Negation isn't supported.
@@ -812,7 +804,6 @@ namespace BdsSoft.SharePoint.Linq
                 while (fEx.NodeType == ExpressionType.Convert || fEx.NodeType == ExpressionType.ConvertChecked)
                     fEx = ((UnaryExpression)fEx).Operand;
 
-                //fEx = DropToString(fEx, ref ppSD, ref ppED);
                 fEx = CheckForNullableType(fEx, out isNullableHasValue);
 
                 if (!IsEntityPropertyReference(fEx))
@@ -825,17 +816,16 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 // Lookup properties are supported only if all property references are of the same lookup type.
                 //
-                if (mex.Member.DeclaringType != _results.EntityType)
+                if (!(mex.Expression is ParameterExpression))
                 {
-                    MemberExpression outer = mex.Expression as MemberExpression;
-                    if (!IsEntityPropertyReference(outer))
+                    LookupInfo lookup1 = new LookupInfo();
+                    if (!FindLookups(mex, ref lookup1))
                         return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
-
-                    PropertyInfo lookup1 = (PropertyInfo)outer.Member;
 
                     //
                     // We've already found field references; check that all of these refer to the same entity type.
                     //
+                    //if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
                     if (fieldRefs.Count != 0 && (lookup == null || lookup != lookup1))
                         return /* PARSE ERROR */ this.DateRangesOverlapInvalidFieldReferences(ppSD, ppED);
                     else
@@ -871,7 +861,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate unary expression in CAML syntax.</returns>
-        private XmlElement ParsePredicateUnary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, UnaryExpression ue, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicateUnary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, UnaryExpression ue, ref LookupInfo lookup, int ppS, int ppE)
         {
             //
             // CAML doesn't support boolean negation; therefore, we apply De Morgan's law by inverting the isPositive indicator.
@@ -888,7 +878,7 @@ namespace BdsSoft.SharePoint.Linq
                 ppS += 4;
                 ppE -= 1;
 
-                PropertyInfo lookup1;
+                LookupInfo lookup1;
                 XmlElement c = ParsePredicate(ue.Operand, predicateParameter, !isPositive, out lookup1, ppS, ppE);
 
                 //
@@ -920,7 +910,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed predicate binary expression in CAML syntax.</returns>
-        private XmlElement ParsePredicateBinary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, BinaryExpression be, ref PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement ParsePredicateBinary(Expression predicate, ParameterExpression predicateParameter, bool isPositive, BinaryExpression be, ref LookupInfo lookup, int ppS, int ppE)
         {
             //
             // Calculcate expression body parser positions: trim outer parentheses.
@@ -968,34 +958,28 @@ namespace BdsSoft.SharePoint.Linq
                         int ppT = ppS + be.Left.ToString().Length - 1;
                         int ppD = ppE - be.Right.ToString().Length + 1;
 
-                        PropertyInfo lookupLeft, lookupRight;
+                        LookupInfo lookupLeft, lookupRight;
                         XmlElement left = ParsePredicate(be.Left, predicateParameter, isPositive, out lookupLeft, ppS, ppT);
                         XmlElement right = ParsePredicate(be.Right, predicateParameter, isPositive, out lookupRight, ppD, ppE);
 
                         //
-                        // Optimizations could occur.
+                        // Optimizations could occur. If none, do the following.
                         //
                         if (left != null && right != null)
                         {
                             //
-                            // If both lookups are the same (or both null), propagate the lookup query expression to the parent.
+                            // Try to coalesce both lookups to propagate the common lookup chain to the parent.
                             //
-                            if (lookupLeft == lookupRight)
-                            {
-                                lookup = lookupLeft;
-                            }
+                            if (lookupLeft != null && lookupRight != null)
+                                lookup = LookupInfo.Coalesce(ref lookupLeft, ref lookupRight);
+                            
                             //
-                            // If one of the lookups is different, apply a patch and don't propagate the lookup query expression to the parent.
+                            // Patch the nodes using the remainder of the coalesced lookup chains.
                             //
-                            else
-                            {
-                                lookup = null;
-
-                                if (lookupLeft != null)
-                                    PatchQueryExpressionNode(lookupLeft, ref left);
-                                if (lookupRight != null)
-                                    PatchQueryExpressionNode(lookupRight, ref right);
-                            }
+                            if (lookupLeft != null)
+                                PatchQueryExpressionNode(lookupLeft, ref left);
+                            if (lookupRight != null)
+                                PatchQueryExpressionNode(lookupRight, ref right);
 
                             //
                             // Continue to compose the query expression tree.
@@ -1054,7 +1038,7 @@ namespace BdsSoft.SharePoint.Linq
                 //
                 default:
                     {
-                        PropertyInfo lookup1;
+                        LookupInfo lookup1;
                         XmlElement c = GetCondition(be, isPositive, predicateParameter, out lookup1, ppS, ppE);
 
                         //
@@ -1071,16 +1055,14 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Patches a query expression node by surrounding it with a Patch element so that it can be replaced with lookup field references upon execution.
         /// </summary>
-        /// <param name="lookup">Lookup entity property to make a patch for.</param>
+        /// <param name="lookups">Chain of lookup entity properties to make a patch for.</param>
         /// <param name="node">Node of the query expression to be patched.</param>
-        private void PatchQueryExpressionNode(PropertyInfo lookup, ref XmlElement node)
+        private void PatchQueryExpressionNode(LookupInfo lookups, ref XmlElement node)
         {
             //
             // Apply the patch.
             //
-            XmlElement patch = _factory.Patch(lookup.Name);
-            patch.AppendChild(node);
-            node = patch;
+            lookups.Patch(_factory, ref node);
         }
 
         /// <summary>
@@ -1104,6 +1086,50 @@ namespace BdsSoft.SharePoint.Linq
 
             isHasValue = null;
             return e;
+        }
+
+        private static bool FindLookups(MemberExpression me, ref LookupInfo lookup)
+        {
+            //
+            // Prepare (optional) result.
+            //
+            LookupInfo l = new LookupInfo();
+
+            //
+            // Find entity property references in chain.
+            //
+            bool found = false;
+            MemberExpression outer;
+            while ((outer = me.Expression as MemberExpression) != null)
+            {
+                found = true;
+                me = outer;
+
+                //
+                // If the current member doesn't refer to an entity property, this should be considered a problem.
+                //
+                if (!IsEntityPropertyReference(outer))
+                    return false;
+
+                //
+                // Register entity property call in chain.
+                //
+                l.Add((PropertyInfo)outer.Member);
+            }
+
+            //
+            // An error has occurred if the chain of member expressions doesn't have the parameter as its root.
+            //
+            if (!(me.Expression is ParameterExpression))
+                return false;
+
+            //
+            // Only assign to the lookup result variable if something was found: a non-set lookup result variable will indicate there's no lookup.
+            //
+            if (found)
+                lookup = l;
+
+            return true;
         }
 
         /// <summary>
@@ -1147,12 +1173,12 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="ppS">Start position for parser error tracking.</param>
         /// <param name="ppE">End position for parser error tracking.</param>
         /// <returns>Output XML element representing the parsed condition in CAML syntax.</returns>
-        private XmlElement GetCondition(BinaryExpression condition, bool isPositive, ParameterExpression predicateParameter, out PropertyInfo lookup, int ppS, int ppE)
+        private XmlElement GetCondition(BinaryExpression condition, bool isPositive, ParameterExpression predicateParameter, out LookupInfo lookup, int ppS, int ppE)
         {
             //
-            // Normally, we don't face a lookup field so stick with the default of no lookup.
+            // Normally, we don't face a lookup field so stick with the default of no lookup (=empty list).
             //
-            lookup = null;
+            lookup = new LookupInfo();
 
             Expression left = condition.Left;
             Expression right = condition.Right;
@@ -1240,14 +1266,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Lookup field reference?
             //
-            if (lhs.Member.DeclaringType != _results.EntityType)
-            {
-                MemberExpression outer = lhs.Expression as MemberExpression;
-                if (!IsEntityPropertyReference(outer))
-                    return /* PARSE ERROR */ this.InvalidEntityReference(lhs.Member.Name, ppS, ppE);
-
-                lookup = (PropertyInfo)outer.Member;
-            }
+            if (!FindLookups(lhs, ref lookup))
+                return /* PARSE ERROR */ this.InvalidEntityReference(lhs.Member.Name, ppS, ppE);
 
             //
             // Ensure that the value side (rhs) of the condition is lambda parameter free.
@@ -1551,7 +1571,7 @@ namespace BdsSoft.SharePoint.Linq
                 if (m.Member.Name != "Url")
                 {
                     int ppS1 = ppS + m.Expression.ToString().Length + 1;
-                    return /* PARSE ERROR */ this.NonUrlCallOnUrlValue(ppS1, ppS1 + m.Member.Name.Length - 1);
+                    return /* PARSE ERROR */ this.NonAddressPropertyCallOnUrlValue(ppS1, ppS1 + m.Member.Name.Length - 1);
                 }
 
                 expression = m.Expression;
@@ -1658,7 +1678,7 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         /// <param name="value">Field value to get a Value element for.</param>
         /// <param name="field">Field to get a Value element for.</param>
-        /// <param name="lookup"></param>
+        /// <param name="lookup">Indicates that a lookup reference was found, e.g. in a comparison with an entity object.</param>
         /// <returns>CAML Value element representing the given value for the given field.</returns>
         private XmlElement GetValue(object value, FieldAttribute field, out bool lookup)
         {
@@ -2661,5 +2681,96 @@ namespace BdsSoft.SharePoint.Linq
         /// Optional number of "top" rows to query for, with the semantics of the TOP construct in SQL. Gathered by parsing Take(n) calls.
         /// </summary>
         public int? Top { get; set; }
+    }
+
+    /// <summary>
+    /// Helper class to hold information about Lookup field subqueries.
+    /// </summary>
+    internal class LookupInfo
+    {
+        /// <summary>
+        /// Keeps chain of lookup properties. To follow a chain from the root entity type, start at the end.
+        /// </summary>
+        /// <example>
+        /// order.Product.Supplier becomes { Product::Supplier ,  Order::Product } internally
+        /// but should be interpreted as   { Order::Product -> Product::Supplier }
+        /// </example>
+        private List<PropertyInfo> lookups = new List<PropertyInfo>();
+
+        /// <summary>
+        /// Adds a new lookup property to the chain represented by the current LookupInfo instance.
+        /// </summary>
+        /// <param name="property">Lookup property to add to the chain.</param>
+        public void Add(PropertyInfo property)
+        {
+            lookups.Add(property);
+        }
+
+        /// <summary>
+        /// Generate the patch for the current lookup chain.
+        /// </summary>
+        /// <param name="factory">Factory to generate CAML elements from.</param>
+        /// <param name="node">Node to be patched using the current lookup chain.</param>
+        /// <example>
+        /// Assume the following chain of lookups: { Order::Product -> Product::Supplier }
+        /// 
+        /// This will produce the following patch surrounding node (%NODE%):
+        /// %NODE% := 
+        /// &lt;Patch Field="Product"&gt;
+        ///    &lt;Patch Field="Product"&gt;
+        ///       %NODE%
+        ///    &lt;/Patch&gt;
+        /// &lt;/Patch&gt;
+        /// </example>
+        public void Patch(CamlFactory factory, ref XmlElement node)
+        {
+            foreach (PropertyInfo lookup in lookups)
+            {
+                XmlElement patch = factory.Patch(lookup.Name);
+                patch.AppendChild(node);
+                node = patch;
+            }
+        }
+
+        /// <summary>
+        /// Coalesces two lookup chains to find the greatest common head.
+        /// </summary>
+        /// <param name="first">First lookup chain.</param>
+        /// <param name="second">Second lookup chain.</param>
+        /// <returns>Greatest common head.</returns>
+        /// <remarks>Both referenced lookup chains will get their common head trimmed of.</remarks>
+        /// <example>
+        /// Assume two lookup chains:
+        /// first  := { Order::Product -> Product::Supplier }
+        /// second := { Order::Product }
+        /// 
+        /// This will return the following result chain { Order::Product }
+        /// and will modify the input chains to:
+        /// first  := { Product::Supplier }
+        /// second := { }
+        /// </example>
+        public static LookupInfo Coalesce(ref LookupInfo first, ref LookupInfo second)
+        {
+            Debug.Assert(first != null && second != null, "One of both inputs to LookupInfo::Coalesce is null.");
+
+            List<PropertyInfo> f = first.lookups;
+            int fi = f.Count - 1;
+            List<PropertyInfo> s = second.lookups;
+            int si = s.Count - 1;
+
+            Stack<PropertyInfo> res = new Stack<PropertyInfo>();
+            while (fi >= 0 && si >= 0 && f[fi] == s[si])
+            {
+                res.Push(f[fi]);
+                f.RemoveAt(fi--);
+                s.RemoveAt(si--);
+            }
+
+            LookupInfo result = new LookupInfo();
+            while (res.Count > 0)
+                result.Add(res.Pop());
+
+            return result;
+        }
     }
 }

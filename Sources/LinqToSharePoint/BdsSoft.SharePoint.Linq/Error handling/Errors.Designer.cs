@@ -349,6 +349,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Only the Address property of Url fields is supported in query predicates..
+        /// </summary>
+        internal static string NonAddressPropertyCallOnUrlValue {
+            get {
+                return ResourceManager.GetString("NonAddressPropertyCallOnUrlValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Non-boolean constant values are not supported in query predicates..
         /// </summary>
         internal static string NonBoolConstantValueInPredicate {
@@ -390,15 +399,6 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string NonUniqueLookupField {
             get {
                 return ResourceManager.GetString("NonUniqueLookupField", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Only the Url property of Url fields is supported in query predicates..
-        /// </summary>
-        internal static string NonUrlCallOnUrlValue {
-            get {
-                return ResourceManager.GetString("NonUrlCallOnUrlValue", resourceCulture);
             }
         }
         
