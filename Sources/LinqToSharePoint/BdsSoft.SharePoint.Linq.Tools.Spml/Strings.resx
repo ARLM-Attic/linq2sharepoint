@@ -140,7 +140,7 @@
     <value>default network credentials</value>
   </data>
   <data name="GenerateContext" xml:space="preserve">
-    <value>Generate SharePoint datacontext {0}.</value>
+    <value>Generate SharePoint data context {0}.</value>
   </data>
   <data name="GenerateEntity" xml:space="preserve">
     <value>Generate entity for list {0}.</value>

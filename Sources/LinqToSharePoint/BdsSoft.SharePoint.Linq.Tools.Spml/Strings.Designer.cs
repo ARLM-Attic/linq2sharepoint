@@ -88,7 +88,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Generate SharePoint datacontext {0}..
+        ///   Looks up a localized string similar to Generate SharePoint data context {0}..
         /// </summary>
         internal static string GenerateContext {
             get {

@@ -981,7 +981,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Generate code.
             //
             StringBuilder sb = new StringBuilder();
-            using (StringWriter sw = new StringWriter(sb))
+            using (StringWriter sw = new StringWriter(sb, CultureInfo.InvariantCulture))
             {
                 _provider.GenerateCodeFromMember(method, sw, new CodeGeneratorOptions());
             }
