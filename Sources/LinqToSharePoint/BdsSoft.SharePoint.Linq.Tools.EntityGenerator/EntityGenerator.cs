@@ -35,6 +35,7 @@ using System.IO;
 using System.Xml.Schema;
 using System.Reflection;
 using System.Globalization;
+using System.CodeDom.Compiler;
 
 #endregion
 
@@ -107,6 +108,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         private EntityGeneratorArgs _args;
 
+        /// <summary>
+        /// Helper provider to generate code fragments for use in generation of literal fragments, e.g. for a partial method.
+        /// </summary>
+        private CodeDomProvider _provider;
+
         #endregion
 
         #region Public members
@@ -118,6 +124,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         public Generator(EntityGeneratorArgs args)
         {
             _args = args;
+            _provider = CodeDomProvider.CreateProvider(_args.Language.ToString());
         }
 
         /// <summary>
@@ -285,7 +292,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             bool success = true;
             List<ValidationEventArgs> msgs = new List<ValidationEventArgs>();
             spml.Validate(
-                delegate (object sender, ValidationEventArgs e)
+                delegate(object sender, ValidationEventArgs e)
                 {
                     msgs.Add(e);
                     if (e.Severity == XmlSeverityType.Error)
@@ -607,9 +614,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 //
                 string fieldName = Helpers.GetFriendlyName(!string.IsNullOrEmpty(field.Alias) ? field.Alias : field.DisplayName);
                 CodeMemberField storageField;
-                CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField);
+                CodeSnippetTypeMember pmChanging;
+                CodeSnippetTypeMember pmChanged;
+                CodeMemberProperty fieldProperty = GetFieldMemberProperty(listType, field.DisplayName, field.Description, readOnly, bclTypeRef, isValue, fieldName, fieldAttributeArgs, false, isLookup, isLookupMulti, out storageField, out pmChanging, out pmChanged);
                 listType.Members.Add(fieldProperty);
                 listType.Members.Add(storageField);
+                if (pmChanging != null)
+                    listType.Members.Add(pmChanging);
+                if (pmChanged != null)
+                    listType.Members.Add(pmChanged);
 
                 //
                 // Generate additional helper property if needed.
@@ -639,9 +652,15 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                     // Create field definition for helper.
                     //
                     CodeMemberField helperStorageField;
-                    CodeMemberProperty helperField = GetFieldMemberProperty(listType, field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), false, fieldName, helperFieldAttributeArgs, true, false, false, out helperStorageField);
+                    CodeSnippetTypeMember helperPmChanging;
+                    CodeSnippetTypeMember helperPmChanged;
+                    CodeMemberProperty helperField = GetFieldMemberProperty(listType, field.DisplayName, field.DisplayName + " 'Fill-in' value", false, new CodeTypeReference(typeof(string), CodeTypeReferenceOptions.GlobalReference), false, fieldName, helperFieldAttributeArgs, true, false, false, out helperStorageField, out helperPmChanging, out helperPmChanged);
                     listType.Members.Add(helperField);
                     listType.Members.Add(helperStorageField);
+                    if (helperPmChanging != null)
+                        listType.Members.Add(helperPmChanging);
+                    if (helperPmChanged != null)
+                        listType.Members.Add(helperPmChanged);
                 }
 
                 //
@@ -692,7 +711,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             CodeMemberMethod method = new CodeMemberMethod();
             method.Attributes = MemberAttributes.Family | MemberAttributes.Final;
             method.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(System.Diagnostics.DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
-            method.Name = "On" + eventName;
+            method.Name = "Send" + eventName;
             CodeParameterDeclarationExpression param = new CodeParameterDeclarationExpression(typeof(string), "propertyName");
             method.Parameters.Add(param);
 
@@ -848,9 +867,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// <param name="isLookup">Indicates whether or not the field is a Lookup field.</param>
         /// <param name="isLookupMulti">Indicates whether or not the field is a LookupMulti field.</param>
         /// <param name="field">Storage field for the property.</param>
+        /// <param name="pmChanging">On...Changing partial method declaration.</param>
+        /// <param name="pmChanged">On...Changed partial method declaration.</param>
         /// <returns>Property definition for the specified SharePoint list field.</returns>
-        private CodeMemberProperty GetFieldMemberProperty(CodeTypeDeclaration listType, string displayName, string description, bool readOnly, CodeTypeReference bclTypeRef, bool isValue, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, bool isHelper, bool isLookup, bool isLookupMulti, out CodeMemberField field)
+        private CodeMemberProperty GetFieldMemberProperty(CodeTypeDeclaration listType, string displayName, string description, bool readOnly, CodeTypeReference bclTypeRef, bool isValue, string fieldName, List<CodeAttributeArgument> fieldAttributeArgs, bool isHelper, bool isLookup, bool isLookupMulti, out CodeMemberField field, out CodeSnippetTypeMember pmChanging, out CodeSnippetTypeMember pmChanged)
         {
+            //
+            // Default no partial methods (will be overriden if needed).
+            //
+            pmChanging = null;
+            pmChanged = null;
+
             //
             // Property definition for the field.
             //
@@ -877,6 +904,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 fieldAttributeArgs.Add(new CodeAttributeArgument("Storage", new CodePrimitiveExpression(field.Name)));
 
                 SetLookupMemberProperty(prop, prop.Name, fieldAttributeArgs, field);
+
+                if (!readOnly)
+                {
+                    pmChanging = GetPartialMethodChanging(prop.Name, bclTypeRef);
+                    pmChanged = GetPartialMethodChanged(prop.Name);
+                }
             }
             else if (isLookupMulti)
             {
@@ -897,6 +930,12 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 fieldAttributeArgs.Add(new CodeAttributeArgument("Storage", new CodePrimitiveExpression(field.Name)));
 
                 SetMemberProperty(prop, readOnly, isValue, prop.Name, fieldAttributeArgs, field);
+
+                if (!readOnly)
+                {
+                    pmChanging = GetPartialMethodChanging(prop.Name, bclTypeRef);
+                    pmChanged = GetPartialMethodChanged(prop.Name);
+                }
             }
 
             //
@@ -909,6 +948,52 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Return the property definition.
             //
             return prop;
+        }
+
+        private CodeSnippetTypeMember GetPartialMethodChanged(string p)
+        {
+            //
+            // Generate prototype of the partial method.
+            //
+            CodeMemberMethod method = new CodeMemberMethod();
+            method.Name = "On" + p + "Changed";
+            method.Attributes = _args.Language == Language.CSharp ? MemberAttributes.Abstract : MemberAttributes.Private;
+
+            return MakePartial(method);
+        }
+
+        private CodeSnippetTypeMember GetPartialMethodChanging(string p, CodeTypeReference bclTypeRef)
+        {
+            //
+            // Generate prototype of the partial method.
+            //
+            CodeMemberMethod method = new CodeMemberMethod();
+            method.Name = "On" + p + "Changing";
+            method.Parameters.Add(new CodeParameterDeclarationExpression(bclTypeRef, "value"));
+            method.Attributes = _args.Language == Language.CSharp ? MemberAttributes.Abstract : MemberAttributes.Private;
+
+            return MakePartial(method);
+        }
+
+        private CodeSnippetTypeMember MakePartial(CodeMemberMethod method)
+        {
+            //
+            // Generate code.
+            //
+            StringBuilder sb = new StringBuilder();
+            using (StringWriter sw = new StringWriter(sb))
+            {
+                _provider.GenerateCodeFromMember(method, sw, new CodeGeneratorOptions());
+            }
+            string code = sb.ToString();
+
+            //
+            // Make it partial.
+            //
+            if (_args.Language == Language.CSharp)
+                return new CodeSnippetTypeMember("partial" + code.Substring("abstract ".Length + 1));
+            else
+                return new CodeSnippetTypeMember("Partial " + code.TrimStart('\n', '\r'));
         }
 
         private Dictionary<CodeTypeDeclaration, HashSet<string>> propertyNames = new Dictionary<CodeTypeDeclaration, HashSet<string>>();
@@ -985,18 +1070,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                         );
                 }
 
-                prop.SetStatements.Add(
-                    new CodeConditionStatement(
-                        cond,
-                        new CodeExpressionStatement(
-                            new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanging", new CodePrimitiveExpression(fieldName))
-                        ),
-                        new CodeAssignStatement(fieldRef, new CodePropertySetValueReferenceExpression()),
-                        new CodeExpressionStatement(
-                            new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanged", new CodePrimitiveExpression(fieldName))
-                        )
-                    )
-                );
+                SetPropertySetter(prop, fieldName, fieldRef, cond);
             }
 
             //
@@ -1054,18 +1128,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 );
             }
 
-            prop.SetStatements.Add(
-                new CodeConditionStatement(
-                    cond,
-                    new CodeExpressionStatement(
-                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanging", new CodePrimitiveExpression(fieldName))
-                    ),
-                    new CodeAssignStatement(fieldRef, new CodePropertySetValueReferenceExpression()),
-                    new CodeExpressionStatement(
-                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "OnPropertyChanged", new CodePrimitiveExpression(fieldName))
-                    )
-                )
-            );
+            SetPropertySetter(prop, fieldName, fieldRef, cond);
 
             //
             // Add a FieldAttribute to the property.
@@ -1074,6 +1137,28 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 new CodeAttributeDeclaration(
                     new CodeTypeReference(typeof(FieldAttribute), CodeTypeReferenceOptions.GlobalReference),
                     fieldAttributeArgs.ToArray()
+                )
+            );
+        }
+
+        private static void SetPropertySetter(CodeMemberProperty prop, string fieldName, CodeExpression fieldRef, CodeExpression cond)
+        {
+            prop.SetStatements.Add(
+                new CodeConditionStatement(
+                    cond,
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "On" + fieldName + "Changing", new CodePropertySetValueReferenceExpression())
+                    ),
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "SendPropertyChanging", new CodePrimitiveExpression(fieldName))
+                    ),
+                    new CodeAssignStatement(fieldRef, new CodePropertySetValueReferenceExpression()),
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "SendPropertyChanged", new CodePrimitiveExpression(fieldName))
+                    ),
+                    new CodeExpressionStatement(
+                        new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "On" + fieldName + "Changed")
+                    )
                 )
             );
         }
