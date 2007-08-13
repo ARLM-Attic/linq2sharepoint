@@ -453,18 +453,28 @@ namespace BdsSoft.SharePoint.Linq
                         string field = e.Attributes["Field"].Value;
                         PropertyInfo lookupField = entityType.GetProperty(field);
                         FieldAttribute lookup = Helpers.GetFieldAttribute(lookupField);
-                        if (lookup.FieldType != FieldType.Lookup)
+                        if (lookup.FieldType != FieldType.Lookup && lookup.FieldType != FieldType.LookupMulti)
                             throw RuntimeErrors.LookupFieldPatchError();
+
+                        Type tProp = lookup.FieldType == FieldType.Lookup ?
+                            //
+                            // Lookup uses the entity property as its return value.
+                            //
+                            lookupField.PropertyType :
+                            //
+                            // LookupMulti uses an EntitySet<T> as its return value.
+                            //
+                            lookupField.PropertyType.GetGenericArguments()[0];
 
                         //
                         // Head recursion; search for sub-patches and patch those first.
                         //
-                        Patch(e, lookupField.PropertyType);
+                        Patch(e, tProp);
 
                         //
                         // Get information about the Lookup list.
                         //
-                        ListAttribute innerListAttribute = Helpers.GetListAttribute(lookupField.PropertyType, true);
+                        ListAttribute innerListAttribute = Helpers.GetListAttribute(tProp, true);
                         string innerList = innerListAttribute.List;
 
                         //

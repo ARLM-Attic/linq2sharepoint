@@ -88,6 +88,15 @@ namespace BdsSoft.SharePoint.Linq {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Calls to the LINQ extension method &apos;Any&apos; are only supported on LookupMulti fields..
+        /// </summary>
+        internal static string AnyOnNonLookupMultiField {
+            get {
+                return ResourceManager.GetString("AnyOnNonLookupMultiField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This method is not intended to be called directly; use it in LINQ query predicates only..
         /// </summary>
         internal static string CamlMethodsInvalidUse {
@@ -273,6 +282,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string LookupFieldPatchError {
             get {
                 return ResourceManager.GetString("LookupFieldPatchError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to LookupMulti subqueries are only supported in positive query predicate contexts..
+        /// </summary>
+        internal static string LookupMultiAnyOnNonPositiveContext {
+            get {
+                return ResourceManager.GetString("LookupMultiAnyOnNonPositiveContext", resourceCulture);
             }
         }
         
@@ -480,6 +498,15 @@ namespace BdsSoft.SharePoint.Linq {
         internal static string UnsupportedBinary {
             get {
                 return ResourceManager.GetString("UnsupportedBinary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The {0} LINQ extension method is not supported in query predicates..
+        /// </summary>
+        internal static string UnsupportedExtensionMethod {
+            get {
+                return ResourceManager.GetString("UnsupportedExtensionMethod", resourceCulture);
             }
         }
         

@@ -512,6 +512,84 @@ namespace BdsSoft.SharePoint.Linq
                     return ParseDateRangesOverlap(predicate, isPositive, mce, ref lookup, ppS, ppE);
                 }
             }
+            //
+            // Check for Any call on LookupMulti field.
+            //
+            else if (mce.Method.DeclaringType == typeof(Enumerable))
+            {
+                ParameterInfo[] parameters = mce.Method.GetParameters();
+                if (mce.Method.Name == "Any" && parameters.Length == 2)
+                {
+                    //
+                    // First argument is the extension 'this' parameter. It should be an entity property reference.
+                    //
+                    MemberExpression lookupMultiField = (MemberExpression)mce.Arguments[0];
+                    if (!IsEntityPropertyReference(lookupMultiField))
+                        return /* PARSE ERROR */ this.PredicateContainsNonEntityMethodCall(mce.Method.Name, ppS, ppE);
+
+                    //
+                    // Check the entity property reference is of type LookupMulti.
+                    //
+                    FieldAttribute lookupMultiFieldAttribute = Helpers.GetFieldAttribute((PropertyInfo)lookupMultiField.Member);
+                    if (lookupMultiFieldAttribute.FieldType != FieldType.LookupMulti)
+                        return /* PARSE ERROR */ this.AnyOnNonLookupMultiField(ppS, ppE);
+
+                    //
+                    // Only supported in positive contexts.
+                    //
+                    if (!isPositive)
+                        return /* PARSE ERROR */ this.LookupMultiAnyOnNonPositiveContext(ppS, ppE);
+
+                    //
+                    // Parse the entity property reference.
+                    //
+                    LookupInfo lookupMulti = new LookupInfo();
+                    if (!FindLookups(lookupMultiField, ref lookupMulti))
+                        return /* PARSE ERROR */ this.InvalidEntityReference(lookupMultiField.Member.Name, ppS, ppE);
+
+                    //
+                    // Add patch reference to self (= LookupMulti field).
+                    //
+                    lookupMulti.Add((PropertyInfo)lookupMultiField.Member);
+
+                    //
+                    // Calculcate expression body parser positions.
+                    // E.g. ___.Any(t => ((t.Age >= 24) && t.LastName.StartsWith("Smet")))
+                    //         +++++0xxxx                                                -
+                    // ppSL <- ppS + 5(+) + predicate.Parameters[0].Name.Length + 4(x) + lookupMultiField.ToString().Length(_)
+                    // ppEL <- ppE - 1(-)
+                    //
+                    ppS = ppS + 10 + lookupMultiField.ToString().Length;
+                    ppE = ppE - 1;
+
+                    //
+                    // Second argument is the Expression<Func<T,bool>> parameter.
+                    //
+                    LambdaExpression lookupMultiSubquery = (LambdaExpression)mce.Arguments[1];
+                    LookupInfo lookupMultiSub;
+
+                    //
+                    // Parse the Any predicate.
+                    //
+                    XmlElement lookupMultiSubqueryResult = ParsePredicate(lookupMultiSubquery.Body, lookupMultiSubquery.Parameters[0], true, out lookupMultiSub, ppS, ppE);
+
+                    //
+                    // Patch for the inner query and for the outer field reference.
+                    // E.g.: p.Bar.Foo.Any(l => l.Sub.Test == "xyz") gets two patches
+                    //       <Patch Field="Bar">
+                    //         <Patch Field="Sub">
+                    //           <Eq ... />
+                    //         </Patch>
+                    //       </Patch>
+                    //
+                    PatchQueryExpressionNode(lookupMultiSub, ref lookupMultiSubqueryResult);
+                    PatchQueryExpressionNode(lookupMulti, ref lookupMultiSubqueryResult);
+
+                    return lookupMultiSubqueryResult;
+                }
+                else
+                    return /* PARSE ERROR */ this.UnsupportedExtensionMethod(mce.Method.Name, ppS, ppE);
+            }
 
             //
             // Check whether the method call is an instance method call.
@@ -1062,7 +1140,8 @@ namespace BdsSoft.SharePoint.Linq
             //
             // Apply the patch.
             //
-            lookups.Patch(_factory, ref node);
+            if (lookups != null)
+                lookups.Patch(_factory, ref node);
         }
 
         /// <summary>

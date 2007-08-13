@@ -330,4 +330,16 @@
     <value>The {0} query expression can't be used after a take operation.</value>
     <comment>SP0029</comment>
   </data>
+  <data name="AnyOnNonLookupMultiField" xml:space="preserve">
+    <value>Calls to the LINQ extension method 'Any' are only supported on LookupMulti fields.</value>
+    <comment>SP0030</comment>
+  </data>
+  <data name="LookupMultiAnyOnNonPositiveContext" xml:space="preserve">
+    <value>LookupMulti subqueries are only supported in positive query predicate contexts.</value>
+    <comment>SP0032</comment>
+  </data>
+  <data name="UnsupportedExtensionMethod" xml:space="preserve">
+    <value>The {0} LINQ extension method is not supported in query predicates.</value>
+    <comment>SP0031</comment>
+  </data>
 </root>

@@ -174,6 +174,21 @@ namespace BdsSoft.SharePoint.Linq
             return KeepOrThrow(parser, 29, String.Format(CultureInfo.InvariantCulture, Errors.AfterTake, method), start, end);
         }
 
+        public static XmlElement AnyOnNonLookupMultiField(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 30, Errors.AnyOnNonLookupMultiField, start, end);
+        }
+
+        public static XmlElement UnsupportedExtensionMethod(this QueryParser parser, string method, int start, int end)
+        {
+            return KeepOrThrow(parser, 31, String.Format(CultureInfo.InvariantCulture, Errors.UnsupportedExtensionMethod, method), start, end);
+        }
+
+        public static XmlElement LookupMultiAnyOnNonPositiveContext(this QueryParser parser, int start, int end)
+        {
+            return KeepOrThrow(parser, 32, Errors.LookupMultiAnyOnNonPositiveContext, start, end);
+        }
+
         public static XmlElement UnsupportedQueryExpression(this QueryParser parser, int start, int end)
         {
             return KeepOrThrow(parser, 99, Errors.UnsupportedQueryExpression, start, end);
