@@ -46,7 +46,7 @@ using System.Resources;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.2.3.0")]
-[assembly: AssemblyFileVersion("0.2.3.0")]
+[assembly: AssemblyVersion("0.2.4.0")]
+[assembly: AssemblyFileVersion("0.2.4.0")]
 [assembly: NeutralResourcesLanguageAttribute("en")]
 [assembly: InternalsVisibleTo("BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer, PublicKey=0024000004800000940000000602000000240000525341310004000001000100ebf8bd2ee245d2c04078fe74e5ec3c9fa3d4c68682f157eb83773de53c16e3985d0097d31b913e0a7f635ffb523311f8adf981407a83f5d66baacec6db036397bac2b7d53d6eabaa621b08c601020dacb17c6274242f3abd24d946fde6627dc675690d1f20072791aac0d23cbe4c1ad7734546d84a059cd0441e18103baa01df")]
