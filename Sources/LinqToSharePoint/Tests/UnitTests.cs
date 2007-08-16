@@ -1534,10 +1534,9 @@ namespace Tests
                 //
                 Url url1 = new Url("http://www.bartdesmet.net", "Bart's homepage");
                 Url url2 = new Url("http://www.codeplex.com/LINQtoSharePoint", null);
-                Url url3 = new Url(null, null);
                 UrlTest u1 = new UrlTest() { Title = "Bart", Homepage = url1 };
                 UrlTest u2 = new UrlTest() { Title = "Project", Homepage = url2 };
-                UrlTest u3 = new UrlTest() { Title = "Null", Homepage = url3 };
+                UrlTest u3 = new UrlTest() { Title = "Null", Homepage = null };
                 UrlTest u4 = new UrlTest() { Title = "NullToo" };
                 Test.Add(lst, u1);
                 Test.Add(lst, u2);

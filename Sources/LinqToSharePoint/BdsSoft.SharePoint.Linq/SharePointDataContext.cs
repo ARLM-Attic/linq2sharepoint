@@ -32,7 +32,7 @@ using System.Globalization;
 using System.Data;
 using System.Reflection;
 using System.Web.Services.Protocols;
-using Microsoft.SharePoint.Utilities;
+//using Microsoft.SharePoint.Utilities;
 using BdsSoft.SharePoint.Linq.Providers;
 
 #endregion
@@ -65,12 +65,6 @@ namespace BdsSoft.SharePoint.Linq
         /// Indicates whether the version of the list on the SharePoint server should be matched against the list version as indicated by the metadata on the list items entity type. (Default: true)
         /// </summary>
         private bool? _checkListVersion;
-
-        /// <summary>
-        /// Used for Lookup fields. Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique.
-        /// </summary>
-        /// <remarks>Obsolete as of 0.2.1</remarks>
-        private bool _enforceLookupFieldUniqueness = true;
 
         /// <summary>
         /// Used to enable/disable deferred loading of entities in Lookup(Multi) field references.
@@ -113,17 +107,6 @@ namespace BdsSoft.SharePoint.Linq
             {
                 return _dataProvider;
             }
-        }
-
-        /// <summary>
-        /// Indicates whether or not a check has to be performed to make sure that a child entity's field referenced by a Lookup field is unique (on by default).
-        /// </summary>
-        /// <remarks>WARNING! Misuse of this property can cause invalid query results to be produced.</remarks>
-        [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
-        public bool EnforceLookupFieldUniqueness
-        {
-            get { CheckDisposed(); return _enforceLookupFieldUniqueness; }
-            set { CheckDisposed(); _enforceLookupFieldUniqueness = value; }
         }
 
         /// <summary>

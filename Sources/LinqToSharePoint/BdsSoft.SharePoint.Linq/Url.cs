@@ -16,7 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
-using Microsoft.SharePoint;
 using System.Diagnostics;
 
 #endregion
@@ -27,28 +26,29 @@ namespace BdsSoft.SharePoint.Linq
     /// Represents a URL used in a SharePoint list. Stores a Uri together with a friendly name that indicates the title of the URL.
     /// </summary>
     [Serializable]
-    public sealed class Url : ISerializable
+    public sealed class Url
     {
         #region Private members
 
         /// <summary>
-        /// Internal storage of the URL's field value.
+        /// Url address.
         /// </summary>
-        private SPFieldUrlValue _urlValue;
+        private string _address;
+
+        /// <summary>
+        /// Url description.
+        /// </summary>
+        private string _description;
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Creates a new Url instance based on a given SPFieldUrlValue.
+        /// Default constructor for factory method.
         /// </summary>
-        /// <param name="urlValue">SPFieldUrlValue instance representing the URL and description.</param>
-        internal Url(SPFieldUrlValue urlValue)
+        internal Url()
         {
-            Debug.Assert(urlValue != null);
-
-            _urlValue = urlValue;
         }
 
         /// <summary>
@@ -58,16 +58,79 @@ namespace BdsSoft.SharePoint.Linq
         /// <param name="description">Description for the URL.</param>
         public Url(string address, string description)
         {
-            _urlValue = new SPFieldUrlValue();
+            if (address == null)
+                throw new ArgumentNullException("address");
 
-            if (address != null)
+            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+                throw RuntimeErrors.InvalidUriSpecified();
+
+            _address = address;
+            _description = description ?? "";
+        }
+
+        #endregion
+
+        #region Factory methods
+
+        /// <summary>
+        /// Creates a new Url instance based on a given textual representation of a SharePoint URL field value.
+        /// </summary>
+        /// <param name="fieldValue">Internal textual representation value of a URL field in SharePoint.</param>
+        public static Url Parse(string fieldValue)
+        {
+            Debug.Assert(fieldValue != null);
+
+            int i;
+            for (i = 0; i < fieldValue.Length; i++)
             {
-                if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-                    throw RuntimeErrors.InvalidUriSpecified();
+                //
+                // Search for commas.
+                //
+                if (fieldValue[i] == ',')
+                {
+                    //
+                    // If this character is the last one, trim it.
+                    //
+                    if (i == fieldValue.Length - 1)
+                        fieldValue = fieldValue.Substring(0, fieldValue.Length - 1);
+                    else
+                    {
+                        //
+                        // Check whether the next character is a space. This indicates the gap between url and description.
+                        //
+                        if (i + 1 < fieldValue.Length && fieldValue[i + 1] == ' ')
+                            break;
 
-                _urlValue.Url = address;
-                _urlValue.Description = description;
+                        //
+                        // If no space was found, skip the next character (should be a double comma) and move on.
+                        //
+                        i++;
+                    }
+                }
             }
+
+            Url result = new Url();
+
+            //
+            // If stopped before reaching the end of the input, we have a composed field with url and description.
+            //
+            if (i < fieldValue.Length)
+            {
+                result._address = fieldValue.Substring(0, i).Replace(",,", ",");
+                i += 2;
+                if (i < fieldValue.Length)
+                    result._description = fieldValue.Substring(i, fieldValue.Length - i);
+            }
+            //
+            // If not, url and description are defined to be the same.
+            //
+            else
+            {
+                result._address = fieldValue;
+                result._description = fieldValue;
+            }
+
+            return result;
         }
 
         #endregion
@@ -77,17 +140,19 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Gets the Url's description.
         /// </summary>
+        /// <remarks>Only a getter is supplied; when updating entities one will have to create a new Url instance in order for change tracking to work.</remarks>
         public string Description
         {
-            get { return _urlValue.Description; }
+            get { return _description; }
         }
 
         /// <summary>
         /// Gets the Url being referred to.
         /// </summary>
+        /// <remarks>Only a getter is supplied; when updating entities one will have to create a new Url instance in order for change tracking to work.</remarks>
         public string Address
         {
-            get { return _urlValue.Url; }
+            get { return _address; }
         }
 
         #endregion
@@ -100,7 +165,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return _urlValue.GetHashCode();
+            return _address.GetHashCode() ^ _description.GetHashCode();
         }
 
         /// <summary>
@@ -117,7 +182,7 @@ namespace BdsSoft.SharePoint.Linq
             else if (object.ReferenceEquals(this, u))
                 return true;
             else
-                return u.Description == _urlValue.Description && u.Address == _urlValue.Url;
+                return u.Description == _description && u.Address == _address;
         }
 
         /// <summary>
@@ -126,32 +191,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <returns></returns>
         public override string ToString()
         {
-            return _urlValue.ToString();
-        }
-
-        #endregion
-
-        #region Serialization support
-
-        /// <summary>
-        /// Initializes a new instance of the Url class from the specified instances of the SerializationInfo and StreamingContext classes.
-        /// </summary>
-        /// <param name="info">An instance of the SerializationInfo class containing the information required to serialize the new Url instance.</param>
-        /// <param name="context">An instance of the StreamingContext class containing the source of the serialized stream associated with the new Uri instance.</param>
-        private Url(SerializationInfo info, StreamingContext context)
-        {
-            _urlValue = (SPFieldUrlValue)info.GetValue("UrlValue", typeof(SPFieldUrlValue));
-        }
-
-        /// <summary>
-        /// Adds the friendly name to the SerializationInfo object.
-        /// </summary>
-        /// <param name="info">The SerializationInfo to populate with data.</param>
-        /// <param name="context">The destination for this serialization.</param>
-        [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
-        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            info.AddValue("UrlValue", _urlValue);
+            return _address + ", " + _description;
         }
 
         #endregion

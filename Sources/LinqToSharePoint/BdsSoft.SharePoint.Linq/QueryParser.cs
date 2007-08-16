@@ -23,8 +23,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml;
-using Microsoft.SharePoint.Utilities;
+//using Microsoft.SharePoint.Utilities;
 using System.Diagnostics;
+using System.Text;
+using System.Globalization;
 
 #endregion
 
@@ -1050,7 +1052,7 @@ namespace BdsSoft.SharePoint.Linq
                             //
                             if (lookupLeft != null && lookupRight != null)
                                 lookup = LookupInfo.Coalesce(ref lookupLeft, ref lookupRight);
-                            
+
                             //
                             // Patch the nodes using the remainder of the coalesced lookup chains.
                             //
@@ -1697,7 +1699,7 @@ namespace BdsSoft.SharePoint.Linq
             else
             {
                 object value = Expression.Lambda(dateValue).Compile().DynamicInvoke();
-                valueElement.InnerText = SPUtility.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
+                valueElement.InnerText = Helpers.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
             }
 
             return valueElement;
@@ -1781,7 +1783,7 @@ namespace BdsSoft.SharePoint.Linq
             // DateTime fields should be converted to ISO 8601 date/time representation in SharePoint.
             //
             if (value is DateTime)
-                valueElement.InnerText = SPUtility.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
+                valueElement.InnerText = Helpers.CreateISO8601DateTimeFromSystemDateTime((DateTime)value);
             //
             // Boolean fields in SharePoint are represented as 1 or 0.
             //

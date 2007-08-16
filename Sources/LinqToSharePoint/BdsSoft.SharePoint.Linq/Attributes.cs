@@ -17,7 +17,6 @@
 #region Namespace imports
 
 using System;
-using Microsoft.SharePoint;
 
 #endregion
 
@@ -129,16 +128,6 @@ namespace BdsSoft.SharePoint.Linq
         /// Points to a string property in the entity type that contains the fill-in choice of a multi-choice list field in SharePoint.
         /// </summary>
         public string OtherChoice
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Indicates that the field is unique across all list entries. Used for Lookup field references that require uniqueness enforcement.
-        /// </summary>
-        [Obsolete("Lookup field uniqueness is now enforced by the query parser, causing this property to be redundant.", false)]
-        public bool IsUnique
         {
             get;
             set;
@@ -297,12 +286,6 @@ namespace BdsSoft.SharePoint.Linq
         Boolean = SPFieldType.Boolean,
 
         /// <summary>
-        /// Calculated field.
-        /// </summary>
-        [Obsolete("Calculated fields are not directly supported; use the underlying type of the Calculated field.")]
-        Calculated = SPFieldType.Calculated,
-
-        /// <summary>
         /// Choice field.
         /// </summary>
         Choice = SPFieldType.Choice,
@@ -364,5 +347,44 @@ namespace BdsSoft.SharePoint.Linq
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1705:LongAcronymsShouldBePascalCased", MessageId = "URL")]
         URL = SPFieldType.URL
+    }
+
+    /// <summary>
+    /// Microsoft.SharePoint.SPFieldType clone based on metadata export.
+    /// </summary>
+    internal enum SPFieldType
+    {
+        Invalid = 0,
+        Integer = 1,
+        Text = 2,
+        Note = 3,
+        DateTime = 4,
+        Counter = 5,
+        Choice = 6,
+        Lookup = 7,
+        Boolean = 8,
+        Number = 9,
+        Currency = 10,
+        URL = 11,
+        Computed = 12,
+        Threading = 13,
+        Guid = 14,
+        MultiChoice = 15,
+        GridChoice = 16,
+        Calculated = 17,
+        File = 18,
+        Attachments = 19,
+        User = 20,
+        Recurrence = 21,
+        CrossProjectLink = 22,
+        ModStat = 23,
+        Error = 24,
+        ContentTypeId = 25,
+        PageSeparator = 26,
+        ThreadIndex = 27,
+        WorkflowStatus = 28,
+        AllDayEvent = 29,
+        WorkflowEventType = 30,
+        MaxItems = 31,
     }
 }

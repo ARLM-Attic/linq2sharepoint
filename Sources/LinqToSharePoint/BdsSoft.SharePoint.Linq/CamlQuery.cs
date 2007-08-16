@@ -36,7 +36,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using Microsoft.SharePoint;
 
 #endregion
 
@@ -888,13 +887,6 @@ namespace BdsSoft.SharePoint.Linq
             string valueAsString;
 
             //
-            // Special treatment for SPFieldLookupValueCollection.
-            //
-            SPFieldLookupValueCollection flval;
-            if ((flval = val as SPFieldLookupValueCollection) != null)
-                val = flval.ToString();
-
-            //
             // Get the property type in order to do subsequent value parsing. If the type is Nullable<X>, return typeof(X).
             //
             Type propertyType = property.PropertyType;
@@ -964,8 +956,7 @@ namespace BdsSoft.SharePoint.Linq
                     // For URL values, a custom Url class has been defined that knows how to parse a SharePoint URL value to a Uri and a friendly name.
                     //
                     case FieldType.URL:
-                        SPFieldUrlValue urlVal = new SPFieldUrlValue(valueAsString);
-                        Url url = new Url(urlVal);
+                        Url url = Url.Parse(valueAsString);
                         AssignValue(target, property, field, url);
                         break;
                     //
@@ -982,8 +973,8 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Structure will be key;#display where key represents the foreign key and display the display field.
                         //
-                        SPFieldLookupValue lookupVal = new SPFieldLookupValue(valueAsString);
-                        int fkey = lookupVal.LookupId;
+                        LookupFieldValue lookupVal = LookupFieldValue.Parse(valueAsString);
+                        int fkey = lookupVal.Id;
 
                         //
                         // We'll only support lazy loading on entity types.
@@ -1013,8 +1004,8 @@ namespace BdsSoft.SharePoint.Linq
                         //
                         // Structure will be [key;#display]* where key represents the foreign key and display the display field.
                         //
-                        SPFieldLookupValueCollection lookupVals = new SPFieldLookupValueCollection(valueAsString);
-                        int[] fkeys = lookupVals.ConvertAll(v => v.LookupId).ToArray();
+                        LookupMultiFieldValue lookupVals = LookupMultiFieldValue.Parse(valueAsString);
+                        int[] fkeys = lookupVals.Values.ConvertAll(v => v.Id).ToArray();
 
                         //
                         // We'll only support lazy loading on entity types.
@@ -1130,11 +1121,7 @@ namespace BdsSoft.SharePoint.Linq
             // The value can be converted to a string in case of (Multi)Choice results.
             // From this set of individual choices, we can filter out the known values, which will leave us with a possible fill-in choice.
             //
-            List<string> vs = new List<string>();
-            SPFieldMultiChoiceValue mcVal = new SPFieldMultiChoiceValue(val as string);
-            for (int i = 0; i < mcVal.Count; i++)
-                vs.Add(mcVal[i]);
-
+            List<string> vs = Helpers.ParseMultiChoiceFieldValue(val as string);
             HashSet<string> knownVals = new HashSet<string>(vs);
             knownVals.IntersectWith(choices);
 
