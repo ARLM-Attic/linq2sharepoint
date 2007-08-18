@@ -286,16 +286,22 @@ namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
                 txtCaml.MouseClick += new MouseEventHandler(txtCaml_MouseClick);
 
                 //
-                // Disable the execute button for invalid queries.
+                // Disable the execute and query plan buttons for invalid queries.
                 //
                 btnExecute.Enabled = false;
+                btnQueryPlan.Enabled = false;
+            }
+            else
+            {
+                //
+                // TODO: Check for patches; if present, we can show a query plan.
+                //
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
         private void btnExecute_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Not implemented yet.");
+            //TODO
         }
 
         private void btnClose_Click(object sender, EventArgs e)

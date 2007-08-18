@@ -101,6 +101,19 @@ namespace BdsSoft.SharePoint.Linq
             return query;
         }
 
+        internal static CamlQuery FromPreParse()
+        {
+            //
+            // Create a query object.
+            //
+            CamlQuery query = new CamlQuery();
+
+            //
+            // Return constructed query object.
+            //
+            return query;
+        }
+
         #endregion
 
         #region Query execution and enumeration
