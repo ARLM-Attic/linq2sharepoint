@@ -18,20 +18,20 @@
 #region Namespace imports
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.VisualStudio.Shell;
-using System.Runtime.InteropServices;
-using VSLangProj80;
-using System.CodeDom.Compiler;
-using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 using System.CodeDom;
-using System.IO;
-using System.Xml;
-using EnvDTE;
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Xml.Schema;
 using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Xml;
+using System.Xml.Schema;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using VSLangProj80;
 
 #endregion
 
