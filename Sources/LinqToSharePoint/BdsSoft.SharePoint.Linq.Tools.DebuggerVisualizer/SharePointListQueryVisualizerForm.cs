@@ -289,7 +289,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.DebuggerVisualizer
                 // Disable the execute and query plan buttons for invalid queries.
                 //
                 btnExecute.Enabled = false;
-                btnQueryPlan.Enabled = false;
+                //btnQueryPlan.Enabled = false;
             }
             else
             {
