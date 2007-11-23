@@ -21,21 +21,19 @@
 #region Namespace imports
 
 using System;
-using System.Linq;
 using System.CodeDom;
-using System.ComponentModel;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
-using System.Text;
-using System.Xml;
-using Microsoft.SharePoint;
-using System.Web.Services.Protocols;
-using System.IO;
-using System.Xml.Schema;
-using System.Reflection;
 using System.Globalization;
-using System.CodeDom.Compiler;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Web.Services.Protocols;
+using System.Xml;
+using System.Xml.Schema;
 
 #endregion
 
@@ -132,9 +130,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         /// <param name="contextName">Prefix for the custom SharePointDataContext type's name.</param>
         /// <param name="listNames">Names of the lists to generate entity types for.</param>
+        /// <param name="enableSom">Enables the SharePoint Object Model data provider.</param>
         /// <returns>SPML document with exported entity information.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spml")]
-        public XmlDocument GenerateSpml(string contextName, params string[] listNames)
+        public XmlDocument GenerateSpml(string contextName, bool enableSom, params string[] listNames)
         {
             //
             // Create Context object and set parameters.
@@ -143,6 +142,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             context.Name = contextName;
             context.Url = _args.Connection.Url;
             context.Connection = _args.Connection;
+            context.EnableObjectModelProvider = enableSom;
 
             if (listNames == null || listNames.Length == 0)
             {
@@ -191,9 +191,10 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// Generates entity types based on the given arguments.
         /// </summary>
         /// <param name="spml">SPML definition to generate code for.</param>
+        /// <param name="enableObjectModelProvider">Indicates whether or not the SPML requests to enable the SharePoint Object Model data provider.</param>
         /// <returns>Code compilation unit for all required entity types and helper types.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1059:MembersShouldNotExposeCertainConcreteTypes", MessageId = "System.Xml.XmlNode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "spml")]
-        public CodeCompileUnit GenerateCode(XmlDocument spml)
+        public CodeCompileUnit GenerateCode(XmlDocument spml, out bool enableObjectModelProvider)
         {
             if (spml == null)
                 throw new ArgumentNullException("spml");
@@ -213,6 +214,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             // Get the SharePointDataContext root.
             //
             _context = Context.FromSpml(spml["SharePointDataContext"]);
+            enableObjectModelProvider = _context.EnableObjectModelProvider;
 
             //
             // Create code unit in specified namespace.
@@ -326,7 +328,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             ctx.IsClass = true;
 
             //
-            // Add constructors.
+            // Standard constructor for built-in web services provider.
             //
             CodeConstructor wsCtor = new CodeConstructor();
             wsCtor.Attributes = MemberAttributes.Public;
@@ -339,17 +341,26 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             wsCtor.Comments.Add(new CodeCommentStatement("<param name=\"wsUri\">URI to the SharePoint site.</param>", true));
             ctx.Members.Add(wsCtor);
 
-            CodeConstructor omCtor = new CodeConstructor();
-            omCtor.Attributes = MemberAttributes.Public;
-            omCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
-            omCtor.Parameters.Add(new CodeParameterDeclarationExpression(typeof(SPSite), "site"));
-            omCtor.BaseConstructorArgs.Add(new CodeSnippetExpression("site"));
-            omCtor.Comments.Add(new CodeCommentStatement("<summary>", true));
-            omCtor.Comments.Add(new CodeCommentStatement("Connect to SharePoint using the SharePoint object model.", true));
-            omCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
-            omCtor.Comments.Add(new CodeCommentStatement("<param name=\"site\">SharePoint site object.</param>", true));
-            ctx.Members.Add(omCtor);
+            //
+            // Support for SharePoint Object Model provider on demand.
+            //
+            if (context.EnableObjectModelProvider)
+            {
+                CodeConstructor omCtor = new CodeConstructor();
+                omCtor.Attributes = MemberAttributes.Public;
+                omCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
+                omCtor.Parameters.Add(new CodeParameterDeclarationExpression(new CodeTypeReference("Microsoft.SharePoint.SPSite", CodeTypeReferenceOptions.GlobalReference), "site"));
+                omCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference("BdsSoft.SharePoint.Linq.ObjectModelProvider.ObjectModelSharePointDataProvider", CodeTypeReferenceOptions.GlobalReference), new CodeSnippetExpression("site")));
+                omCtor.Comments.Add(new CodeCommentStatement("<summary>", true));
+                omCtor.Comments.Add(new CodeCommentStatement("Connect to SharePoint using the SharePoint object model.", true));
+                omCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
+                omCtor.Comments.Add(new CodeCommentStatement("<param name=\"site\">SharePoint site object.</param>", true));
+                ctx.Members.Add(omCtor);
+            }
 
+            //
+            // Convenience constructor for the specified URI.
+            //
             CodeConstructor customCtor = new CodeConstructor();
             customCtor.Attributes = MemberAttributes.Public;
             customCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
@@ -1339,10 +1350,5 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
-    }
-
-    public class XsdError
-    {
-
     }
 }

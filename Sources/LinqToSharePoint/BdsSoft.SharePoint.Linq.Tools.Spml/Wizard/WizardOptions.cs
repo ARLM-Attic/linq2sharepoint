@@ -8,14 +8,13 @@
  * This project is subject to licensing restrictions. Visit http://www.codeplex.com/LINQtoSharePoint/Project/License.aspx for more information.
  */
 
+#region Namespace imports
+
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
+
+#endregion
 
 namespace BdsSoft.SharePoint.Linq.Tools.Spml
 {

@@ -14,6 +14,7 @@
  * 0.2.1 - Introduction of SharePointDataContext.
  * 0.2.2 - New entity model.
  *         Provider model.
+ * 0.2.4 - Dropped SPSite ctor dependency, now using the provider model instead.
  */
 
 #region Namespace imports
@@ -22,17 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
-using System.Text;
-using Microsoft.SharePoint;
-using System.Xml;
-using System.Globalization;
-using System.Data;
-using System.Reflection;
-using System.Web.Services.Protocols;
-//using Microsoft.SharePoint.Utilities;
 using BdsSoft.SharePoint.Linq.Providers;
 
 #endregion
@@ -85,13 +77,12 @@ namespace BdsSoft.SharePoint.Linq
         }
 
         /// <summary>
-        /// Create a data context object using the SharePoint object model to connect to SharePoint.
+        /// Create a data context object using the specified SharePoint data provider.
         /// </summary>
-        /// <param name="site">SharePoint site object.</param>
-        [CLSCompliant(false)]
-        public SharePointDataContext(SPSite site)
+        /// <param name="provider">SharePoint data provider.</param>
+        public SharePointDataContext(ISharePointDataProvider provider)
         {
-            _dataProvider = new ObjectModelSharePointDataProvider(site);
+            _dataProvider = provider;
         }
 
         #endregion
@@ -101,7 +92,7 @@ namespace BdsSoft.SharePoint.Linq
         /// <summary>
         /// Gets the data provider.
         /// </summary>
-        internal ISharePointDataProvider DataProvider
+        public ISharePointDataProvider DataProvider
         {
             get
             {

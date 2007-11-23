@@ -58,6 +58,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
         /// </summary>
         public string Context { get; set; }
 
+        /// <summary>
+        /// Enables the SharePoint Object Model data provider.
+        /// </summary>
+        public bool EnableSom { get; set; }
+
         #endregion
 
         #region {connect}
@@ -231,7 +236,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
                 //
                 string context;
                 if (arguments.TryGetValue("context", out context) && list.Length != 0)
+                {
                     res.Context = context;
+
+                    //
+                    // Support for SharePoint Object Model data provider.
+                    //
+                    res.EnableSom = arguments.ContainsKey("enablesom");
+                }
 
                 //
                 // Only process authentication arguments if a user argument is present.

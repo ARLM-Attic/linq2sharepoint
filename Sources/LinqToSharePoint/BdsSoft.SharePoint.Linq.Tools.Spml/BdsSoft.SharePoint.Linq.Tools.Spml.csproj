@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.20706</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D40D3731-1597-4180-B5D7-E052B5D9A935}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -62,8 +62,6 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.EnterpriseServices" />
-    <Reference Include="System.Management" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -92,6 +90,9 @@
     <Compile Include="Code generator\BaseCodeGeneratorWithSite.cs" />
     <Compile Include="Code generator\CodeGeneratorRegistrationAttribute.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Lists.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Wizard\Steps\1 - Connect.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -131,11 +132,6 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Strings.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Web References\WebServices\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.map</DependentUpon>
     </Compile>
     <Compile Include="Wizard\Steps\0 - Welcome.cs">
       <SubType>UserControl</SubType>
@@ -198,34 +194,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Wizard\LINQtoSharePoint.ico" />
-    <None Include="app.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Web References\WebServices\lists.disco" />
     <None Include="Resources\sharepoint1.bmp" />
-    <None Include="Web References\WebServices\lists.wsdl" />
-    <None Include="Web References\WebServices\Reference.map">
-      <Generator>MSDiscoCodeGenerator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferenceUrl Include="http://wss3demo/_vti_bin/lists.asmx">
-      <UrlBehavior>Dynamic</UrlBehavior>
-      <RelPath>Web References\WebServices\</RelPath>
-      <UpdateFromURL>http://wss3demo/_vti_bin/lists.asmx</UpdateFromURL>
-      <ServiceLocationURL>
-      </ServiceLocationURL>
-      <CachedDynamicPropName>
-      </CachedDynamicPropName>
-      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
-      <CachedSettingsPropName>BdsSoft_SharePoint_Linq_Tools_Spml_wss3demo_Lists</CachedSettingsPropName>
-    </WebReferenceUrl>
   </ItemGroup>
   <PropertyGroup>
     <!--

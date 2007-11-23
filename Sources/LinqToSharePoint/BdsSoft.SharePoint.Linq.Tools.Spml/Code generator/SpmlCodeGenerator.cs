@@ -66,10 +66,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
         protected override byte[] GenerateCode(string inputFileContent)
         {
             //
-            // Ensure references to BdsSoft.SharePoint.Linq and Microsoft.SharePoint are present in the project.
+            // Ensure reference to BdsSoft.SharePoint.Linq is present in the project.
             //
             this.GetVSProject().References.Add("BdsSoft.SharePoint.Linq");
-            this.GetVSProject().References.Add("Microsoft.SharePoint, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71E9BCE111E9429C");
 
             //
             // Get SPML definition.
@@ -111,7 +110,17 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             CodeCompileUnit compileUnit;
             try
             {
-                compileUnit = gen.GenerateCode(spml);
+                bool som;
+                compileUnit = gen.GenerateCode(spml, out som);
+
+                //
+                // Need additional references in case support for the SharePoint Object Model data provider is requested.
+                //
+                if (som)
+                {
+                    this.GetVSProject().References.Add("BdsSoft.SharePoint.Linq.ObjectModelProvider");
+                    this.GetVSProject().References.Add("Microsoft.SharePoint, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71E9BCE111E9429C");
+                }
             }
             catch (EntityGeneratorException ex)
             {

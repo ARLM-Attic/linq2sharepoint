@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.20706</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{1ACE901B-0691-4795-BBA6-69A856D7B372}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -64,6 +64,10 @@
     <Compile Include="UnitTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BdsSoft.SharePoint.Linq.ObjectModelProvider\BdsSoft.SharePoint.Linq.ObjectModelProvider.csproj">
+      <Project>{757AD55A-5685-47FE-9003-CC0BB1BDC2EE}</Project>
+      <Name>BdsSoft.SharePoint.Linq.ObjectModelProvider</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BdsSoft.SharePoint.Linq\BdsSoft.SharePoint.Linq.csproj">
       <Project>{B19723C2-779B-4FE5-B5BB-A9CAC927F96A}</Project>
       <Name>BdsSoft.SharePoint.Linq</Name>

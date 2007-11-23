@@ -27,7 +27,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Interface for SharePoint data providers.
     /// </summary>
-    internal interface ISharePointDataProvider : IDisposable
+    public interface ISharePointDataProvider : IDisposable
     {
         /// <summary>
         /// Gets or sets the network credentials to connect to SharePoint.

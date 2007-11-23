@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -214,7 +214,7 @@
     <value>4, 16</value>
   </data>
   <data name="fields.Size" type="System.Drawing.Size, System.Drawing">
-    <value>135, 286</value>
+    <value>135, 264</value>
   </data>
   <data name="fields.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -277,7 +277,7 @@
     <value>3, 16</value>
   </data>
   <data name="properties.Size" type="System.Drawing.Size, System.Drawing">
-    <value>248, 289</value>
+    <value>248, 267</value>
   </data>
   <data name="properties.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -307,7 +307,7 @@
     <value>1</value>
   </data>
   <data name="splitContainer2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>402, 305</value>
+    <value>402, 283</value>
   </data>
   <data name="splitContainer2.SplitterDistance" type="System.Int32, mscorlib">
     <value>144</value>
@@ -331,7 +331,7 @@
     <value>Top, Bottom, Left, Right</value>
   </data>
   <data name="panel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 52</value>
+    <value>6, 74</value>
   </data>
   <data name="lists.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Bottom, Left, Right</value>
@@ -340,7 +340,7 @@
     <value>6, 16</value>
   </data>
   <data name="lists.Size" type="System.Drawing.Size, System.Drawing">
-    <value>130, 289</value>
+    <value>130, 267</value>
   </data>
   <data name="lists.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -382,7 +382,7 @@
     <value>1</value>
   </data>
   <data name="panel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>545, 305</value>
+    <value>545, 283</value>
   </data>
   <data name="panel.SplitterDistance" type="System.Int32, mscorlib">
     <value>139</value>
@@ -400,7 +400,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;panel.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="txtContext.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -424,7 +424,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;txtContext.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="chkContext.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -451,11 +451,38 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;chkContext.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <metadata name="bgList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="chkSom.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkSom.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 51</value>
+  </data>
+  <data name="chkSom.Size" type="System.Drawing.Size, System.Drawing">
+    <value>298, 17</value>
+  </data>
+  <data name="chkSom.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="chkSom.Text" xml:space="preserve">
+    <value>Enable support for SharePoint &amp;Object Model data provider</value>
+  </data>
+  <data name="&gt;&gt;chkSom.Name" xml:space="preserve">
+    <value>chkSom</value>
+  </data>
+  <data name="&gt;&gt;chkSom.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkSom.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;chkSom.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>

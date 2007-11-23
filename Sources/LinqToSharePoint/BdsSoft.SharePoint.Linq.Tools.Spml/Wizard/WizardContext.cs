@@ -17,10 +17,6 @@
 
 #region Namespace imports
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion

@@ -12,6 +12,7 @@
  * Version history:
  * 
  * 0.2.3 - Introduction of Context class + SPML conversions
+ * 0.2.4 - Configurable support for SharePoint Object Model data provider
  */
 
 #region Namespace imports
@@ -65,6 +66,11 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
         /// </summary>
         public IList<List> Lists { get; internal set; }
 
+        /// <summary>
+        /// Indicates whether or not the SharePoint Object Model provider is to be supported directly on the generated data context.
+        /// </summary>
+        public bool EnableObjectModelProvider { get; set; }
+
         #endregion
 
         #region Factory methods
@@ -91,6 +97,13 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             context.Name = spml.Attributes["Name"].Value;
             context.Url = new Uri(spml.Attributes["Url"].Value);
             context.Connection = Connection.FromSpml(spml["Connection"]);
+
+            //
+            // Check SharePoint Object Model support.
+            //
+            XmlAttribute enableObjectModelProvider = spml.Attributes["EnableObjectModelProvider"];
+            if (enableObjectModelProvider != null)
+                context.EnableObjectModelProvider = Helpers.ParseBool(enableObjectModelProvider.Value);
 
             //
             // Get lists.
@@ -127,6 +140,9 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
             XmlAttribute url = doc.CreateAttribute("Url");
             url.Value = Url.ToString();
             ctx.Attributes.Append(url);
+
+            if (this.EnableObjectModelProvider)
+                ctx.Attributes.Append(doc.CreateAttribute("EnableObjectModelProvider")).Value = "true";
 
             XmlAttribute ns = doc.CreateAttribute("xmlns");
             ns.Value = "http://www.codeplex.com/LINQtoSharePoint/SPML.xsd";

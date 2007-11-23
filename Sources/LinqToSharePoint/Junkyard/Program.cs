@@ -24,6 +24,7 @@ namespace Junkyard
                 Console.WriteLine(p);
              */
 
+            /*
             var ctx = new NorthwindSharePointDataContext();
             ctx.Log = Console.Out;
             ctx.CheckListVersion = false;
@@ -34,6 +35,7 @@ namespace Junkyard
             var res = from l in ctx.NestedSubqueriesMulti where l.Products.Any(p => p.Category.CategoryName == "Beverages") select l;
             foreach (var l in res)
                 Console.WriteLine(l.Title);
+             */
         }
     }
 }

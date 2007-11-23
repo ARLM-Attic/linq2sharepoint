@@ -2698,7 +2698,7 @@ namespace BdsSoft.SharePoint.Linq
     /// <summary>
     /// Helper class to hold information about a SharePoint query.
     /// </summary>
-    internal class QueryInfo
+    public sealed class QueryInfo
     {
         /// <summary>
         /// Entity type of the source list items.

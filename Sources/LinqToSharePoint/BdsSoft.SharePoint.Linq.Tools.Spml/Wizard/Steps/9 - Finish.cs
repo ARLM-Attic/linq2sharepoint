@@ -11,14 +11,10 @@
 #region Namespace imports
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-using System.Globalization;
 
 #endregion
 

@@ -12,20 +12,23 @@
  * Version history:
  *
  * 0.2.2 - Provider model.
+ * 0.2.4 - Moved to separate assembly.
  */
 
 #region Namespace imports
 
+using BdsSoft.SharePoint.Linq;
+
 using System;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Xml;
 
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
-using System.Globalization;
 
 #endregion
 
@@ -34,8 +37,9 @@ namespace BdsSoft.SharePoint.Linq.Providers
     /// <summary>
     /// SharePoint data provider using the SharePoint Object Model.
     /// </summary>
-    //[CLSCompliant(false)]
-    internal class ObjectModelSharePointDataProvider : ISharePointDataProvider
+    /// <remarks>In case of name change, make sure to propagate change to EntityGenerator.cs.</remarks>
+    [CLSCompliant(false)]
+    public class ObjectModelSharePointDataProvider : ISharePointDataProvider
     {
         /// <summary>
         /// SharePoint site object to connect to SharePoint.
@@ -62,12 +66,12 @@ namespace BdsSoft.SharePoint.Linq.Providers
             get
             {
                 CheckDisposed();
-                throw new NotSupportedException(Errors.NoNetworkCredentialsForSom);
+                throw new NotSupportedException(BdsSoft.SharePoint.Linq.ObjectModelProvider.Errors.NoNetworkCredentialsForSom);
             }
             set
             {
                 CheckDisposed();
-                throw new NotSupportedException(Errors.NoNetworkCredentialsForSom);
+                throw new NotSupportedException(BdsSoft.SharePoint.Linq.ObjectModelProvider.Errors.NoNetworkCredentialsForSom);
             }
         }
 
@@ -160,7 +164,7 @@ namespace BdsSoft.SharePoint.Linq.Providers
             }
             catch (Exception ex)
             {
-                throw RuntimeErrors.ConnectionExceptionSp(_site.Url, ex);
+                throw ConnectionExceptionSp(_site.Url, ex);
             }
 
             DataTable tbl = new DataTable();
@@ -191,6 +195,11 @@ namespace BdsSoft.SharePoint.Linq.Providers
             }
 
             return tbl;
+        }
+
+        public static Exception ConnectionExceptionSp(string url, Exception innerException)
+        {
+            return new SharePointConnectionException(String.Format(CultureInfo.InvariantCulture, BdsSoft.SharePoint.Linq.ObjectModelProvider.Errors.ConnectionExceptionSp, url), innerException);
         }
 
         #region Dispose pattern implementation

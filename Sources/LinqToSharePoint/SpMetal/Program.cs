@@ -31,19 +31,17 @@
 #region Namespace imports
 
 using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using EG = BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-using System.CodeDom;
-using System.CodeDom.Compiler;
-using System.Diagnostics;
 using System.Xml.Schema;
-using System.Globalization;
+using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion
 
@@ -120,7 +118,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
             {
                 try
                 {
-                    spml.InnerXml = gen.GenerateSpml(a.Context, a.List).InnerXml;
+                    spml.InnerXml = gen.GenerateSpml(a.Context, a.EnableSom, a.List).InnerXml;
                 }
                 catch (EntityGeneratorException ex)
                 {
@@ -192,7 +190,8 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
                 CodeCompileUnit compileUnit;
                 try
                 {
-                    compileUnit = gen.GenerateCode(spml);
+                    bool som;
+                    compileUnit = gen.GenerateCode(spml, out som);
                 }
                 catch (EntityGeneratorException ex)
                 {
@@ -326,6 +325,16 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
             Console.WriteLine("Usage: {0} [options]", file);
             Console.WriteLine();
 
+            Console.WriteLine("Syntax:");
+            Console.WriteLine("  {0} [{{online}}|{{offline}}]", file);
+            Console.WriteLine("  {online}  := -url:<url> -list:<list> [{context}] {connect} {option}");
+            Console.WriteLine("  {offline} := -in:<file> {codegen}");
+            Console.WriteLine("  {context} := -context:<context> [-enablesom]");
+            Console.WriteLine("  {connect} := [-user:<user> -password:<password> [-domain:<domain>]]");
+            Console.WriteLine("  {option}  := [{codegen}|{export}]");
+            Console.WriteLine("  {codegen} := [-code:<file>] [-language:<lang>] [-namespace:<ns>] [-pluralize]");
+            Console.WriteLine("  {export}  := [-xml:<file>]");
+            Console.WriteLine();
             Console.WriteLine("Options:");
             Console.WriteLine("  -url:<url>            URL to the root of the SharePoint site");
             Console.WriteLine("  -user:<user>          User name for connection to SharePoint site");
@@ -339,15 +348,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.SPMetal
             Console.WriteLine("  -language:<lang>      Code language used for output: VB or CS (default)");
             Console.WriteLine("  -namespace:<ns>       Namespace to put generated code in");
             Console.WriteLine("  -pluralize            Auto-(de)pluralize list entity names");
-            Console.WriteLine();
-            Console.WriteLine("Syntax:");
-            Console.WriteLine("  {0} [{{online}}|{{offline}}]", file);
-            Console.WriteLine("  {online}  := -url:<url> -list:<list> [-context:<context>] {connect} {option}");
-            Console.WriteLine("  {offline} := -in:<file> {codegen}");
-            Console.WriteLine("  {connect} := [-user:<user> -password:<password> [-domain:<domain>]]");
-            Console.WriteLine("  {option}  := [{codegen}|{export}]");
-            Console.WriteLine("  {codegen} := [-code:<file>] [-language:<lang>] [-namespace:<ns>] [-pluralize]");
-            Console.WriteLine("  {export}  := [-xml:<file>]");
+            Console.WriteLine("  -enablesom            Adds support for the SharePoint Object Model provider");
             Console.WriteLine();
             Console.WriteLine("Samples:");
             Console.WriteLine("To export one list to code (online codegen).");

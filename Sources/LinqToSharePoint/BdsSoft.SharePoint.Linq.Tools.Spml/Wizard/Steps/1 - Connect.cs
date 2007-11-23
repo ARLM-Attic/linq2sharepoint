@@ -17,16 +17,8 @@
 #region Namespace imports
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Text;
 using System.Windows.Forms;
-using System.Net;
-using System.Xml;
-using System.Web.Services.Protocols;
-using System.Diagnostics;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
 
 #endregion

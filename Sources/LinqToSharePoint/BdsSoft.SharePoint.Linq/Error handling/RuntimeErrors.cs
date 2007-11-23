@@ -38,11 +38,6 @@ namespace BdsSoft.SharePoint.Linq
             return new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, Errors.ListVersionMismatch));
         }
 
-        public static Exception ConnectionExceptionSp(string url, Exception innerException)
-        {
-            return new SharePointConnectionException(String.Format(CultureInfo.InvariantCulture, Errors.ConnectionExceptionSp, url), innerException);
-        }
-
         public static Exception ConnectionExceptionWs(string url, Exception innerException)
         {
             return new SharePointConnectionException(String.Format(CultureInfo.InvariantCulture, Errors.ConnectionExceptionWs, url), innerException);

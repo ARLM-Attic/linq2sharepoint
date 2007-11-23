@@ -132,10 +132,6 @@
     <value>Can't negate a {0} query expression.</value>
     <comment>SP0011</comment>
   </data>
-  <data name="ConnectionExceptionSp" xml:space="preserve">
-    <value>Error occurred when connecting to the SharePoint site at {0}.</value>
-    <comment>SP0103</comment>
-  </data>
   <data name="ConnectionExceptionWs" xml:space="preserve">
     <value>Error occurred when connecting to the SharePoint web service at {0}.</value>
     <comment>SP0104</comment>
@@ -242,9 +238,6 @@
   <data name="NonBoolConstantValueInPredicate" xml:space="preserve">
     <value>Non-boolean constant values are not supported in query predicates.</value>
     <comment>SP0002</comment>
-  </data>
-  <data name="NoNetworkCredentialsForSom" xml:space="preserve">
-    <value>Cannot use network credentials when using the SharePoint object model as the data source.</value>
   </data>
   <data name="NonExistingLookupField" xml:space="preserve">
     <value>The Lookup field {0} links to a non-existing LookupField: {1}.</value>

@@ -12,6 +12,7 @@
  * Version history:
  * 
  * 0.2.2 - Introduction of entity wizard
+ * 0.2.4 - Configurable support for SharePoint Object Model data provider
  */
 
 #region Namespace imports
@@ -19,12 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Text;
+using System.Diagnostics;
 using System.Windows.Forms;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-using System.Diagnostics;
 
 #endregion
 
@@ -301,7 +299,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             //
             // Allow or disallow to set context name.
             //
-            txtContext.Enabled = chkContext.Checked;
+            chkSom.Enabled = txtContext.Enabled = chkContext.Checked;
             if (!chkContext.Checked)
                 ctx.ResultContext.Name = "";
             else
@@ -314,6 +312,14 @@ namespace BdsSoft.SharePoint.Linq.Tools.Spml
             // Set context name.
             //
             ctx.ResultContext.Name = txtContext.Text;
+        }
+
+        private void chkSom_CheckedChanged(object sender, EventArgs e)
+        {
+            //
+            // Enable/disable support for SharePoint Object Model data provider.
+            //
+            ctx.ResultContext.EnableObjectModelProvider = chkSom.Checked;
         }
 
         private void lists_Enter(object sender, EventArgs e)

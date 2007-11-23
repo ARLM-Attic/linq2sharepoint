@@ -43,6 +43,7 @@
             this.txtContext = new System.Windows.Forms.TextBox();
             this.chkContext = new System.Windows.Forms.CheckBox();
             this.bgList = new System.ComponentModel.BackgroundWorker();
+            this.chkSom = new System.Windows.Forms.CheckBox();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
@@ -158,10 +159,18 @@
             this.bgList.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bgList_DoWork);
             this.bgList.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bgList_RunWorkerCompleted);
             // 
+            // chkSom
+            // 
+            resources.ApplyResources(this.chkSom, "chkSom");
+            this.chkSom.Name = "chkSom";
+            this.chkSom.UseVisualStyleBackColor = true;
+            this.chkSom.CheckedChanged += new System.EventHandler(this.chkSom_CheckedChanged);
+            // 
             // ExportLists
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.chkSom);
             this.Controls.Add(this.chkContext);
             this.Controls.Add(this.txtContext);
             this.Controls.Add(this.panel);
@@ -198,6 +207,7 @@
         private System.Windows.Forms.CheckBox chkContext;
         private System.Windows.Forms.Label label4;
         private System.ComponentModel.BackgroundWorker bgList;
+        private System.Windows.Forms.CheckBox chkSom;
 
     }
 }

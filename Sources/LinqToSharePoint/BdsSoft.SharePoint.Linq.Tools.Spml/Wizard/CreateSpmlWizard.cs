@@ -12,16 +12,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.VisualStudio.TemplateWizard;
-using System.Windows.Forms;
-using EnvDTE;
-using System.Xml;
-using System.IO;
 using System.Reflection;
+using System.Text;
+using System.Windows.Forms;
+using System.Xml;
 using BdsSoft.SharePoint.Linq.Tools.EntityGenerator;
-using System.Globalization;
-using System.Runtime.InteropServices;
+using EnvDTE;
+using Microsoft.VisualStudio.TemplateWizard;
 
 #endregion
 

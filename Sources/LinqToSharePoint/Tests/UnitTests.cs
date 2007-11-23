@@ -19,6 +19,7 @@ using BdsSoft.SharePoint.Linq;
 using Microsoft.SharePoint;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Test = Tests.SharePointListEntityTest;
+using BdsSoft.SharePoint.Linq.Providers;
 
 #endregion
 
@@ -42,7 +43,7 @@ namespace Tests
 
         private SharePointDataContext GetSpContext()
         {
-            SharePointDataContext ctx = new SharePointDataContext(site);
+            SharePointDataContext ctx = new SharePointDataContext(new ObjectModelSharePointDataProvider(site));
             ctx.CheckListVersion = false;
             return ctx;
         }
