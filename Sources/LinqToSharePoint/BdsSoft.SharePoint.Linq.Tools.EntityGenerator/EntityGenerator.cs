@@ -350,7 +350,7 @@ namespace BdsSoft.SharePoint.Linq.Tools.EntityGenerator
                 omCtor.Attributes = MemberAttributes.Public;
                 omCtor.CustomAttributes.Add(new CodeAttributeDeclaration(new CodeTypeReference(typeof(DebuggerNonUserCodeAttribute), CodeTypeReferenceOptions.GlobalReference)));
                 omCtor.Parameters.Add(new CodeParameterDeclarationExpression(new CodeTypeReference("Microsoft.SharePoint.SPSite", CodeTypeReferenceOptions.GlobalReference), "site"));
-                omCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference("BdsSoft.SharePoint.Linq.ObjectModelProvider.ObjectModelSharePointDataProvider", CodeTypeReferenceOptions.GlobalReference), new CodeSnippetExpression("site")));
+                omCtor.BaseConstructorArgs.Add(new CodeObjectCreateExpression(new CodeTypeReference("BdsSoft.SharePoint.Linq.Providers.ObjectModelSharePointDataProvider", CodeTypeReferenceOptions.GlobalReference), new CodeSnippetExpression("site")));
                 omCtor.Comments.Add(new CodeCommentStatement("<summary>", true));
                 omCtor.Comments.Add(new CodeCommentStatement("Connect to SharePoint using the SharePoint object model.", true));
                 omCtor.Comments.Add(new CodeCommentStatement("</summary>", true));
