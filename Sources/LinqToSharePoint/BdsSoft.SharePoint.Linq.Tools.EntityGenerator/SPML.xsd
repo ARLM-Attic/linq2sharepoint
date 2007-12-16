@@ -79,7 +79,7 @@
                   <xs:attribute name="Id" type="xs:string" use="required" />
                   <xs:attribute name="Name" type="xs:string" use="required" />
                   <xs:attribute name="Description" type="xs:string" use="optional" />
-                  <xs:attribute name="Version" type="xs:unsignedByte" use="required" />
+                  <xs:attribute name="Version" type="xs:int" use="required" />
                   <xs:attribute name="Path" type="xs:string" use="required" />
                   <xs:attribute name="EntityAlias" type="xs:string" use="optional" />
                   <xs:attribute name="ListAlias" type="xs:string" use="optional" />
